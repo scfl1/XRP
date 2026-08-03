@@ -1,54 +1,79 @@
 <template>
-  <div class="container">
-    <div class="card">
-      <!-- الشعار والعنوان -->
-      <div class="brand-header">
-        <div class="logo-wrapper">
-          <img :src="logo" class="luxury-logo" alt="Palm Treasure Logo" />
-        </div>
+  <div class="login-page">
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+      <button class="icon-btn" @click="$router.back()">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <span class="lang-switch">
+        عربي <i class="fas fa-play"></i>
+      </span>
+    </div>
+
+    <!-- منطقة الشعار -->
+    <div class="hero">
+      <div class="hero-glow"></div>
+      <div class="cube-deco">
+        <span class="cube c1"></span>
+        <span class="cube c2"></span>
+        <span class="cube c3"></span>
+        <span class="cube c4"></span>
+        <span class="cube c5"></span>
+        <span class="cube c6"></span>
+        <span class="cube c7"></span>
       </div>
-      <h2 class="title">تسجيل الدخول</h2>
-      
+      <div class="logo-frame">
+        <img :src="logo" class="luxury-logo" alt="Palm Treasure Logo" />
+      </div>
+      <h1 class="brand-name">PALM TREASURE</h1>
+    </div>
+
+    <!-- بطاقة تسجيل الدخول -->
+    <div class="card">
+      <div class="support-bubble" title="الدعم الفني">
+        <i class="fab fa-telegram-plane"></i>
+      </div>
+
+      <!-- اختيار نوع الدخول -->
+      <div class="login-type-selector">
+        <button
+          class="type-btn"
+          :class="{ active: loginType === 'email' }"
+          @click="loginType = 'email'"
+        >
+          تسجيل الدخول بالبريد الإلكتروني
+        </button>
+        <button
+          class="type-btn"
+          :class="{ active: loginType === 'phone' }"
+          @click="loginType = 'phone'"
+        >
+          تسجيل الدخول عبر الهاتف
+        </button>
+      </div>
+
       <!-- رسالة الخطأ العامة -->
       <div v-if="errorMessage" class="error-message-box">
         {{ errorMessage }}
       </div>
-      
-      <!-- اختيار نوع الدخول -->
-      <div class="login-type-selector">
-        <button 
-          class="type-btn" 
-          :class="{ active: loginType === 'email' }"
-          @click="loginType = 'email'"
-        >
-          <i class="fas fa-envelope"></i>
-          البريد الإلكتروني
-        </button>
-        <button 
-          class="type-btn" 
-          :class="{ active: loginType === 'phone' }"
-          @click="loginType = 'phone'"
-        >
-          <i class="fas fa-phone"></i>
-          رقم الهاتف
-        </button>
-      </div>
+
       <!-- تسجيل الدخول بالبريد الإلكتروني -->
       <template v-if="loginType === 'email'">
-        <label class="label">البريد الإلكتروني</label>
-        <input
-          type="email"
-          v-model="email"
-          placeholder="البريد الإلكتروني"
-          class="input"
-          :class="{ 'input-error': errorMessage && loginType === 'email' }"
-          @keyup.enter="loginUser"
-          @focus="clearError"
-        />
+        <div class="input-box">
+          <i class="fas fa-envelope field-icon"></i>
+          <input
+            type="email"
+            v-model="email"
+            placeholder="بريد إلكترونى"
+            class="input"
+            :class="{ 'input-error': errorMessage && loginType === 'email' }"
+            @keyup.enter="loginUser"
+            @focus="clearError"
+          />
+        </div>
       </template>
       <!-- تسجيل الدخول برقم الهاتف -->
       <template v-if="loginType === 'phone'">
-        <label class="label">رقم الهاتف مع رمز الدولة</label>
         <div class="phone-input-container">
           <select v-model="countryCode" class="country-select">
             <option value="">اختر الرمز</option>
@@ -133,38 +158,30 @@
         <span v-if="phoneError" class="validation-error">{{ phoneError }}</span>
       </template>
       <!-- كلمة المرور -->
-      <label class="label">كلمة المرور</label>
       <div class="input-box">
+        <i class="fas fa-lock field-icon"></i>
         <input
           :type="showPassword ? 'text' : 'password'"
           v-model="password"
-          placeholder="كلمة المرور"
+          placeholder="كلمة سر الدخول"
           class="input"
           :class="{ 'input-error': errorMessage }"
           @keyup.enter="loginUser"
           @focus="clearError"
         />
         <span class="toggle" @click="togglePassword">
-          {{ showPassword ? "إخفاء" : "إظهار" }}
+          <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
         </span>
       </div>
+
       <!-- زر تسجيل الدخول مع Loader -->
       <button class="btn" @click="loginUser" :disabled="loading">
         <span v-if="!loading">تسجيل الدخول</span>
         <span v-else class="loader"></span>
       </button>
-      <!-- تسجيل الدخول عبر جوجل -->
-      <div class="divider">
-        <span>أو</span>
-      </div>
-      
-      <button class="google-btn" @click="loginWithGoogle" :disabled="loading">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-        تسجيل الدخول عبر جوجل
-      </button>
+
       <p class="link">
-        ليس لديك حساب؟
-        <router-link to="/register">إنشاء حساب</router-link>
+        لا حساب؟<router-link to="/register">يسجل</router-link>
       </p>
     </div>
   </div>
@@ -194,9 +211,7 @@
 </template>
 
 <script>
-import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, googleProvider } from "../firebase";
+import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import router from "../router";
 import logo from "../assets/palm-gold.png";
 
@@ -288,60 +303,6 @@ export default {
         this.closeAd();
       }
     },
-    async loginWithGoogle() {
-      this.loading = true;
-      this.errorMessage = "";
-      const auth = getAuth();
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
-        
-        if (user.disabled === true) {
-          await signOut(auth);
-          this.errorMessage = "تم حظر حسابك، تواصل مع الدعم";
-          this.loading = false;
-          return;
-        }
-        
-        await user.reload();
-        const updatedUser = auth.currentUser;
-        
-        if (updatedUser && updatedUser.disabled === true) {
-          await signOut(auth);
-          this.errorMessage = "تم حظر حسابك، تواصل مع الدعم";
-          this.loading = false;
-          return;
-        }
-        
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        
-        if (!userDoc.exists()) {
-          await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            balance: 0,
-            vipLevel: 0,
-            createdAt: serverTimestamp(),
-            referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-            invitedBy: ""
-          });
-        }
-        
-        const admins = ["azad.333388@gmail.com", "admin2@gmail.com", "owner@gmail.com"];
-        if (admins.includes(user.email)) {
-          router.push("/admin");
-        } else {
-          router.push("/home");
-        }
-      } catch (error) {
-        console.error("Google Login Error:", error);
-        this.errorMessage = this.getErrorMessage(error);
-      } finally {
-        this.loading = false;
-      }
-    },
     async loginUser() {
       this.errorMessage = "";
       
@@ -413,225 +374,297 @@ export default {
 </script>
 
 <style scoped>
-/* التنسيقات العامة */
-.container {
+* {
+  box-sizing: border-box;
+}
+.login-page {
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #0A0C10;
-  padding: 20px;
   direction: rtl;
+  background: radial-gradient(circle at 30% 15%, #1f6b5c 0%, #0f3a3a 28%, #12202e 55%, #0a0e16 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
 }
+
+/* الشريط العلوي */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px 0;
+}
+.icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #fff;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+}
+.lang-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+}
+.lang-switch i {
+  color: #FFDE03;
+  font-size: 11px;
+}
+
+/* منطقة الشعار */
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 25px 20px 70px;
+  overflow: hidden;
+}
+.hero-glow {
+  position: absolute;
+  top: -40px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, rgba(212, 175, 55, 0) 70%);
+  filter: blur(10px);
+  pointer-events: none;
+}
+.cube-deco {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+}
+.cube {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(135deg, rgba(80, 220, 200, 0.35), rgba(20, 90, 90, 0.15));
+  border: 1px solid rgba(150, 240, 220, 0.25);
+  transform: rotate(45deg);
+  border-radius: 6px;
+}
+.c1 { top: 10%; left: 12%; width: 30px; height: 30px; }
+.c2 { top: 20%; right: 10%; width: 40px; height: 40px; }
+.c3 { top: 55%; left: 6%; width: 36px; height: 36px; }
+.c4 { top: 60%; right: 8%; width: 28px; height: 28px; }
+.c5 { top: 5%; left: 45%; width: 22px; height: 22px; }
+.c6 { top: 75%; left: 30%; width: 24px; height: 24px; }
+.c7 { top: 72%; right: 30%; width: 20px; height: 20px; }
+
+.logo-frame {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, #16233a, #0c1424);
+  border: 2px solid rgba(212, 175, 55, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+.luxury-logo {
+  width: 78px;
+  object-fit: contain;
+}
+.brand-name {
+  z-index: 1;
+  margin-top: 14px;
+  font-size: 20px;
+  letter-spacing: 2px;
+  font-weight: 800;
+  color: #F6E27A;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* بطاقة تسجيل الدخول */
 .card {
-  background: #11151C;
-  width: 100%;
-  max-width: 380px;
-  padding: 30px 25px;
-  border-radius: 20px;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(212, 175, 55, 0.1);
+  position: relative;
+  background: rgba(20, 26, 38, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: 26px 26px 0 0;
+  padding: 26px 22px 34px;
+  margin-top: -45px;
+  flex: 1;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35);
 }
+.support-bubble {
+  position: absolute;
+  top: -22px;
+  left: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #2aa8e0, #1a7fb0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
 /* رسالة الخطأ */
 .error-message-box {
   background: rgba(255, 107, 107, 0.15);
   border: 1px solid rgba(255, 107, 107, 0.3);
   border-radius: 10px;
   padding: 12px 15px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   color: #ff6b6b;
   font-size: 13px;
   text-align: center;
   font-weight: 500;
 }
-/* الشعار والعنوان */
-.brand-header {
-  text-align: center;
-  margin-bottom: 25px;
-}
-.logo-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-.luxury-logo {
-  width: 120px;
-  object-fit: contain;
-}
-.title {
-  color: #ffffff;
-  text-align: center;
-  font-size: 20px;
-  margin-bottom: 25px;
-  font-weight: 600;
-}
+
 /* اختيار نوع الدخول */
 .login-type-selector {
   display: flex;
-  gap: 10px;
+  gap: 18px;
   margin-bottom: 20px;
-  background: #1A1F2A;
-  padding: 5px;
-  border-radius: 12px;
+  flex-wrap: wrap;
 }
 .type-btn {
-  flex: 1;
-  padding: 10px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
-  border-radius: 8px;
   font-size: 13px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  font-weight: 700;
+  padding: 0;
 }
 .type-btn.active {
-  background: #D4AF37;
-  color: #0A0C10;
+  color: #F6E27A;
 }
-.label {
-  display: block;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 8px;
-  font-size: 13px;
-  font-weight: 500;
-}
+
 /* حقول الإدخال */
-.input, .country-select, .phone-input {
+.input-box {
+  position: relative;
   width: 100%;
-  padding: 10px 12px;
-  margin-bottom: 15px;
-  border-radius: 10px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  background: #1A1F2A;
+  margin-bottom: 16px;
+}
+.field-icon {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  color: #F6E27A;
+  font-size: 14px;
+}
+.input {
+  width: 100%;
+  padding: 14px 42px 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   color: #ffffff;
   font-size: 14px;
-  transition: all 0.3s ease;
   box-sizing: border-box;
+}
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
 }
 .input-error {
   border-color: #ff6b6b;
   box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.3);
 }
-.phone-input-container {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
-}
-.country-select {
-  width: 120px;
-  margin-bottom: 0;
-}
-.phone-input {
-  margin-bottom: 0;
-}
-.input:focus, .country-select:focus, .phone-input:focus {
+.input:focus {
   outline: none;
   border-color: #D4AF37;
-  background: #1E2430;
-}
-/* حقل كلمة المرور */
-.input-box {
-  position: relative;
-  width: 100%;
+  background: rgba(255, 255, 255, 0.09);
 }
 .toggle {
   position: absolute;
-  left: 12px;
-  top: 10px;
-  color: #D4AF37;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 15px;
 }
+
+.phone-input-container {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.country-select {
+  width: 120px;
+  padding: 14px 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 13px;
+}
+.phone-input {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  font-size: 14px;
+}
+.phone-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+.country-select:focus, .phone-input:focus {
+  outline: none;
+  border-color: #D4AF37;
+  background: rgba(255, 255, 255, 0.09);
+}
+
 /* الأزرار */
 .btn {
   width: 100%;
-  padding: 12px;
+  padding: 16px;
   border: none;
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0A0C10;
-  border-radius: 10px;
+  background: #FFDE03;
+  color: #1a1a1a;
+  border-radius: 16px;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 10px;
+  margin-top: 22px;
 }
 .btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+  filter: brightness(1.05);
 }
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-/* فاصل */
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: 20px 0;
-  color: rgba(255, 255, 255, 0.3);
-}
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-.divider span {
-  padding: 0 10px;
-  font-size: 12px;
-}
-/* زر جوجل */
-.google-btn {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #ffffff;
-  color: #333;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  transition: all 0.3s ease;
-}
-.google-btn img {
-  width: 18px;
-  height: 18px;
-}
-.google-btn:hover:not(:disabled) {
-  background: #f1f1f1;
-}
-.google-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+
 .link {
   text-align: center;
-  margin-top: 20px;
-  color: rgba(255, 255, 255, 0.5);
+  margin-top: 18px;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
 }
 .link a {
-  color: #D4AF37;
+  color: #FFDE03;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 700;
 }
+
 .loader {
   width: 18px;
   height: 18px;
-  border: 2px solid #0A0C10;
-  border-top: 2px solid #D4AF37;
+  border: 2px solid #1a1a1a;
+  border-top: 2px solid #FFDE03;
   border-radius: 50%;
   display: inline-block;
   animation: spin 0.8s linear infinite;
@@ -646,6 +679,7 @@ export default {
   margin-bottom: 10px;
   display: block;
 }
+
 /* الإعلان */
 .ad-overlay {
   position: fixed;
@@ -693,7 +727,7 @@ export default {
 }
 @media (max-width: 480px) {
   .card {
-    padding: 25px 20px;
+    padding: 24px 18px 30px;
   }
 }
 </style>
