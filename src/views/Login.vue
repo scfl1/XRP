@@ -2,117 +2,119 @@
   <div class="login-page">
     <!-- الشريط العلوي -->
     <div class="top-bar">
-      <button class="icon-btn" @click="$router.back()">
+      <button class="back-btn" @click="$router.back()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-          <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 18L9 12L15 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <div class="lang-switch">
         <span>عربي</span>
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+        <svg width="12" height="12" viewBox="0 0 24 24">
           <polygon points="2,2 22,12 2,22" fill="#FFD700"/>
         </svg>
       </div>
     </div>
 
     <!-- منطقة الشعار + المكعبات -->
-    <div class="hero-section">
-      <div class="hero-bg">
-        <div class="cubes-container">
-          <!-- مكعبات ثلاثية الأبعاد -->
-          <div class="cube-stack">
-            <div class="cube c1"></div>
-            <div class="cube c2"></div>
-            <div class="cube c3"></div>
-            <div class="cube c4"></div>
-            <div class="cube c5"></div>
-            <div class="cube c6"></div>
-            <div class="cube c7"></div>
-            <div class="cube c8"></div>
-            <div class="cube c9"></div>
-            <div class="cube c10"></div>
-            <div class="cube c11"></div>
-            <div class="cube c12"></div>
-          </div>
-        </div>
-        <div class="glow-effect"></div>
+    <div class="hero">
+      <!-- المكعبات -->
+      <div class="cubes">
+        <div class="cube c1"></div>
+        <div class="cube c2"></div>
+        <div class="cube c3"></div>
+        <div class="cube c4"></div>
+        <div class="cube c5"></div>
+        <div class="cube c6"></div>
+        <div class="cube c7"></div>
+        <div class="cube c8"></div>
+        <div class="cube c9"></div>
+        <div class="cube c10"></div>
+        <div class="cube c11"></div>
+        <div class="cube c12"></div>
+        <div class="cube c13"></div>
+        <div class="cube c14"></div>
       </div>
 
-      <!-- شعار SCFL -->
-      <div class="logo-wrapper">
+      <!-- الشعار -->
+      <div class="logo-wrap">
         <div class="logo-box">
           <div class="logo-circle">
-            <div class="logo-quarter q1">S</div>
-            <div class="logo-quarter q2">F</div>
-            <div class="logo-quarter q3">F</div>
-            <div class="logo-quarter q4">L</div>
-            <div class="logo-center">SCFL</div>
+            <div class="q q1">S</div>
+            <div class="q q2">F</div>
+            <div class="q q3">F</div>
+            <div class="q q4">
+              <span class="bars">
+                <i></i><i></i><i></i><i></i>
+              </span>
+              L
+            </div>
+            <div class="badge">SCFL</div>
           </div>
         </div>
-        <h1 class="brand-title">SCFL</h1>
+        <div class="brand">SCFL</div>
       </div>
     </div>
 
-    <!-- بطاقة تسجيل الدخول -->
-    <div class="login-card">
-      <!-- زر الدعم -->
-      <div class="support-btn" @click="openSupport">
-        <div class="support-icon">
-          <svg viewBox="0 0 64 64" width="48" height="48">
+    <!-- بطاقة الدخول -->
+    <div class="card">
+      <!-- أيقونة الدعم -->
+      <div class="support" @click="openSupport">
+        <div class="support-circle">
+          <svg viewBox="0 0 64 64" width="46" height="46">
             <circle cx="32" cy="32" r="30" fill="#fff"/>
-            <circle cx="32" cy="24" r="10" fill="#00A0E3"/>
-            <path d="M16 48c0-10 7-16 16-16s16 6 16 16" fill="#00A0E3"/>
-            <path d="M42 20c4 0 7 3 7 7v2h-4v-2c0-2-1.5-3-3-3h-2" fill="#00A0E3"/>
-            <circle cx="48" cy="22" r="6" fill="#00A0E3"/>
+            <!-- الرأس -->
+            <circle cx="32" cy="23" r="9" fill="#00A0E3"/>
+            <!-- الجسم -->
+            <path d="M15 50c0-11 8-17 17-17s17 6 17 17" fill="#00A0E3"/>
+            <!-- السماعة -->
+            <path d="M44 18c5 0 9 4 9 9v3h-5v-3c0-2.5-2-4.5-4.5-4.5H41" stroke="#00A0E3" stroke-width="3.5" fill="none"/>
+            <circle cx="50" cy="22" r="5.5" fill="#00A0E3"/>
           </svg>
         </div>
       </div>
 
       <!-- التبويبات -->
-      <div class="tab-container">
+      <div class="tabs">
         <button
-          class="tab-btn"
+          class="tab"
           :class="{ active: loginType === 'email' }"
           @click="loginType = 'email'"
         >
-          تسجيل الدخول بالبريد الإلكتروني
+          تسجيل الدخول بالبريد<br>الإلكتروني
         </button>
         <button
-          class="tab-btn"
+          class="tab"
           :class="{ active: loginType === 'phone' }"
           @click="loginType = 'phone'"
         >
-          تسجيل الدخول عبر الهاتف
+          تسجيل الدخول<br>عبر الهاتف
         </button>
       </div>
 
-      <!-- رسالة الخطأ -->
-      <div v-if="errorMessage" class="error-message">
-        ⚠️ {{ errorMessage }}
-      </div>
+      <!-- خطأ -->
+      <div v-if="errorMessage" class="error">⚠️ {{ errorMessage }}</div>
 
-      <!-- حقل البريد -->
-      <div v-if="loginType === 'email'" class="input-group">
-        <div class="input-wrapper">
-          <svg class="input-icon" width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <rect x="2" y="4" width="20" height="16" rx="2" stroke="#FFD700" stroke-width="1.8"/>
-            <path d="M2 7l10 7 10-7" stroke="#FFD700" stroke-width="1.8" stroke-linecap="round"/>
+      <!-- البريد -->
+      <div v-if="loginType === 'email'" class="field">
+        <div class="input-box">
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="4" width="20" height="16" rx="2.5" stroke="#FFD700" stroke-width="1.9"/>
+            <path d="M3 7l9 7 9-7" stroke="#FFD700" stroke-width="1.9" stroke-linecap="round"/>
           </svg>
           <input
             type="email"
             v-model="email"
             placeholder="بريد إلكترونى"
-            class="input-field"
-            @keyup.enter="loginUser"
+            @keyup.enter="login"
           />
         </div>
       </div>
 
-      <!-- حقل الهاتف -->
-      <div v-if="loginType === 'phone'" class="input-group">
-        <div class="phone-input-wrapper">
-          <select v-model="countryCode" class="country-select">
-            <option value="">اختر الرمز</option>
+      <!-- الهاتف -->
+      <div v-if="loginType === 'phone'" class="field">
+        <div class="phone-row">
+          <select v-model="countryCode" class="code">
+            <option value="">الرمز</option>
             <option value="+964">🇮🇶 +964</option>
             <option value="+966">🇸🇦 +966</option>
             <option value="+971">🇦🇪 +971</option>
@@ -123,68 +125,51 @@
             <option value="+216">🇹🇳 +216</option>
             <option value="+213">🇩🇿 +213</option>
           </select>
-          <input
-            type="tel"
-            v-model="phoneNumber"
-            placeholder="رقم الهاتف"
-            class="input-field phone-input"
-            :disabled="!countryCode"
-            @keyup.enter="loginUser"
-          />
+          <div class="input-box phone">
+            <input
+              type="tel"
+              v-model="phone"
+              placeholder="رقم الهاتف"
+              :disabled="!countryCode"
+              @keyup.enter="login"
+            />
+          </div>
         </div>
       </div>
 
       <!-- كلمة المرور -->
-      <div class="input-group">
-        <div class="input-wrapper">
-          <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="11" width="18" height="11" rx="2" stroke="#FFD700" stroke-width="1.8"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#FFD700" stroke-width="1.8"/>
+      <div class="field">
+        <div class="input-box">
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="11" width="18" height="11" rx="2.5" stroke="#FFD700" stroke-width="1.9"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="#FFD700" stroke-width="1.9"/>
           </svg>
           <input
-            :type="showPassword ? 'text' : 'password'"
+            :type="showPass ? 'text' : 'password'"
             v-model="password"
             placeholder="كلمة سر الدخول"
-            class="input-field"
-            @keyup.enter="loginUser"
+            @keyup.enter="login"
           />
-          <button class="toggle-password" @click="showPassword = !showPassword">
+          <button class="eye" @click="showPass = !showPass">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="#8E8EA2" stroke-width="1.8"/>
               <circle cx="12" cy="12" r="3" stroke="#8E8EA2" stroke-width="1.8"/>
-              <line v-if="showPassword" x1="3" y1="3" x2="21" y2="21" stroke="#8E8EA2" stroke-width="1.8"/>
+              <line v-if="showPass" x1="3" y1="3" x2="21" y2="21" stroke="#8E8EA2" stroke-width="1.8"/>
             </svg>
           </button>
         </div>
       </div>
 
       <!-- زر الدخول -->
-      <button class="login-btn" @click="loginUser" :disabled="loading">
+      <button class="btn" @click="login" :disabled="loading">
         <span v-if="!loading">تسجيل الدخول</span>
         <div v-else class="spinner"></div>
       </button>
 
-      <!-- رابط التسجيل -->
-      <p class="register-link">
+      <!-- تسجيل -->
+      <p class="register">
         لا حساب؟ <router-link to="/register">يسجل</router-link>
       </p>
-    </div>
-
-    <!-- إعلان منبثق -->
-    <div v-if="showAd" class="ad-overlay" @click.self="closeAd">
-      <div class="ad-popup">
-        <div class="ad-header">
-          <h2>✨ إعلان ✨</h2>
-        </div>
-        <div class="ad-body">
-          <p>
-            🎉🎉🎉🎉 مرحبا بالجميع! تأسست SCFL في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
-            <br><br>
-            يتعاون SCFL مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ.
-          </p>
-        </div>
-        <button class="ad-close-btn" @click="closeAd">أنا أعرف</button>
-      </div>
     </div>
   </div>
 </template>
@@ -195,58 +180,45 @@ export default {
     return {
       loginType: 'email',
       email: '',
-      phoneNumber: '',
+      phone: '',
       countryCode: '',
       password: '',
-      showPassword: false,
+      showPass: false,
       loading: false,
-      errorMessage: '',
-      showAd: true,
+      errorMessage: ''
     };
   },
-  mounted() {
-    setTimeout(() => {
-      this.showAd = false;
-    }, 5000);
-  },
   methods: {
-    async loginUser() {
+    login() {
       this.errorMessage = '';
 
       if (this.loginType === 'email' && !this.email) {
         this.errorMessage = 'الرجاء إدخال البريد الإلكتروني';
         return;
       }
-
       if (this.loginType === 'phone') {
         if (!this.countryCode) {
           this.errorMessage = 'الرجاء اختيار رمز الدولة';
           return;
         }
-        if (!this.phoneNumber) {
+        if (!this.phone) {
           this.errorMessage = 'الرجاء إدخال رقم الهاتف';
           return;
         }
       }
-
       if (!this.password || this.password.length < 6) {
         this.errorMessage = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
         return;
       }
 
       this.loading = true;
-
-      // محاكاة تسجيل الدخول
       setTimeout(() => {
         this.loading = false;
         this.$router.push('/home');
-      }, 1500);
-    },
-    closeAd() {
-      this.showAd = false;
+      }, 1400);
     },
     openSupport() {
-      // افتح دعم فني أو واتساب أو تيليجرام حسب احتياجك
+      // غيّر الرابط حسب احتياجك
       window.open('https://t.me/your_support', '_blank');
     }
   }
@@ -262,29 +234,29 @@ export default {
 
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #0b3a4a 0%, #0f2a3a 35%, #1a1c2e 70%, #12141f 100%);
+  background: linear-gradient(165deg, #0a3d4d 0%, #0c2f3f 30%, #15182a 70%, #0f111c 100%);
   display: flex;
   flex-direction: column;
   direction: rtl;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
+  position: relative;
 }
 
-/* الشريط العلوي */
+/* ===== الشريط العلوي ===== */
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 20px 8px;
-  z-index: 20;
+  padding: 16px 18px 6px;
+  z-index: 30;
 }
 
-.icon-btn {
+.back-btn {
   background: none;
   border: none;
-  cursor: pointer;
   padding: 6px;
+  cursor: pointer;
 }
 
 .lang-switch {
@@ -296,114 +268,89 @@ export default {
   font-weight: 500;
 }
 
-/* الهيرو */
-.hero-section {
+/* ===== الهيرو ===== */
+.hero {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0 0 15px;
-  z-index: 5;
-  min-height: 280px;
-}
-
-.hero-bg {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-/* المكعبات */
-.cubes-container {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  height: 290px;
   display: flex;
   justify-content: center;
   align-items: center;
-  perspective: 800px;
+  z-index: 5;
 }
 
-.cube-stack {
-  position: relative;
-  width: 220px;
-  height: 180px;
+/* المكعبات */
+.cubes {
+  position: absolute;
+  width: 280px;
+  height: 240px;
+  right: 5%;
+  top: 20px;
+  transform: rotateX(18deg) rotateY(-28deg);
   transform-style: preserve-3d;
-  transform: rotateX(25deg) rotateY(-25deg);
+  perspective: 900px;
 }
 
 .cube {
   position: absolute;
-  width: 42px;
-  height: 42px;
-  background: linear-gradient(145deg, #00d4d4, #008a8a);
-  border-radius: 6px;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(145deg, #1ee0e0, #0a9a9a);
+  border-radius: 7px;
   box-shadow:
-    inset 2px 2px 6px rgba(255,255,255,0.25),
-    inset -2px -2px 6px rgba(0,0,0,0.3),
-    4px 4px 12px rgba(0,0,0,0.35);
-  opacity: 0.85;
+    inset 3px 3px 8px rgba(255,255,255,0.22),
+    inset -3px -3px 8px rgba(0,0,0,0.28),
+    5px 6px 14px rgba(0,0,0,0.35);
+  opacity: 0.9;
 }
 
-.cube::before {
+.cube::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, transparent 40%, rgba(0,0,0,0.25));
-  border-radius: 6px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, transparent 45%, rgba(0,0,0,0.22));
 }
 
-.c1  { top: 20px;  left: 40px;  transform: translateZ(30px); }
-.c2  { top: 10px;  left: 85px;  transform: translateZ(50px); }
-.c3  { top: 35px;  left: 130px; transform: translateZ(20px); }
-.c4  { top: 55px;  left: 55px;  transform: translateZ(60px); }
-.c5  { top: 45px;  left: 100px; transform: translateZ(40px); }
-.c6  { top: 70px;  left: 145px; transform: translateZ(10px); }
-.c7  { top: 90px;  left: 70px;  transform: translateZ(35px); }
-.c8  { top: 80px;  left: 115px; transform: translateZ(55px); }
-.c9  { top: 110px; left: 40px;  transform: translateZ(15px); }
-.c10 { top: 100px; left: 90px;  transform: translateZ(45px); }
-.c11 { top: 125px; left: 130px; transform: translateZ(25px); }
-.c12 { top: 60px;  left: 20px;  transform: translateZ(5px);  opacity: 0.6; }
-
-.glow-effect {
-  position: absolute;
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(0, 220, 220, 0.12) 0%, transparent 65%);
-  border-radius: 50%;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: none;
-}
+.c1  { top: 10px;  left: 90px;  transform: translateZ(40px); }
+.c2  { top: 25px;  left: 145px; transform: translateZ(20px); }
+.c3  { top: 45px;  left: 50px;  transform: translateZ(55px); }
+.c4  { top: 55px;  left: 110px; transform: translateZ(65px); }
+.c5  { top: 70px;  left: 165px; transform: translateZ(30px); }
+.c6  { top: 90px;  left: 70px;  transform: translateZ(45px); }
+.c7  { top: 100px; left: 130px; transform: translateZ(70px); }
+.c8  { top: 115px; left: 180px; transform: translateZ(25px); }
+.c9  { top: 130px; left: 40px;  transform: translateZ(15px); }
+.c10 { top: 140px; left: 95px;  transform: translateZ(50px); }
+.c11 { top: 155px; left: 150px; transform: translateZ(35px); }
+.c12 { top: 80px;  left: 20px;  transform: translateZ(10px); opacity: 0.7; }
+.c13 { top: 30px;  left: 20px;  transform: translateZ(5px);  opacity: 0.6; }
+.c14 { top: 170px; left: 70px;  transform: translateZ(20px); opacity: 0.75; }
 
 /* الشعار */
-.logo-wrapper {
+.logo-wrap {
   position: relative;
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 30px;
+  margin-top: -10px;
 }
 
 .logo-box {
-  width: 108px;
-  height: 108px;
+  width: 112px;
+  height: 112px;
   background: #fff;
-  border-radius: 22px;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 12px 40px rgba(0, 200, 200, 0.18);
-  margin-bottom: 12px;
+  box-shadow: 0 14px 40px rgba(0, 200, 200, 0.2);
 }
 
 .logo-circle {
-  width: 88px;
-  height: 88px;
-  border: 2.5px solid #0a1e2f;
+  width: 92px;
+  height: 92px;
+  border: 2.8px solid #0a1e2f;
   border-radius: 50%;
   position: relative;
   overflow: hidden;
@@ -412,170 +359,196 @@ export default {
   grid-template-rows: 1fr 1fr;
 }
 
-.logo-quarter {
+.q {
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 900;
-  font-size: 18px;
+  font-size: 20px;
   color: #0a1e2f;
-  letter-spacing: -0.5px;
+  letter-spacing: -1px;
 }
 
-.q1 { border-bottom: 1.5px solid #0a1e2f; border-left: 1.5px solid #0a1e2f; }
-.q2 { border-bottom: 1.5px solid #0a1e2f; }
-.q3 { border-left: 1.5px solid #0a1e2f; }
-.q4 { }
+.q1 { border-left: 1.8px solid #0a1e2f; border-bottom: 1.8px solid #0a1e2f; }
+.q2 { border-bottom: 1.8px solid #0a1e2f; }
+.q3 { border-left: 1.8px solid #0a1e2f; }
+.q4 {
+  flex-direction: column;
+  gap: 1px;
+  font-size: 17px;
+}
 
-.logo-center {
+.bars {
+  display: flex;
+  gap: 2.5px;
+  margin-bottom: -2px;
+}
+.bars i {
+  display: block;
+  width: 3.5px;
+  background: #0a1e2f;
+  border-radius: 1px;
+}
+.bars i:nth-child(1) { height: 6px; }
+.bars i:nth-child(2) { height: 10px; }
+.bars i:nth-child(3) { height: 8px; }
+.bars i:nth-child(4) { height: 12px; }
+
+.badge {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: #0a1e2f;
   color: #fff;
-  font-size: 8px;
+  font-size: 8.5px;
   font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 3px;
-  letter-spacing: 0.8px;
+  padding: 2.5px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.6px;
   z-index: 5;
 }
 
-.brand-title {
+.brand {
+  margin-top: 12px;
   color: #FFD700;
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 800;
   letter-spacing: 5px;
-  margin: 0;
-  text-shadow: 0 2px 18px rgba(255, 215, 0, 0.2);
+  text-shadow: 0 2px 16px rgba(255, 215, 0, 0.25);
 }
 
-/* بطاقة الدخول */
-.login-card {
+/* ===== البطاقة ===== */
+.card {
   background: #26263a;
   flex: 1;
-  border-radius: 36px 36px 0 0;
-  padding: 32px 22px 40px;
-  margin-top: 8px;
+  border-radius: 38px 38px 0 0;
+  padding: 36px 22px 40px;
   position: relative;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 -14px 45px rgba(0,0,0,0.5);
 }
 
-/* زر الدعم */
-.support-btn {
+/* الدعم */
+.support {
   position: absolute;
-  top: -26px;
-  left: 22px;
-  width: 52px;
-  height: 52px;
+  top: -28px;
+  left: 22px; /* في RTL left = يمين الشاشة */
+  z-index: 40;
   cursor: pointer;
-  z-index: 30;
-  transition: transform 0.25s;
 }
 
-.support-btn:active {
-  transform: scale(0.95);
+.support-circle {
+  filter: drop-shadow(0 5px 16px rgba(0, 160, 227, 0.45));
+  transition: transform 0.2s;
 }
-
-.support-icon {
-  filter: drop-shadow(0 4px 14px rgba(0, 160, 227, 0.4));
+.support:active .support-circle {
+  transform: scale(0.94);
 }
 
 /* التبويبات */
-.tab-container {
+.tabs {
   display: flex;
-  justify-content: space-between;
   margin-bottom: 26px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 0 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0 2px;
 }
 
-.tab-btn {
+.tab {
+  flex: 1;
   background: none;
   border: none;
   color: #8e8ea2;
-  font-size: 13.5px;
+  font-size: 13.2px;
   font-weight: 500;
-  padding: 8px 0 14px;
+  line-height: 1.35;
+  padding: 6px 4px 14px;
   cursor: pointer;
   position: relative;
-  flex: 1;
   text-align: center;
   transition: color 0.25s;
 }
 
-.tab-btn::after {
+.tab::after {
   content: '';
   position: absolute;
   bottom: -1px;
-  right: 10%;
+  right: 12%;
   width: 0;
   height: 2.5px;
   background: #FFD700;
   border-radius: 2px;
-  transition: width 0.3s ease;
+  transition: width 0.3s;
 }
 
-.tab-btn.active {
+.tab.active {
   color: #FFD700;
 }
-
-.tab-btn.active::after {
-  width: 80%;
+.tab.active::after {
+  width: 76%;
 }
 
-/* حقول الإدخال */
-.input-group {
+/* الحقول */
+.field {
   margin-bottom: 14px;
 }
 
-.input-wrapper {
+.input-box {
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.input-icon {
-  position: absolute;
-  right: 16px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.input-field {
-  width: 100%;
-  height: 54px;
-  padding: 0 48px 0 48px;
   background: #35354d;
-  border: 2px solid transparent;
   border-radius: 14px;
-  color: #fff;
-  font-size: 15px;
-  text-align: right;
-  transition: all 0.25s;
+  height: 54px;
+  border: 2px solid transparent;
+  transition: border-color 0.25s, background 0.25s;
 }
 
-.input-field::placeholder {
-  color: #8e8ea2;
-}
-
-.input-field:focus {
-  outline: none;
+.input-box:focus-within {
   border-color: #FFD700;
   background: #3a3a55;
 }
 
+.icon {
+  position: absolute;
+  right: 15px;
+  pointer-events: none;
+}
+
+.input-box input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-size: 15px;
+  padding: 0 48px 0 48px;
+  text-align: right;
+}
+
+.input-box input::placeholder {
+  color: #8e8ea2;
+}
+
+.eye {
+  position: absolute;
+  left: 14px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+}
+
 /* الهاتف */
-.phone-input-wrapper {
+.phone-row {
   display: flex;
   gap: 10px;
 }
 
-.country-select {
-  width: 105px;
+.code {
+  width: 100px;
   height: 54px;
-  padding: 0 8px;
   background: #35354d;
   border: 2px solid transparent;
   border-radius: 14px;
@@ -585,47 +558,32 @@ export default {
   appearance: none;
   cursor: pointer;
 }
-
-.country-select:focus {
+.code:focus {
   outline: none;
   border-color: #FFD700;
 }
 
-.phone-input {
+.phone {
   flex: 1;
+}
+.phone input {
   padding-right: 16px;
 }
 
-.phone-input:disabled {
-  opacity: 0.45;
-}
-
-/* إظهار كلمة المرور */
-.toggle-password {
-  position: absolute;
-  left: 14px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-}
-
-/* رسالة الخطأ */
-.error-message {
+/* الخطأ */
+.error {
   background: rgba(255, 90, 90, 0.12);
-  border: 1px solid rgba(255, 90, 90, 0.25);
+  border: 1px solid rgba(255, 90, 90, 0.22);
   color: #ff6b6b;
-  padding: 11px 14px;
+  padding: 11px;
   border-radius: 12px;
-  margin-bottom: 14px;
   font-size: 13.5px;
   text-align: center;
+  margin-bottom: 14px;
 }
 
-/* زر الدخول */
-.login-btn {
+/* الزر */
+.btn {
   width: 100%;
   height: 54px;
   background: linear-gradient(135deg, #FFD700, #f0c000);
@@ -635,21 +593,18 @@ export default {
   font-size: 17px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 10px;
-  box-shadow: 0 6px 22px rgba(255, 215, 0, 0.25);
+  margin-top: 8px;
+  box-shadow: 0 6px 24px rgba(255, 215, 0, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s;
+  transition: transform 0.2s;
 }
-
-.login-btn:active:not(:disabled) {
+.btn:active:not(:disabled) {
   transform: scale(0.98);
 }
-
-.login-btn:disabled {
+.btn:disabled {
   opacity: 0.65;
-  cursor: not-allowed;
 }
 
 .spinner {
@@ -660,112 +615,30 @@ export default {
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
 }
-
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* رابط التسجيل */
-.register-link {
+/* التسجيل */
+.register {
   text-align: center;
   margin-top: 22px;
   color: #8e8ea2;
   font-size: 14px;
 }
-
-.register-link a {
+.register a {
   color: #FFD700;
   text-decoration: none;
   font-weight: 600;
 }
 
-/* الإعلان */
-.ad-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.82);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.3s ease;
-}
-
-.ad-popup {
-  background: #1a1c2e;
-  width: 90%;
-  max-width: 380px;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 215, 0, 0.12);
-  animation: slideUp 0.35s ease;
-}
-
-.ad-header {
-  background: linear-gradient(135deg, #FFD700, #f0c000);
-  padding: 15px;
-  text-align: center;
-}
-
-.ad-header h2 {
-  color: #0a1e2f;
-  font-size: 18px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.ad-body {
-  padding: 18px 20px;
-  max-height: 280px;
-  overflow-y: auto;
-  color: #c0c0d0;
-  font-size: 13.5px;
-  line-height: 1.75;
-}
-
-.ad-close-btn {
-  width: 100%;
-  padding: 15px;
-  background: none;
-  border: none;
-  border-top: 1px solid rgba(255, 215, 0, 0.1);
-  color: #FFD700;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(25px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
 /* موبايل */
-@media (max-width: 400px) {
-  .login-card {
-    padding: 28px 16px 36px;
-  }
-  .tab-btn {
-    font-size: 12.5px;
-  }
-  .logo-box {
-    width: 96px;
-    height: 96px;
-  }
-  .logo-circle {
-    width: 78px;
-    height: 78px;
-  }
-  .logo-quarter {
-    font-size: 16px;
-  }
-  .brand-title {
-    font-size: 23px;
-  }
+@media (max-width: 390px) {
+  .logo-box { width: 100px; height: 100px; }
+  .logo-circle { width: 82px; height: 82px; }
+  .q { font-size: 18px; }
+  .brand { font-size: 24px; }
+  .tab { font-size: 12.5px; }
+  .cubes { right: 0; transform: scale(0.9) rotateX(18deg) rotateY(-28deg); }
 }
 </style>
