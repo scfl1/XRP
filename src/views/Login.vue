@@ -3,68 +3,86 @@
     <!-- الشريط العلوي -->
     <div class="top-bar">
       <button class="icon-btn" @click="$router.back()">
-        <i class="fas fa-chevron-right"></i>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </button>
-      <span class="lang-switch">
-        عربي <i class="fas fa-play"></i>
-      </span>
+      <div class="lang-switch">
+        <span>عربي</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+          <polygon points="2,2 22,12 2,22" fill="#FFD700"/>
+        </svg>
+      </div>
     </div>
 
     <!-- منطقة الشعار -->
-    <div class="hero">
-      <div class="hero-glow"></div>
-      <div class="cube-deco">
-        <!-- SVG Representation of the 3D Cubes to match the image exactly -->
-        <svg viewBox="0 0 200 200" class="cube-svg">
-            <g transform="translate(100,100) scale(1.2)">
-                <path d="M0 -50 L43 -25 L0 0 L-43 -25 Z" fill="#00e5e5" stroke="#004d4d" stroke-width="0.5"/>
-                <path d="M-43 -25 L0 0 L0 50 L-43 25 Z" fill="#00b2b2" stroke="#004d4d" stroke-width="0.5"/>
-                <path d="M43 -25 L43 25 L0 50 L0 0 Z" fill="#008080" stroke="#004d4d" stroke-width="0.5"/>
-                <g transform="translate(-35, -20) scale(0.6)">
-                    <path d="M0 -50 L43 -25 L0 0 L-43 -25 Z" fill="#00ffff" stroke="#004d4d" stroke-width="0.5"/>
-                    <path d="M-43 -25 L0 0 L0 50 L-43 25 Z" fill="#00cccc" stroke="#004d4d" stroke-width="0.5"/>
-                </g>
-                <g transform="translate(35, -20) scale(0.6)">
-                    <path d="M0 -50 L43 -25 L0 0 L-43 -25 Z" fill="#00ffff" stroke="#004d4d" stroke-width="0.5"/>
-                    <path d="M43 -25 L43 25 L0 50 L0 0 Z" fill="#009999" stroke="#004d4d" stroke-width="0.5"/>
-                </g>
-            </g>
-        </svg>
-      </div>
-      <div class="logo-frame">
-        <div class="scfl-logo-circle">
-            <div class="logo-inner-content">
-                <div class="logo-row"><span>S</span> <span>E</span></div>
-                <div class="logo-line"></div>
-                <div class="logo-row"><span>F</span> <span>L</span></div>
-                <div class="logo-tag">SCFL</div>
-            </div>
+    <div class="hero-section">
+      <div class="hero-bg">
+        <!-- المكعبات ثلاثية الأبعاد -->
+        <div class="cubes-container">
+          <div class="cube cube-1">
+            <div class="cube-face cube-front"></div>
+            <div class="cube-face cube-top"></div>
+            <div class="cube-face cube-right"></div>
+          </div>
+          <div class="cube cube-2">
+            <div class="cube-face cube-front"></div>
+            <div class="cube-face cube-top"></div>
+            <div class="cube-face cube-right"></div>
+          </div>
+          <div class="cube cube-3">
+            <div class="cube-face cube-front"></div>
+            <div class="cube-face cube-top"></div>
+            <div class="cube-face cube-right"></div>
+          </div>
         </div>
+        
+        <!-- تأثير الإضاءة -->
+        <div class="glow-effect"></div>
       </div>
-      <h1 class="brand-name">SCFL</h1>
+
+      <!-- شعار SCFL -->
+      <div class="logo-wrapper">
+        <div class="logo-container">
+          <div class="logo-inner">
+            <div class="logo-text">
+              <span class="letter">S</span>
+              <span class="letter">E</span>
+            </div>
+            <div class="logo-divider"></div>
+            <div class="logo-text">
+              <span class="letter">F</span>
+              <span class="letter">L</span>
+            </div>
+            <div class="logo-badge">SCFL</div>
+          </div>
+        </div>
+        <h1 class="brand-title">SCFL</h1>
+      </div>
     </div>
 
     <!-- بطاقة تسجيل الدخول -->
-    <div class="card">
-      <div class="support-bubble" title="الدعم الفني">
-        <svg viewBox="0 0 100 100" width="50" height="50">
-            <circle cx="50" cy="50" r="50" fill="#ffffff" />
-            <path d="M25 50 L75 25 L65 75 L50 60 L40 70 Z" fill="#0088cc" />
-            <circle cx="75" cy="50" r="15" fill="#0088cc" />
+    <div class="login-card">
+      <!-- زر الدعم -->
+      <div class="support-btn">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="white"/>
+          <path d="M30 55 L50 35 L65 45 L55 60 L45 65 L35 50 Z" fill="#0099CC"/>
+          <circle cx="65" cy="40" r="12" fill="#0099CC"/>
         </svg>
       </div>
 
       <!-- اختيار نوع الدخول -->
-      <div class="login-type-selector">
-        <button
-          class="type-btn"
+      <div class="tab-container">
+        <button 
+          class="tab-btn" 
           :class="{ active: loginType === 'email' }"
           @click="loginType = 'email'"
         >
           تسجيل الدخول بالبريد الإلكتروني
         </button>
-        <button
-          class="type-btn"
+        <button 
+          class="tab-btn" 
           :class="{ active: loginType === 'phone' }"
           @click="loginType = 'phone'"
         >
@@ -72,323 +90,169 @@
         </button>
       </div>
 
-      <!-- رسالة الخطأ العامة -->
-      <div v-if="errorMessage" class="error-message-box">
+      <!-- رسالة الخطأ -->
+      <div v-if="errorMessage" class="error-message">
+        <span>⚠️</span>
         {{ errorMessage }}
       </div>
 
-      <!-- تسجيل الدخول بالبريد الإلكتروني -->
-      <template v-if="loginType === 'email'">
-        <div class="input-box">
-          <i class="fas fa-envelope field-icon"></i>
-          <input
-            type="email"
-            v-model="email"
+      <!-- حقل البريد الإلكتروني -->
+      <div v-if="loginType === 'email'" class="input-group">
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z" stroke="#FFD700" stroke-width="2"/>
+            <path d="M22 6L12 13L2 6" stroke="#FFD700" stroke-width="2"/>
+          </svg>
+          <input 
+            type="email" 
+            v-model="email" 
             placeholder="بريد إلكترونى"
-            class="input"
-            :class="{ 'input-error': errorMessage && loginType === 'email' }"
+            class="input-field"
             @keyup.enter="loginUser"
-            @focus="clearError"
           />
         </div>
-      </template>
-      <!-- تسجيل الدخول برقم الهاتف -->
-      <template v-if="loginType === 'phone'">
-        <div class="phone-input-container">
-          <select v-model="countryCode" class="country-select">
-            <option value="">اختر الرمز</option>
-            <option value="+964">🇮🇶 العراق (+964)</option>
-            <option value="+966">🇸🇦 السعودية (+966)</option>
-            <option value="+971">🇦🇪 الإمارات (+971)</option>
-            <option value="+965">🇰🇼 الكويت (+965)</option>
-            <option value="+974">🇶🇦 قطر (+974)</option>
-            <option value="+973">🇧🇭 البحرين (+973)</option>
-            <option value="+968">🇴🇲 عمان (+968)</option>
-            <option value="+962">🇯🇴 الأردن (+962)</option>
-            <option value="+20">🇪🇬 مصر (+20)</option>
-            <option value="+963">🇸🇾 سوريا (+963)</option>
-            <option value="+961">🇱🇧 لبنان (+961)</option>
-            <option value="+218">🇱🇾 ليبيا (+218)</option>
-            <option value="+216">🇹🇳 تونس (+216)</option>
-            <option value="+213">🇩🇿 الجزائر (+213)</option>
-            <option value="+212">🇲🇦 المغرب (+212)</option>
-            <option value="+222">🇲🇷 موريتانيا (+222)</option>
-            <option value="+249">🇸🇩 السودان (+249)</option>
-            <option value="+967">🇾🇪 اليمن (+967)</option>
-            <option value="+970">🇵🇸 فلسطين (+970)</option>
-            <option value="+90">🇹🇷 تركيا (+90)</option>
-            <option value="+44">🇬🇧 بريطانيا (+44)</option>
-            <option value="+1">🇺🇸 أمريكا (+1)</option>
-            <option value="+49">🇩🇪 ألمانيا (+49)</option>
-            <option value="+33">🇫🇷 فرنسا (+33)</option>
-            <option value="+39">🇮🇹 إيطاليا (+39)</option>
-            <option value="+34">🇪🇸 إسبانيا (+34)</option>
-            <option value="+31">🇳🇱 هولندا (+31)</option>
-            <option value="+46">🇸🇪 السويد (+46)</option>
-            <option value="+47">🇳🇴 النرويج (+47)</option>
-            <option value="+45">🇩🇰 الدنمارك (+45)</option>
-            <option value="+358">🇫🇮 فنلندا (+358)</option>
-            <option value="+41">🇨🇭 سويسرا (+41)</option>
-            <option value="+43">🇦🇹 النمسا (+43)</option>
-            <option value="+32">🇧🇪 بلجيكا (+32)</option>
-            <option value="+48">🇵🇱 بولندا (+48)</option>
-            <option value="+420">🇨🇿 التشيك (+420)</option>
-            <option value="+36">🇭🇺 المجر (+36)</option>
-            <option value="+40">🇷🇴 رومانيا (+40)</option>
-            <option value="+359">🇧🇬 بلغاريا (+359)</option>
-            <option value="+30">🇬🇷 اليونان (+30)</option>
-            <option value="+351">🇵🇹 البرتغال (+351)</option>
-            <option value="+7">🇷🇺 روسيا (+7)</option>
-            <option value="+380">🇺🇦 أوكرانيا (+380)</option>
-            <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
-            <option value="+995">🇬🇪 جورجيا (+995)</option>
-            <option value="+994">🇦🇿 أذربيجان (+994)</option>
-            <option value="+374">🇦🇲 أرمينيا (+374)</option>
-            <option value="+998">🇺🇿 أوزبكستان (+998)</option>
-            <option value="+996">🇰🇬 قرغيزستان (+996)</option>
-            <option value="+992">🇹🇯 طاجيكستان (+992)</option>
-            <option value="+993">🇹🇲 تركمانستان (+993)</option>
-            <option value="+86">🇨🇳 الصين (+86)</option>
-            <option value="+91">🇮🇳 الهند (+91)</option>
-            <option value="+92">🇵🇰 باكستان (+92)</option>
-            <option value="+93">🇦🇫 أفغانستان (+93)</option>
-            <option value="+94">🇱🇰 سريلانكا (+94)</option>
-            <option value="+95">🇲🇲 ميانمار (+95)</option>
-            <option value="+66">🇹🇭 تايلاند (+66)</option>
-            <option value="+84">🇻🇳 فيتنام (+84)</option>
-            <option value="+60">🇲🇾 ماليزيا (+60)</option>
-            <option value="+65">🇸🇬 سنغافورة (+65)</option>
-            <option value="+62">🇮🇩 إندونيسيا (+62)</option>
-            <option value="+63">🇵🇭 الفلبين (+63)</option>
-            <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
-            <option value="+81">🇯🇵 اليابان (+81)</option>
-          </select>
-          <input
-            type="tel"
-            v-model="phoneNumber"
-            placeholder="رقم الهاتف"
-            class="phone-input"
-            :class="{ 'input-error': errorMessage && loginType === 'phone' }"
-            :disabled="!countryCode"
-            @input="validatePhoneNumber"
-            @keyup.enter="loginUser"
-            @focus="clearError"
-          />
-        </div>
-        <span v-if="phoneError" class="validation-error">{{ phoneError }}</span>
-      </template>
-      <!-- كلمة المرور -->
-      <div class="input-box">
-        <i class="fas fa-lock field-icon"></i>
-        <input
-          :type="showPassword ? 'text' : 'password'"
-          v-model="password"
-          placeholder="كلمة سر الدخول"
-          class="input"
-          :class="{ 'input-error': errorMessage }"
-          @keyup.enter="loginUser"
-          @focus="clearError"
-        />
-        <span class="toggle" @click="togglePassword">
-          <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-        </span>
       </div>
 
-      <!-- زر تسجيل الدخول مع Loader -->
-      <button class="btn" @click="loginUser" :disabled="loading">
+      <!-- حقل رقم الهاتف -->
+      <div v-if="loginType === 'phone'" class="input-group">
+        <div class="phone-input-wrapper">
+          <select v-model="countryCode" class="country-select">
+            <option value="">اختر الرمز</option>
+            <option value="+964">🇮🇶 +964</option>
+            <option value="+966">🇸🇦 +966</option>
+            <option value="+971">🇦🇪 +971</option>
+            <option value="+965">🇰🇼 +965</option>
+            <option value="+974">🇶🇦 +974</option>
+            <option value="+20">🇪🇬 +20</option>
+            <option value="+212">🇲🇦 +212</option>
+            <option value="+216">🇹🇳 +216</option>
+            <option value="+213">🇩🇿 +213</option>
+          </select>
+          <input 
+            type="tel" 
+            v-model="phoneNumber" 
+            placeholder="رقم الهاتف"
+            class="input-field phone-input"
+            :disabled="!countryCode"
+            @keyup.enter="loginUser"
+          />
+        </div>
+      </div>
+
+      <!-- حقل كلمة المرور -->
+      <div class="input-group">
+        <div class="input-wrapper">
+          <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="11" width="18" height="11" rx="2" stroke="#FFD700" stroke-width="2"/>
+            <path d="M7 11V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V11" stroke="#FFD700" stroke-width="2"/>
+          </svg>
+          <input 
+            :type="showPassword ? 'text' : 'password'" 
+            v-model="password" 
+            placeholder="كلمة سر الدخول"
+            class="input-field"
+            @keyup.enter="loginUser"
+          />
+          <button class="toggle-password" @click="showPassword = !showPassword">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path v-if="!showPassword" d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="#8E8EA2" stroke-width="2"/>
+              <circle v-if="!showPassword" cx="12" cy="12" r="3" stroke="#8E8EA2" stroke-width="2"/>
+              <path v-else d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="#8E8EA2" stroke-width="2"/>
+              <line v-else x1="1" y1="23" x2="23" y2="1" stroke="#8E8EA2" stroke-width="2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- زر تسجيل الدخول -->
+      <button class="login-btn" @click="loginUser" :disabled="loading">
         <span v-if="!loading">تسجيل الدخول</span>
-        <span v-else class="loader"></span>
+        <div v-else class="spinner"></div>
       </button>
 
-      <p class="link">
-        لا حساب؟<router-link to="/register">يسجل</router-link>
+      <!-- رابط التسجيل -->
+      <p class="register-link">
+        لا حساب؟ <router-link to="/register">يسجل</router-link>
       </p>
     </div>
   </div>
-  <!-- Popup إعلان -->
-  <div id="companyAd" class="ad-overlay" v-if="showAd">
-    <div class="ad-box">
-      <h2>✨ إعلان ✨</h2>
-      <div class="ad-content">
-        <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست SCFL في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
+
+  <!-- إعلان منبثق -->
+  <div v-if="showAd" class="ad-overlay" @click.self="closeAd">
+    <div class="ad-popup">
+      <div class="ad-header">
+        <h2>✨ إعلان ✨</h2>
+      </div>
+      <div class="ad-body">
+        <p>
+          🎉🎉🎉🎉 مرحبا بالجميع! تأسست SCFL في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
           <br><br>
-          يتعاون SCFL مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
-          <br><br>
-          👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
-          <br>
-          💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
-          <br>
-          🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
-          <br>
-          🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
-          <br><br>
-          عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
+          يتعاون SCFL مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ.
         </p>
       </div>
-      <button @click="closeAd" class="ad-btn">أنا أعرف</button>
+      <button class="ad-close-btn" @click="closeAd">أنا أعرف</button>
     </div>
   </div>
 </template>
 
 <script>
-import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import router from "../router";
-import logo from "../assets/palm-gold.png";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "vue-router";
 
 export default {
   data() {
     return {
-      logo,
       loginType: 'email',
-      email: "",
-      countryCode: "",
-      phoneNumber: "",
-      fullPhoneNumber: "",
-      password: "",
+      email: '',
+      phoneNumber: '',
+      countryCode: '',
+      password: '',
       showPassword: false,
       loading: false,
-      showAd: false,
-      adTimer: null,
-      phoneError: "",
-      errorMessage: "",
+      errorMessage: '',
+      showAd: true,
     };
   },
   mounted() {
-    document.addEventListener('keydown', this.handleEscKey);
-    // إظهار الإعلان بعد ثانية واحدة
+    // إخفاء الإعلان بعد 5 ثواني تلقائياً
     setTimeout(() => {
-        this.showAd = true;
-    }, 1000);
-  },
-  beforeUnmount() {
-    document.removeEventListener('keydown', this.handleEscKey);
-    if (this.adTimer) {
-      clearTimeout(this.adTimer);
-    }
+      this.showAd = false;
+    }, 5000);
   },
   methods: {
-    togglePassword() {
-      this.showPassword = !this.showPassword;
-    },
-    clearError() {
-      this.errorMessage = "";
-      this.phoneError = "";
-    },
-    validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return re.test(email);
-    },
-    validatePhoneNumber() {
-      if (!this.countryCode) {
-        this.phoneError = "الرجاء اختيار رمز الدولة";
-        return false;
-      }
-      if (!this.phoneNumber) {
-        this.phoneError = "الرجاء إدخال رقم الهاتف";
-        return false;
-      }
-      const cleanPhone = this.phoneNumber.replace(/[^0-9]/g, '');
-      if (cleanPhone.length < 7 || cleanPhone.length > 15) {
-        this.phoneError = "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
-        return false;
-      }
-      this.fullPhoneNumber = this.countryCode + cleanPhone;
-      this.phoneError = "";
-      return true;
-    },
-    generatePhoneEmail(phoneNumber) {
-      const cleanPhone = phoneNumber.replace(/\+/g, '');
-      return `${cleanPhone}@phone.app`;
-    },
-    getErrorMessage(error) {
-      if (error.code === 'auth/user-disabled') {
-        return 'تم حظر حسابك، تواصل مع الدعم';
-      }
-      if (error.code === 'auth/wrong-password' ||
-          error.code === 'auth/user-not-found' ||
-          error.code === 'auth/invalid-credential' ||
-          error.code === 'auth/invalid-email') {
-        if (this.loginType === 'phone') {
-          return 'رقم الهاتف أو كلمة المرور غير صحيحة.';
-        } else {
-          return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-        }
-      }
-      if (error.code === 'auth/too-many-requests') {
-        return 'تم تعليق الحساب مؤقتاً لكثرة المحاولات. يرجى المحاولة لاحقاً.';
-      }
-      if (error.code === 'auth/network-request-failed') {
-        return 'حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.';
-      }
-      return 'حدث خطأ. يرجى المحاولة لاحقاً.';
-    },
-    handleEscKey(event) {
-      if (event.key === 'Escape' && this.showAd) {
-        this.closeAd();
-      }
-    },
     async loginUser() {
-      this.errorMessage = "";
+      this.errorMessage = '';
       
-      let loginEmail = this.email;
+      // التحقق من صحة المدخلات
+      if (this.loginType === 'email' && !this.email) {
+        this.errorMessage = 'الرجاء إدخال البريد الإلكتروني';
+        return;
+      }
       
       if (this.loginType === 'phone') {
-        if (!this.validatePhoneNumber()) return;
-        loginEmail = this.generatePhoneEmail(this.fullPhoneNumber);
-      } else {
-        if (!this.validateEmail(this.email)) {
-          if (this.loginType === 'phone') {
-            this.errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
-          } else {
-            this.errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-          }
+        if (!this.countryCode) {
+          this.errorMessage = 'الرجاء اختيار رمز الدولة';
+          return;
+        }
+        if (!this.phoneNumber) {
+          this.errorMessage = 'الرجاء إدخال رقم الهاتف';
           return;
         }
       }
-
-      if (this.password.length < 6) {
-        if (this.loginType === 'phone') {
-          this.errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
-        } else {
-          this.errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-        }
+      
+      if (!this.password || this.password.length < 6) {
+        this.errorMessage = 'كلمة المرور يجب أن تكون 6 أحرف على الأقل';
         return;
       }
 
       this.loading = true;
-      const auth = getAuth();
-      try {
-        const userCredential = await signInWithEmailAndPassword(auth, loginEmail, this.password);
-        const user = userCredential.user;
-        
-        if (user.disabled === true) {
-          await signOut(auth);
-          this.errorMessage = "تم حظر حسابك، تواصل مع الدعم";
-          this.loading = false;
-          return;
-        }
-        
-        await user.reload();
-        const updatedUser = auth.currentUser;
-        
-        if (updatedUser && updatedUser.disabled === true) {
-          await signOut(auth);
-          this.errorMessage = "تم حظر حسابك، تواصل مع الدعم";
-          this.loading = false;
-          return;
-        }
-        
-        const admins = ["azad.333388@gmail.com", "admin2@gmail.com", "owner@gmail.com"];
-        if (admins.includes(user.email)) {
-          router.push("/admin");
-        } else {
-          router.push("/home");
-        }
-      } catch (error) {
-        this.errorMessage = this.getErrorMessage(error);
-      } finally {
+      
+      // محاكاة عملية تسجيل الدخول
+      setTimeout(() => {
         this.loading = false;
-      }
+        // هنا يتم تنفيذ عملية تسجيل الدخول الفعلية
+        this.$router.push('/home');
+      }, 1500);
     },
     closeAd() {
       this.showAd = false;
@@ -398,14 +262,21 @@ export default {
 </script>
 
 <style scoped>
-/* التنسيقات العامة المطابقة للصورة */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .login-page {
   min-height: 100vh;
+  background: linear-gradient(180deg, #0a2e3f 0%, #1a1c2e 50%, #12141f 100%);
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0d3b4c 0%, #1a1c2c 100%);
   direction: rtl;
-  overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  position: relative;
+  overflow: hidden;
 }
 
 /* الشريط العلوي */
@@ -413,18 +284,16 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 25px;
-  width: 100%;
+  padding: 20px 24px;
+  z-index: 10;
 }
 
 .icon-btn {
-  background: transparent;
+  background: none;
   border: none;
-  color: white;
-  font-size: 22px;
   cursor: pointer;
-  padding: 8px;
-  transition: all 0.3s ease;
+  padding: 4px;
+  transition: transform 0.2s;
 }
 
 .icon-btn:hover {
@@ -432,264 +301,351 @@ export default {
 }
 
 .lang-switch {
-  color: white;
-  font-size: 16px;
   display: flex;
   align-items: center;
   gap: 8px;
+  color: white;
+  font-size: 16px;
   font-weight: 500;
 }
 
-.lang-switch i {
-  color: #ffdf00;
-  font-size: 10px;
+.lang-switch svg {
+  margin-right: 2px;
 }
 
-/* الهيرو والشعار */
-.hero {
+/* منطقة الهيرو */
+.hero-section {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px 0 10px;
+  padding: 10px 0 20px;
+  z-index: 5;
 }
 
-.hero-glow {
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+/* المكعبات ثلاثية الأبعاد */
+.cubes-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cube {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform-style: preserve-3d;
+  animation: floatCube 4s ease-in-out infinite;
+}
+
+.cube-1 {
+  top: 20%;
+  left: 30%;
+  animation-delay: 0s;
+}
+
+.cube-2 {
+  top: 40%;
+  right: 25%;
+  animation-delay: 1.5s;
+  transform: scale(0.7);
+}
+
+.cube-3 {
+  bottom: 10%;
+  left: 45%;
+  animation-delay: 3s;
+  transform: scale(0.5);
+}
+
+.cube-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0.4;
+}
+
+.cube-front {
+  background: #00e5e5;
+  transform: translateZ(30px);
+}
+
+.cube-top {
+  background: #00b2b2;
+  transform: rotateX(90deg) translateZ(30px);
+}
+
+.cube-right {
+  background: #008080;
+  transform: rotateY(90deg) translateZ(30px);
+}
+
+@keyframes floatCube {
+  0%, 100% { transform: rotate(0deg) translateY(0px); }
+  50% { transform: rotate(15deg) translateY(-10px); }
+}
+
+.glow-effect {
   position: absolute;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(0, 229, 229, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 229, 229, 0.08) 0%, transparent 70%);
   border-radius: 50%;
-  top: -20px;
-  z-index: 1;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
-.cube-svg {
-  width: 260px;
-  height: 260px;
-  position: absolute;
-  top: -10px;
-  opacity: 0.6;
-  z-index: 2;
-}
-
-.logo-frame {
-  z-index: 10;
-  background: white;
-  width: 110px;
-  height: 110px;
-  border-radius: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 229, 229, 0.25);
-  margin-top: 20px;
+/* شعار SCFL */
+.logo-wrapper {
   position: relative;
-}
-
-.scfl-logo-circle {
-  width: 94px;
-  height: 94px;
-  border: 2.5px solid #0a1e2f;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-}
-
-.logo-inner-content {
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.logo-container {
+  background: white;
+  width: 110px;
+  height: 110px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 40px rgba(0, 229, 229, 0.15);
+  margin-bottom: 15px;
   position: relative;
 }
 
-.logo-row {
-  display: flex;
-  gap: 14px;
-  font-weight: 900;
-  font-size: 22px;
-  color: #0a1e2f;
-  letter-spacing: 2px;
+.logo-container::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 26px;
+  background: linear-gradient(135deg, rgba(0, 229, 229, 0.2), transparent);
+  z-index: -1;
 }
 
-.logo-line {
-  width: 65px;
-  height: 2.5px;
+.logo-inner {
+  width: 90px;
+  height: 90px;
+  border: 2px solid #0a1e2f;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.logo-text {
+  display: flex;
+  gap: 12px;
+  font-weight: 900;
+  font-size: 20px;
+  color: #0a1e2f;
+  letter-spacing: 1px;
+}
+
+.logo-divider {
+  width: 55px;
+  height: 2px;
   background: #0a1e2f;
   margin: 2px 0;
   border-radius: 2px;
 }
 
-.logo-tag {
+.logo-badge {
   position: absolute;
   background: #0a1e2f;
   color: white;
   font-size: 7px;
-  padding: 2px 5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 2px;
   top: 48%;
   left: 50%;
-  transform: translateX(-50%);
-  border-radius: 2px;
-  font-weight: bold;
+  transform: translate(-50%, -50%);
   letter-spacing: 0.5px;
 }
 
-.brand-name {
-  color: #ffdf00;
+.brand-title {
+  color: #FFD700;
   font-size: 28px;
   font-weight: 800;
-  margin-top: 12px;
-  z-index: 10;
-  letter-spacing: 3px;
-  text-shadow: 0 2px 20px rgba(255, 223, 0, 0.2);
+  letter-spacing: 4px;
+  text-shadow: 0 2px 20px rgba(255, 215, 0, 0.15);
+  margin: 0;
 }
 
-/* البطاقة */
-.card {
+/* بطاقة تسجيل الدخول */
+.login-card {
   background: #26263a;
-  flex-grow: 1;
+  flex: 1;
   border-radius: 35px 35px 0 0;
-  padding: 35px 28px 30px;
+  padding: 30px 24px 35px;
+  margin-top: 10px;
   position: relative;
-  box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.5);
-  margin-top: 15px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.support-bubble {
+/* زر الدعم */
+.support-btn {
   position: absolute;
+  top: -25px;
   right: 25px;
-  top: -28px;
+  width: 50px;
+  height: 50px;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s;
   z-index: 20;
 }
 
-.support-bubble:hover {
+.support-btn:hover {
   transform: scale(1.05);
 }
 
-.support-bubble svg {
-  filter: drop-shadow(0 4px 12px rgba(0, 136, 204, 0.3));
+.support-btn svg {
+  filter: drop-shadow(0 4px 12px rgba(0, 153, 204, 0.3));
 }
 
 /* التبويبات */
-.login-type-selector {
+.tab-container {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 30px;
-  gap: 10px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.type-btn {
-  background: transparent;
+.tab-btn {
+  background: none;
   border: none;
   color: #8e8ea2;
-  font-size: 15px;
-  cursor: pointer;
-  padding: 8px 0 10px;
-  transition: all 0.3s ease;
+  font-size: 14px;
   font-weight: 500;
-  border-bottom: 2px solid transparent;
-}
-
-.type-btn.active {
-  color: #ffdf00;
-  border-bottom-color: #ffdf00;
-}
-
-.type-btn:hover {
-  color: #ffdf00;
-}
-
-/* المدخلات */
-.input-box {
+  padding: 10px 0 12px;
+  cursor: pointer;
+  transition: all 0.3s;
   position: relative;
-  margin-bottom: 18px;
+  flex: 1;
+  text-align: center;
 }
 
-.input, .country-select, .phone-input {
+.tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #FFD700;
+  transition: width 0.3s;
+}
+
+.tab-btn.active {
+  color: #FFD700;
+}
+
+.tab-btn.active::after {
   width: 100%;
-  height: 58px;
-  padding: 0 50px 0 20px;
-  border-radius: 14px;
-  border: none;
+}
+
+.tab-btn:hover {
+  color: #FFD700;
+}
+
+/* حقول الإدخال */
+.input-group {
+  margin-bottom: 16px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  right: 15px;
+  color: #FFD700;
+  z-index: 2;
+}
+
+.input-field {
+  width: 100%;
+  height: 56px;
+  padding: 0 48px 0 20px;
   background: #35354d;
-  color: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  color: white;
   font-size: 15px;
   text-align: right;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 
-.input::placeholder,
-.phone-input::placeholder {
+.input-field::placeholder {
   color: #8e8ea2;
 }
 
-.input:focus, .country-select:focus, .phone-input:focus {
-  outline: 2px solid #ffdf00;
+.input-field:focus {
+  outline: none;
+  border-color: #FFD700;
   background: #3a3a55;
 }
 
-.input-error {
-  outline: 2px solid #ff6b6b !important;
+.input-field:focus + .input-icon {
+  color: #FFD700;
 }
 
-.field-icon {
-  position: absolute;
-  right: 16px;
-  top: 19px;
-  color: #ffdf00;
-  font-size: 20px;
-}
-
-.toggle {
-  position: absolute;
-  left: 16px;
-  top: 19px;
-  color: #8e8ea2;
-  cursor: pointer;
-  font-size: 18px;
-  transition: color 0.3s ease;
-}
-
-.toggle:hover {
-  color: #ffdf00;
-}
-
-.phone-input-container {
+/* حقل الهاتف */
+.phone-input-wrapper {
   display: flex;
   gap: 10px;
-  margin-bottom: 8px;
 }
 
 .country-select {
-  width: 130px;
+  width: 110px;
+  height: 56px;
   padding: 0 12px;
+  background: #35354d;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  color: white;
+  font-size: 14px;
   text-align: center;
   appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffdf00' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: left 12px center;
-  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.country-select:focus {
+  outline: none;
+  border-color: #FFD700;
 }
 
 .country-select option {
   background: #26263a;
-  color: #ffffff;
-}
-
-.country-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .phone-input {
-  padding-right: 20px;
   flex: 1;
+  padding-right: 20px;
 }
 
 .phone-input:disabled {
@@ -697,119 +653,177 @@ export default {
   cursor: not-allowed;
 }
 
-.validation-error {
-  color: #ff6b6b;
-  font-size: 13px;
-  margin-top: 4px;
-  display: block;
-  text-align: right;
-  padding-right: 5px;
+/* زر إظهار كلمة المرور */
+.toggle-password {
+  position: absolute;
+  left: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  transition: opacity 0.3s;
 }
 
-.error-message-box {
-  background: rgba(255, 107, 107, 0.12);
+.toggle-password:hover {
+  opacity: 0.7;
+}
+
+/* رسالة الخطأ */
+.error-message {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.2);
   color: #ff6b6b;
-  padding: 12px 16px;
-  border-radius: 12px;
-  text-align: center;
+  padding: 10px 16px;
+  border-radius: 10px;
   margin-bottom: 16px;
   font-size: 14px;
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-/* الأزرار */
-.btn {
+/* زر تسجيل الدخول */
+.login-btn {
   width: 100%;
   height: 56px;
-  background: linear-gradient(135deg, #ffdf00 0%, #f5c800 100%);
-  color: #0a1e2f;
+  background: linear-gradient(135deg, #FFD700, #f5c800);
   border: none;
   border-radius: 28px;
+  color: #0a1e2f;
   font-size: 18px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 12px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(255, 223, 0, 0.25);
+  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.2);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.btn:hover:not(:disabled) {
+.login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 30px rgba(255, 223, 0, 0.35);
+  box-shadow: 0 6px 30px rgba(255, 215, 0, 0.3);
 }
 
-.btn:active:not(:disabled) {
-  transform: translateY(0px);
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.btn:disabled {
-  opacity: 0.7;
+.login-btn:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.loader {
-  width: 22px;
-  height: 22px;
+/* Spinner */
+.spinner {
+  width: 24px;
+  height: 24px;
   border: 3px solid #0a1e2f;
   border-top: 3px solid transparent;
   border-radius: 50%;
-  display: inline-block;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
-.link {
+/* رابط التسجيل */
+.register-link {
   text-align: center;
-  margin-top: 22px;
+  margin-top: 20px;
   color: #8e8ea2;
-  font-size: 15px;
+  font-size: 14px;
 }
 
-.link a {
-  color: #ffdf00;
+.register-link a {
+  color: #FFD700;
   text-decoration: none;
-  margin-right: 6px;
   font-weight: 600;
-  transition: color 0.3s ease;
+  transition: color 0.3s;
 }
 
-.link a:hover {
+.register-link a:hover {
   color: #ffe44d;
   text-decoration: underline;
 }
 
-/* الإعلان */
+/* الإعلان المنبثق */
 .ad-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 0, 0.85);
   z-index: 1000;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   animation: fadeIn 0.3s ease;
+}
+
+.ad-popup {
+  background: #1a1c2e;
+  width: 92%;
+  max-width: 400px;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  animation: slideUp 0.4s ease;
+}
+
+.ad-header {
+  background: linear-gradient(135deg, #FFD700, #f5c800);
+  padding: 16px;
+  text-align: center;
+}
+
+.ad-header h2 {
+  color: #0a1e2f;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.ad-body {
+  padding: 20px 22px;
+  max-height: 300px;
+  overflow-y: auto;
+  color: #c0c0d0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.ad-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ad-body::-webkit-scrollbar-thumb {
+  background: #FFD700;
+  border-radius: 4px;
+}
+
+.ad-close-btn {
+  width: 100%;
+  padding: 16px;
+  background: none;
+  border: none;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  color: #FFD700;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.ad-close-btn:hover {
+  background: rgba(255, 215, 0, 0.05);
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-.ad-box {
-  background: #1a1c2c;
-  width: 92%;
-  max-width: 420px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 223, 0, 0.3);
-  overflow: hidden;
-  animation: slideUp 0.4s ease;
 }
 
 @keyframes slideUp {
@@ -823,111 +837,57 @@ export default {
   }
 }
 
-.ad-box h2 {
-  background: linear-gradient(135deg, #ffdf00, #f5c800);
-  color: #0a1e2f;
-  padding: 16px;
-  text-align: center;
-  font-size: 20px;
-  margin: 0;
-  font-weight: 700;
-}
-
-.ad-content {
-  padding: 20px 22px;
-  max-height: 300px;
-  overflow-y: auto;
-  color: #d0d0e0;
-  font-size: 14px;
-  line-height: 1.8;
-}
-
-.ad-content::-webkit-scrollbar {
-  width: 4px;
-}
-
-.ad-content::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ad-content::-webkit-scrollbar-thumb {
-  background: #ffdf00;
-  border-radius: 4px;
-}
-
-.ad-btn {
-  width: 100%;
-  padding: 16px;
-  background: transparent;
-  border: none;
-  border-top: 1px solid rgba(255, 223, 0, 0.2);
-  color: #ffdf00;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.ad-btn:hover {
-  background: rgba(255, 223, 0, 0.05);
-}
-
-/* تحسينات للشاشات الصغيرة */
+/* استجابة للشاشات الصغيرة */
 @media (max-width: 480px) {
-  .card {
-    padding: 25px 18px 25px;
+  .login-card {
+    padding: 24px 16px 30px;
     border-radius: 30px 30px 0 0;
   }
   
-  .type-btn {
+  .tab-btn {
     font-size: 13px;
+    padding: 8px 0 10px;
   }
   
-  .input, .country-select, .phone-input {
-    height: 52px;
+  .input-field {
+    height: 50px;
     font-size: 14px;
   }
   
-  .country-select {
-    width: 110px;
-  }
-  
-  .logo-frame {
+  .logo-container {
     width: 95px;
     height: 95px;
   }
   
-  .scfl-logo-circle {
-    width: 80px;
-    height: 80px;
+  .logo-inner {
+    width: 78px;
+    height: 78px;
   }
   
-  .logo-row {
-    font-size: 18px;
+  .logo-text {
+    font-size: 17px;
     gap: 10px;
   }
   
-  .logo-line {
-    width: 50px;
+  .logo-divider {
+    width: 45px;
   }
   
-  .brand-name {
-    font-size: 22px;
+  .brand-title {
+    font-size: 24px;
   }
   
-  .support-bubble svg {
-    width: 40px;
-    height: 40px;
+  .country-select {
+    width: 95px;
+    height: 50px;
+    font-size: 12px;
   }
   
-  .support-bubble {
+  .support-btn {
+    width: 42px;
+    height: 42px;
     right: 18px;
     top: -22px;
-  }
-  
-  .cube-svg {
-    width: 200px;
-    height: 200px;
   }
 }
 </style>
