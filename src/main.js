@@ -3,7 +3,7 @@
 // ===============================
 
 // منع تشغيل الموقع على أي دومين غير الدومين الرسمي
-if (window.location.hostname !== "palm-treasure.vercel.app") {
+if (window.location.hostname !== "ai51ai.xusstates.workers.dev") {
   document.body.innerHTML = "403 Forbidden";
   throw new Error("Domain not allowed");
 }
