@@ -380,7 +380,7 @@ export default {
 .login-page {
   min-height: 100vh;
   direction: rtl;
-  background: radial-gradient(circle at 30% 15%, #1f6b5c 0%, #0f3a3a 28%, #12202e 55%, #0a0e16 100%);
+  background: radial-gradient(circle at 50% 40%, #21a37a 0%, #1c8c69 22%, #1a6b53 42%, #23293a 68%, #282634 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -416,7 +416,7 @@ export default {
   font-size: 15px;
 }
 .lang-switch i {
-  color: #FFDE03;
+  color: #FFE500;
   font-size: 11px;
 }
 
@@ -485,15 +485,14 @@ export default {
   font-size: 20px;
   letter-spacing: 2px;
   font-weight: 800;
-  color: #F6E27A;
+  color: #FFE500;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 /* بطاقة تسجيل الدخول */
 .card {
   position: relative;
-  background: rgba(20, 26, 38, 0.9);
-  backdrop-filter: blur(6px);
+  background: #3c3a47;
   border-radius: 26px 26px 0 0;
   padding: 26px 22px 34px;
   margin-top: -45px;
@@ -546,7 +545,7 @@ export default {
   padding: 0;
 }
 .type-btn.active {
-  color: #F6E27A;
+  color: #FFE500;
 }
 
 /* حقول الإدخال */
@@ -558,39 +557,37 @@ export default {
 .field-icon {
   position: absolute;
   top: 50%;
-  right: 16px;
+  left: 16px;
   transform: translateY(-50%);
-  color: #F6E27A;
-  font-size: 14px;
+  color: #FFE500;
+  font-size: 15px;
 }
 .input {
   width: 100%;
-  padding: 14px 42px 14px 16px;
+  padding: 14px 16px 14px 42px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  background: #55525d;
   color: #ffffff;
   font-size: 14px;
   box-sizing: border-box;
 }
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: #a9a8af;
 }
 .input-error {
-  border-color: #ff6b6b;
-  box-shadow: 0 0 0 1px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 0 0 1px #ff6b6b;
 }
 .input:focus {
   outline: none;
-  border-color: #D4AF37;
-  background: rgba(255, 255, 255, 0.09);
+  background: #5c5964;
 }
 .toggle {
   position: absolute;
-  left: 16px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   font-size: 15px;
 }
@@ -632,7 +629,7 @@ export default {
   width: 100%;
   padding: 16px;
   border: none;
-  background: #FFDE03;
+  background: #FFE500;
   color: #1a1a1a;
   border-radius: 16px;
   font-size: 16px;
@@ -655,7 +652,7 @@ export default {
   font-size: 14px;
 }
 .link a {
-  color: #FFDE03;
+  color: #FFE500;
   text-decoration: none;
   font-weight: 700;
 }
@@ -664,7 +661,7 @@ export default {
   width: 18px;
   height: 18px;
   border: 2px solid #1a1a1a;
-  border-top: 2px solid #FFDE03;
+  border-top: 2px solid #FFE500;
   border-radius: 50%;
   display: inline-block;
   animation: spin 0.8s linear infinite;
