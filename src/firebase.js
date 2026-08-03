@@ -59,13 +59,13 @@ import { getFunctions } from "firebase/functions";
 // إعدادات Firebase الخاصة بتطبيقك  
 // -------------------------------------------  
 const firebaseConfig = {  
-  apiKey: "AIzaSyDa0XdGA05G3vt-enGPBfDTD16K4OdoMik",  
-  authDomain: "american-54cbd.firebaseapp.com",  
-  projectId: "american-54cbd",  
-  storageBucket: "american-54cbd.appspot.com",  
-  messagingSenderId: "166955679884",  
-  appId: "1:166955679884:web:5d8701f7ed3e3f78d33ba9",  
-  measurementId: "G-ZL7XR4VCV3"  
+  apiKey: "AIzaSyDA9TynZBT2hG7i8Z6iJ9_8qM8Qgd1GjcA",  
+  authDomain: "scfl-91bcb.firebaseapp.com",  
+  projectId: "scfl-91bcb",  
+  storageBucket: "scfl-91bcb.firebasestorage.app",  
+  messagingSenderId: "169510429824",  
+  appId: "1:169510429824:web:984d66ec6fc70b0ca3f265",  
+  measurementId: "G-P9HSX17HJZ"  
 };  
 
 // -------------------------------------------  
