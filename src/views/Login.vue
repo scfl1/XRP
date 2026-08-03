@@ -14,24 +14,44 @@
     <div class="hero">
       <div class="hero-glow"></div>
       <div class="cube-deco">
-        <span class="cube c1"></span>
-        <span class="cube c2"></span>
-        <span class="cube c3"></span>
-        <span class="cube c4"></span>
-        <span class="cube c5"></span>
-        <span class="cube c6"></span>
-        <span class="cube c7"></span>
+        <!-- SVG Representation of the 3D Cubes to match the image exactly -->
+        <svg viewBox="0 0 200 200" class="cube-svg">
+            <g transform="translate(100,100) scale(1.2)">
+                <path d="M0 -50 L43 -25 L0 0 L-43 -25 Z" fill="#00e5e5" stroke="#004d4d" stroke-width="0.5"/>
+                <path d="M-43 -25 L0 0 L0 50 L-43 25 Z" fill="#00b2b2" stroke="#004d4d" stroke-width="0.5"/>
+                <path d="M43 -25 L43 25 L0 50 L0 0 Z" fill="#008080" stroke="#004d4d" stroke-width="0.5"/>
+                <g transform="translate(-35, -20) scale(0.6)">
+                    <path d="M0 -50 L43 -25 L0 0 L-43 -25 Z" fill="#00ffff" stroke="#004d4d" stroke-width="0.5"/>
+                    <path d="M-43 -25 L0 0 L0 50 L-43 25 Z" fill="#00cccc" stroke="#004d4d" stroke-width="0.5"/>
+                </g>
+                <g transform="translate(35, -20) scale(0.6)">
+                    <path d="M0 -50 L43 -25 L0 0 L-43 -25 Z" fill="#00ffff" stroke="#004d4d" stroke-width="0.5"/>
+                    <path d="M43 -25 L43 25 L0 50 L0 0 Z" fill="#009999" stroke="#004d4d" stroke-width="0.5"/>
+                </g>
+            </g>
+        </svg>
       </div>
       <div class="logo-frame">
-        <img :src="logo" class="luxury-logo" alt="Palm Treasure Logo" />
+        <div class="scfl-logo-circle">
+            <div class="logo-inner-content">
+                <div class="logo-row"><span>S</span> <span>E</span></div>
+                <div class="logo-line"></div>
+                <div class="logo-row"><span>F</span> <span>L</span></div>
+                <div class="logo-tag">SCFL</div>
+            </div>
+        </div>
       </div>
-      <h1 class="brand-name">PALM TREASURE</h1>
+      <h1 class="brand-name">SCFL</h1>
     </div>
 
     <!-- بطاقة تسجيل الدخول -->
     <div class="card">
       <div class="support-bubble" title="الدعم الفني">
-        <i class="fab fa-telegram-plane"></i>
+        <svg viewBox="0 0 100 100" width="50" height="50">
+            <circle cx="50" cy="50" r="50" fill="#ffffff" />
+            <path d="M25 50 L75 25 L65 75 L50 60 L40 70 Z" fill="#0088cc" />
+            <circle cx="75" cy="50" r="15" fill="#0088cc" />
+        </svg>
       </div>
 
       <!-- اختيار نوع الدخول -->
@@ -190,9 +210,9 @@
     <div class="ad-box">
       <h2>✨ إعلان ✨</h2>
       <div class="ad-content">
-        <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
+        <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست SCFL في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
           <br><br>
-          يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
+          يتعاون SCFL مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
           <br><br>
           👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
           <br>
@@ -235,6 +255,10 @@ export default {
   },
   mounted() {
     document.addEventListener('keydown', this.handleEscKey);
+    // إظهار الإعلان بعد ثانية واحدة
+    setTimeout(() => {
+        this.showAd = true;
+    }, 1000);
   },
   beforeUnmount() {
     document.removeEventListener('keydown', this.handleEscKey);
@@ -374,16 +398,13 @@ export default {
 </script>
 
 <style scoped>
-* {
-  box-sizing: border-box;
-}
+/* التنسيقات العامة المطابقة للصورة */
 .login-page {
   min-height: 100vh;
-  direction: rtl;
-  background: radial-gradient(circle at 50% 40%, #21a37a 0%, #1c8c69 22%, #1a6b53 42%, #23293a 68%, #282634 100%);
-  color: #fff;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(180deg, #0f4c5c 0%, #1a1c2c 100%);
+  direction: rtl;
   overflow-x: hidden;
 }
 
@@ -391,290 +412,250 @@ export default {
 .top-bar {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 18px 20px 0;
-}
-.icon-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: #fff;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  cursor: pointer;
-}
-.lang-switch {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 15px;
-}
-.lang-switch i {
-  color: #FFE500;
-  font-size: 11px;
+  padding: 20px;
+  width: 100%;
 }
 
-/* منطقة الشعار */
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.lang-switch {
+  color: white;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lang-switch i {
+  color: #ffdf00;
+  font-size: 10px;
+}
+
+/* الهيرو والشعار */
 .hero {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 25px 20px 70px;
-  overflow: hidden;
+  padding: 40px 0 20px;
 }
-.hero-glow {
+
+.cube-svg {
+  width: 280px;
+  height: 280px;
   position: absolute;
-  top: -40px;
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.35) 0%, rgba(212, 175, 55, 0) 70%);
-  filter: blur(10px);
-  pointer-events: none;
+  top: 0;
+  opacity: 0.8;
 }
-.cube-deco {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.5;
-}
-.cube {
-  position: absolute;
-  width: 46px;
-  height: 46px;
-  background: linear-gradient(135deg, rgba(80, 220, 200, 0.35), rgba(20, 90, 90, 0.15));
-  border: 1px solid rgba(150, 240, 220, 0.25);
-  transform: rotate(45deg);
-  border-radius: 6px;
-}
-.c1 { top: 10%; left: 12%; width: 30px; height: 30px; }
-.c2 { top: 20%; right: 10%; width: 40px; height: 40px; }
-.c3 { top: 55%; left: 6%; width: 36px; height: 36px; }
-.c4 { top: 60%; right: 8%; width: 28px; height: 28px; }
-.c5 { top: 5%; left: 45%; width: 22px; height: 22px; }
-.c6 { top: 75%; left: 30%; width: 24px; height: 24px; }
-.c7 { top: 72%; right: 30%; width: 20px; height: 20px; }
 
 .logo-frame {
-  position: relative;
-  width: 130px;
-  height: 130px;
-  border-radius: 28px;
-  background: linear-gradient(145deg, #16233a, #0c1424);
-  border: 2px solid rgba(212, 175, 55, 0.5);
+  z-index: 10;
+  background: white;
+  width: 110px;
+  height: 110px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  z-index: 1;
-}
-.luxury-logo {
-  width: 78px;
-  object-fit: contain;
-}
-.brand-name {
-  z-index: 1;
-  margin-top: 14px;
-  font-size: 20px;
-  letter-spacing: 2px;
-  font-weight: 800;
-  color: #FFE500;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+  margin-top: 20px;
 }
 
-/* بطاقة تسجيل الدخول */
-.card {
-  position: relative;
-  background: #3c3a47;
-  border-radius: 26px 26px 0 0;
-  padding: 26px 22px 34px;
-  margin-top: -45px;
-  flex: 1;
-  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35);
+.scfl-logo-circle {
+  width: 95px;
+  height: 95px;
+  border: 2px solid #001f3f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.logo-inner-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.logo-row {
+  display: flex;
+  gap: 12px;
+  font-weight: 900;
+  font-size: 20px;
+  color: #001f3f;
+}
+
+.logo-line {
+  width: 70px;
+  height: 2px;
+  background: #001f3f;
+  margin: 2px 0;
+}
+
+.logo-tag {
+  position: absolute;
+  background: #001f3f;
+  color: white;
+  font-size: 7px;
+  padding: 1px 3px;
+  top: 45%;
+  border-radius: 1px;
+}
+
+.brand-name {
+  color: #ffdf00;
+  font-size: 26px;
+  font-weight: bold;
+  margin-top: 15px;
+  z-index: 10;
+}
+
+/* البطاقة */
+.card {
+  background: #2c2c3e;
+  flex-grow: 1;
+  border-radius: 40px 40px 0 0;
+  padding: 40px 25px;
+  position: relative;
+  box-shadow: 0 -10px 40px rgba(0,0,0,0.4);
+  margin-top: 20px;
+}
+
 .support-bubble {
   position: absolute;
-  top: -22px;
-  left: 22px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #2aa8e0, #1a7fb0);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: #fff;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  right: 20px;
+  top: -30px;
+  cursor: pointer;
 }
 
-/* رسالة الخطأ */
-.error-message-box {
-  background: rgba(255, 107, 107, 0.15);
-  border: 1px solid rgba(255, 107, 107, 0.3);
-  border-radius: 10px;
-  padding: 12px 15px;
-  margin-bottom: 15px;
-  color: #ff6b6b;
-  font-size: 13px;
-  text-align: center;
-  font-weight: 500;
-}
-
-/* اختيار نوع الدخول */
+/* التبويبات */
 .login-type-selector {
   display: flex;
-  gap: 18px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-.type-btn {
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.55);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 0;
-}
-.type-btn.active {
-  color: #FFE500;
+  justify-content: space-around;
+  margin-bottom: 35px;
 }
 
-/* حقول الإدخال */
+.type-btn {
+  background: transparent;
+  border: none;
+  color: #8e8e9e;
+  font-size: 16px;
+  cursor: pointer;
+  padding-bottom: 5px;
+}
+
+.type-btn.active {
+  color: #ffdf00;
+}
+
+/* المدخلات */
 .input-box {
   position: relative;
-  width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
+
+.input, .country-select, .phone-input {
+  width: 100%;
+  height: 60px;
+  padding: 0 50px 0 20px;
+  border-radius: 15px;
+  border: none;
+  background: #3e3e56;
+  color: white;
+  font-size: 16px;
+  text-align: right;
+}
+
+.input:focus, .country-select:focus, .phone-input:focus {
+  outline: 2px solid #ffdf00;
+}
+
 .field-icon {
   position: absolute;
-  top: 50%;
-  left: 16px;
-  transform: translateY(-50%);
-  color: #FFE500;
-  font-size: 15px;
+  right: 15px;
+  top: 20px;
+  color: #ffdf00;
+  font-size: 20px;
 }
-.input {
-  width: 100%;
-  padding: 14px 16px 14px 42px;
-  border-radius: 14px;
-  border: none;
-  background: #55525d;
-  color: #ffffff;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-.input::placeholder {
-  color: #a9a8af;
-}
-.input-error {
-  box-shadow: 0 0 0 1px #ff6b6b;
-}
-.input:focus {
-  outline: none;
-  background: #5c5964;
-}
+
 .toggle {
   position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.8);
+  left: 15px;
+  top: 20px;
+  color: #8e8e9e;
   cursor: pointer;
-  font-size: 15px;
 }
 
 .phone-input-container {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
+
 .country-select {
   width: 120px;
-  padding: 14px 10px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-  font-size: 13px;
+  padding: 0 10px;
 }
+
 .phone-input {
-  flex: 1;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
-  font-size: 14px;
-}
-.phone-input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
-}
-.country-select:focus, .phone-input:focus {
-  outline: none;
-  border-color: #D4AF37;
-  background: rgba(255, 255, 255, 0.09);
+  padding-right: 20px;
 }
 
 /* الأزرار */
 .btn {
   width: 100%;
-  padding: 16px;
+  height: 55px;
+  background: #ffdf00;
+  color: #000;
   border: none;
-  background: #FFE500;
-  color: #1a1a1a;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 800;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: bold;
   cursor: pointer;
-  margin-top: 22px;
+  margin-top: 10px;
 }
-.btn:hover:not(:disabled) {
-  filter: brightness(1.05);
+
+.loader {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #000;
+  border-top: 3px solid transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 1s linear infinite;
 }
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .link {
   text-align: center;
-  margin-top: 18px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 14px;
-}
-.link a {
-  color: #FFE500;
-  text-decoration: none;
-  font-weight: 700;
+  margin-top: 25px;
+  color: white;
 }
 
-.loader {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #1a1a1a;
-  border-top: 2px solid #FFE500;
-  border-radius: 50%;
-  display: inline-block;
-  animation: spin 0.8s linear infinite;
+.link a {
+  color: #ffdf00;
+  text-decoration: none;
+  margin-right: 5px;
 }
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-.validation-error {
+
+.error-message-box {
+  background: rgba(255, 0, 0, 0.1);
   color: #ff6b6b;
-  font-size: 12px;
-  margin-top: -10px;
-  margin-bottom: 10px;
-  display: block;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 15px;
 }
 
 /* الإعلان */
@@ -684,47 +665,50 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0,0,0,0.8);
+  z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
 }
+
 .ad-box {
-  background: #11151C;
+  background: #11151c;
   width: 90%;
   max-width: 400px;
   border-radius: 20px;
-  border: 1px solid #D4AF37;
+  border: 1px solid #ffdf00;
   overflow: hidden;
 }
+
 .ad-box h2 {
-  background: #D4AF37;
-  color: #0A0C10;
-  margin: 0;
+  background: #ffdf00;
+  color: black;
   padding: 15px;
-  font-size: 18px;
+  text-align: center;
 }
+
 .ad-content {
   padding: 20px;
-  color: #fff;
-  font-size: 14px;
   max-height: 300px;
   overflow-y: auto;
+  color: white;
 }
+
 .ad-btn {
   width: 100%;
   padding: 15px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(212, 175, 55, 0.3);
-  color: #D4AF37;
+  border-top: 1px solid #ffdf00;
+  color: #ffdf00;
+  font-weight: bold;
   cursor: pointer;
-  font-weight: 700;
 }
+
 @media (max-width: 480px) {
   .card {
-    padding: 24px 18px 30px;
+    padding: 25px 20px;
   }
 }
 </style>
