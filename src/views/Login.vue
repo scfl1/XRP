@@ -3,7 +3,7 @@
     <!-- الشريط العلوي -->
     <div class="top-bar">
       <button class="icon-btn" @click="$router.back()">
-        <i class="fas fa-chevron-left"></i>
+        <i class="fas fa-chevron-right"></i>
       </button>
       <span class="lang-switch">
         عربي <i class="fas fa-play"></i>
@@ -403,7 +403,7 @@ export default {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #0f4c5c 0%, #1a1c2c 100%);
+  background: linear-gradient(180deg, #0d3b4c 0%, #1a1c2c 100%);
   direction: rtl;
   overflow-x: hidden;
 }
@@ -412,7 +412,8 @@ export default {
 .top-bar {
   display: flex;
   justify-content: space-between;
-  padding: 20px;
+  align-items: center;
+  padding: 20px 25px;
   width: 100%;
 }
 
@@ -420,8 +421,14 @@ export default {
   background: transparent;
   border: none;
   color: white;
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
+  padding: 8px;
+  transition: all 0.3s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
 }
 
 .lang-switch {
@@ -429,7 +436,8 @@ export default {
   font-size: 16px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  font-weight: 500;
 }
 
 .lang-switch i {
@@ -443,15 +451,26 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 0 20px;
+  padding: 20px 0 10px;
+}
+
+.hero-glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(0, 229, 229, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  top: -20px;
+  z-index: 1;
 }
 
 .cube-svg {
-  width: 280px;
-  height: 280px;
+  width: 260px;
+  height: 260px;
   position: absolute;
-  top: 0;
-  opacity: 0.8;
+  top: -10px;
+  opacity: 0.6;
+  z-index: 2;
 }
 
 .logo-frame {
@@ -459,22 +478,24 @@ export default {
   background: white;
   width: 110px;
   height: 110px;
-  border-radius: 20px;
+  border-radius: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 229, 229, 0.25);
   margin-top: 20px;
+  position: relative;
 }
 
 .scfl-logo-circle {
-  width: 95px;
-  height: 95px;
-  border: 2px solid #001f3f;
+  width: 94px;
+  height: 94px;
+  border: 2.5px solid #0a1e2f;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: white;
 }
 
 .logo-inner-content {
@@ -486,150 +507,254 @@ export default {
 
 .logo-row {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   font-weight: 900;
-  font-size: 20px;
-  color: #001f3f;
+  font-size: 22px;
+  color: #0a1e2f;
+  letter-spacing: 2px;
 }
 
 .logo-line {
-  width: 70px;
-  height: 2px;
-  background: #001f3f;
+  width: 65px;
+  height: 2.5px;
+  background: #0a1e2f;
   margin: 2px 0;
+  border-radius: 2px;
 }
 
 .logo-tag {
   position: absolute;
-  background: #001f3f;
+  background: #0a1e2f;
   color: white;
   font-size: 7px;
-  padding: 1px 3px;
-  top: 45%;
-  border-radius: 1px;
+  padding: 2px 5px;
+  top: 48%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
 }
 
 .brand-name {
   color: #ffdf00;
-  font-size: 26px;
-  font-weight: bold;
-  margin-top: 15px;
+  font-size: 28px;
+  font-weight: 800;
+  margin-top: 12px;
   z-index: 10;
+  letter-spacing: 3px;
+  text-shadow: 0 2px 20px rgba(255, 223, 0, 0.2);
 }
 
 /* البطاقة */
 .card {
-  background: #2c2c3e;
+  background: #26263a;
   flex-grow: 1;
-  border-radius: 40px 40px 0 0;
-  padding: 40px 25px;
+  border-radius: 35px 35px 0 0;
+  padding: 35px 28px 30px;
   position: relative;
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.4);
-  margin-top: 20px;
+  box-shadow: 0 -10px 50px rgba(0, 0, 0, 0.5);
+  margin-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .support-bubble {
   position: absolute;
-  right: 20px;
-  top: -30px;
+  right: 25px;
+  top: -28px;
   cursor: pointer;
+  transition: transform 0.3s ease;
+  z-index: 20;
+}
+
+.support-bubble:hover {
+  transform: scale(1.05);
+}
+
+.support-bubble svg {
+  filter: drop-shadow(0 4px 12px rgba(0, 136, 204, 0.3));
 }
 
 /* التبويبات */
 .login-type-selector {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 35px;
+  margin-bottom: 30px;
+  gap: 10px;
 }
 
 .type-btn {
   background: transparent;
   border: none;
-  color: #8e8e9e;
-  font-size: 16px;
+  color: #8e8ea2;
+  font-size: 15px;
   cursor: pointer;
-  padding-bottom: 5px;
+  padding: 8px 0 10px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
 }
 
 .type-btn.active {
+  color: #ffdf00;
+  border-bottom-color: #ffdf00;
+}
+
+.type-btn:hover {
   color: #ffdf00;
 }
 
 /* المدخلات */
 .input-box {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .input, .country-select, .phone-input {
   width: 100%;
-  height: 60px;
+  height: 58px;
   padding: 0 50px 0 20px;
-  border-radius: 15px;
+  border-radius: 14px;
   border: none;
-  background: #3e3e56;
-  color: white;
-  font-size: 16px;
+  background: #35354d;
+  color: #ffffff;
+  font-size: 15px;
   text-align: right;
+  transition: all 0.3s ease;
+}
+
+.input::placeholder,
+.phone-input::placeholder {
+  color: #8e8ea2;
 }
 
 .input:focus, .country-select:focus, .phone-input:focus {
   outline: 2px solid #ffdf00;
+  background: #3a3a55;
+}
+
+.input-error {
+  outline: 2px solid #ff6b6b !important;
 }
 
 .field-icon {
   position: absolute;
-  right: 15px;
-  top: 20px;
+  right: 16px;
+  top: 19px;
   color: #ffdf00;
   font-size: 20px;
 }
 
 .toggle {
   position: absolute;
-  left: 15px;
-  top: 20px;
-  color: #8e8e9e;
+  left: 16px;
+  top: 19px;
+  color: #8e8ea2;
   cursor: pointer;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+.toggle:hover {
+  color: #ffdf00;
 }
 
 .phone-input-container {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 }
 
 .country-select {
-  width: 120px;
-  padding: 0 10px;
+  width: 130px;
+  padding: 0 12px;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23ffdf00' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  color: #ffffff;
+}
+
+.country-select option {
+  background: #26263a;
+  color: #ffffff;
+}
+
+.country-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .phone-input {
   padding-right: 20px;
+  flex: 1;
+}
+
+.phone-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.validation-error {
+  color: #ff6b6b;
+  font-size: 13px;
+  margin-top: 4px;
+  display: block;
+  text-align: right;
+  padding-right: 5px;
+}
+
+.error-message-box {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  padding: 12px 16px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
 }
 
 /* الأزرار */
 .btn {
   width: 100%;
-  height: 55px;
-  background: #ffdf00;
-  color: #000;
+  height: 56px;
+  background: linear-gradient(135deg, #ffdf00 0%, #f5c800 100%);
+  color: #0a1e2f;
   border: none;
-  border-radius: 30px;
+  border-radius: 28px;
   font-size: 18px;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 12px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 223, 0, 0.25);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(255, 223, 0, 0.35);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0px);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .loader {
-  width: 20px;
-  height: 20px;
-  border: 3px solid #000;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #0a1e2f;
   border-top: 3px solid transparent;
   border-radius: 50%;
   display: inline-block;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -639,23 +764,22 @@ export default {
 
 .link {
   text-align: center;
-  margin-top: 25px;
-  color: white;
+  margin-top: 22px;
+  color: #8e8ea2;
+  font-size: 15px;
 }
 
 .link a {
   color: #ffdf00;
   text-decoration: none;
-  margin-right: 5px;
+  margin-right: 6px;
+  font-weight: 600;
+  transition: color 0.3s ease;
 }
 
-.error-message-box {
-  background: rgba(255, 0, 0, 0.1);
-  color: #ff6b6b;
-  padding: 10px;
-  border-radius: 10px;
-  text-align: center;
-  margin-bottom: 15px;
+.link a:hover {
+  color: #ffe44d;
+  text-decoration: underline;
 }
 
 /* الإعلان */
@@ -665,50 +789,145 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 1000;
   display: flex;
   justify-content: center;
   align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .ad-box {
-  background: #11151c;
-  width: 90%;
-  max-width: 400px;
+  background: #1a1c2c;
+  width: 92%;
+  max-width: 420px;
   border-radius: 20px;
-  border: 1px solid #ffdf00;
+  border: 1px solid rgba(255, 223, 0, 0.3);
   overflow: hidden;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .ad-box h2 {
-  background: #ffdf00;
-  color: black;
-  padding: 15px;
+  background: linear-gradient(135deg, #ffdf00, #f5c800);
+  color: #0a1e2f;
+  padding: 16px;
   text-align: center;
+  font-size: 20px;
+  margin: 0;
+  font-weight: 700;
 }
 
 .ad-content {
-  padding: 20px;
+  padding: 20px 22px;
   max-height: 300px;
   overflow-y: auto;
-  color: white;
+  color: #d0d0e0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.ad-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ad-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ad-content::-webkit-scrollbar-thumb {
+  background: #ffdf00;
+  border-radius: 4px;
 }
 
 .ad-btn {
   width: 100%;
-  padding: 15px;
+  padding: 16px;
   background: transparent;
   border: none;
-  border-top: 1px solid #ffdf00;
+  border-top: 1px solid rgba(255, 223, 0, 0.2);
   color: #ffdf00;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
 }
 
+.ad-btn:hover {
+  background: rgba(255, 223, 0, 0.05);
+}
+
+/* تحسينات للشاشات الصغيرة */
 @media (max-width: 480px) {
   .card {
-    padding: 25px 20px;
+    padding: 25px 18px 25px;
+    border-radius: 30px 30px 0 0;
+  }
+  
+  .type-btn {
+    font-size: 13px;
+  }
+  
+  .input, .country-select, .phone-input {
+    height: 52px;
+    font-size: 14px;
+  }
+  
+  .country-select {
+    width: 110px;
+  }
+  
+  .logo-frame {
+    width: 95px;
+    height: 95px;
+  }
+  
+  .scfl-logo-circle {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .logo-row {
+    font-size: 18px;
+    gap: 10px;
+  }
+  
+  .logo-line {
+    width: 50px;
+  }
+  
+  .brand-name {
+    font-size: 22px;
+  }
+  
+  .support-bubble svg {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .support-bubble {
+    right: 18px;
+    top: -22px;
+  }
+  
+  .cube-svg {
+    width: 200px;
+    height: 200px;
   }
 }
 </style>
