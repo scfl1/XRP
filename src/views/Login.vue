@@ -379,7 +379,7 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 430px;
+  height: 450px;
   overflow: hidden;
   z-index: 0;
 }
@@ -396,12 +396,13 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 430px;
+  height: 450px;
   background: linear-gradient(
     to bottom,
     rgba(11, 14, 22, 0) 0%,
-    rgba(11, 14, 22, 0.2) 50%,
-    rgba(11, 14, 22, 0.9) 100%
+    rgba(11, 14, 22, 0.15) 40%,
+    rgba(11, 14, 22, 0.85) 80%,
+    rgba(11, 14, 22, 1) 100%
   );
   z-index: 1;
 }
@@ -409,16 +410,16 @@ export default {
 /* زر الرجوع */
 .back-btn {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 18px;
+  left: 18px;
   background: none;
   border: none;
   color: #FFFFFF;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
   z-index: 10;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -427,20 +428,20 @@ export default {
 }
 
 .back-btn:active {
-  transform: scale(1.15);
+  transform: scale(0.92);
 }
 
 /* محدد اللغة */
 .language-selector {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   cursor: pointer;
   z-index: 10;
-  padding: 6px 10px;
+  padding: 6px 8px;
 }
 
 .language-selector span:first-child {
@@ -462,44 +463,44 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 85px;
-  margin-bottom: 20px;
+  margin-top: 70px;
+  margin-bottom: 16px;
 }
 
 .logo-frame {
   position: relative;
-  width: 100px;
-  height: 100px;
-  margin-bottom: 12px;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 8px;
 }
 
 .logo-white {
-  width: 100px;
-  height: 100px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  width: 120px;
+  height: 120px;
+  background: transparent;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
+  border-radius: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .logo-img {
-  width: 60px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   object-fit: contain;
 }
 
 .app-name {
   color: #FFD400;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   margin: 0;
-  margin-top: -4px;
+  margin-top: 2px;
   text-transform: uppercase;
 }
 
@@ -508,34 +509,35 @@ export default {
   position: relative;
   z-index: 2;
   width: 95%;
-  max-width: 440px;
-  margin-bottom: 40px;
+  max-width: 430px;
+  margin-bottom: 30px;
 }
 
 /* البطاقة الرئيسية */
 .main-card {
   width: 100%;
-  background: rgba(54, 54, 65, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 35px;
-  padding: 32px 24px 28px;
+  background: rgba(54, 54, 65, 0.72);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 40px;
+  padding: 32px 26px 28px;
   box-shadow: 
-    0 20px 45px rgba(0, 0, 0, 0.4),
+    0 20px 50px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.06);
+  margin-top: -8px;
 }
 
 /* التبويبات */
 .tabs {
   display: flex;
   justify-content: center;
-  gap: 26px;
+  gap: 30px;
   margin-bottom: 28px;
 }
 
 .tab {
   color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -553,7 +555,7 @@ export default {
 .error-message {
   background: rgba(255, 70, 70, 0.12);
   border: 1px solid rgba(255, 70, 70, 0.2);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px 14px;
   margin-bottom: 18px;
   color: #FF6B6B;
@@ -565,27 +567,27 @@ export default {
 /* مجموعة الإدخال */
 .input-group {
   position: relative;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .input-icon {
   position: absolute;
-  right: 16px;
+  right: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: #FFD400;
-  font-size: 20px;
+  font-size: 22px;
   z-index: 2;
   pointer-events: none;
 }
 
 .eye-icon {
   position: absolute;
-  left: 16px;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.5);
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   z-index: 2;
   transition: color 0.2s ease;
@@ -597,16 +599,17 @@ export default {
 
 .form-input {
   width: 100%;
-  height: 60px;
-  padding: 0 48px 0 44px;
+  height: 64px;
+  padding: 0 52px 0 48px;
   background: #5a5864;
   border: none;
-  border-radius: 18px;
+  border-radius: 20px;
   color: #FFFFFF;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   outline: none;
   transition: all 0.2s ease;
+  line-height: 64px;
 }
 
 .form-input::placeholder {
@@ -625,32 +628,33 @@ export default {
 
 /* مجموعة الهاتف */
 .phone-input-group {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .phone-wrapper {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .country-select {
   width: 100px;
-  height: 60px;
-  padding: 0 10px;
+  height: 64px;
+  padding: 0 12px;
   background: #5a5864;
   border: none;
-  border-radius: 18px;
+  border-radius: 20px;
   color: #FFFFFF;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   outline: none;
   transition: all 0.2s ease;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M5 7L1 3h8z' fill='%23FFD400'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 10 10'%3E%3Cpath d='M5 7L1 3h8z' fill='%23FFD400'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: left 8px center;
+  background-position: left 12px center;
+  background-size: 12px;
 }
 
 .country-select:focus {
@@ -668,7 +672,7 @@ export default {
 
 .field-error {
   color: #FF6B6B;
-  font-size: 12px;
+  font-size: 13px;
   margin-top: 6px;
   display: block;
   padding-right: 14px;
@@ -677,25 +681,25 @@ export default {
 
 /* زر تسجيل الدخول */
 .login-btn {
-  width: 98%;
-  height: 70px;
+  width: 100%;
+  height: 76px;
   background: #FFD400;
   border: none;
-  border-radius: 40px;
+  border-radius: 50px;
   color: #1A1A2E;
-  font-size: 21px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   cursor: pointer;
-  margin-top: 24px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 22px;
+  margin-left: 0;
+  margin-right: 0;
   display: block;
   transition: all 0.2s ease;
-  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .login-btn:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: scale(0.96);
   background: #E8C400;
 }
 
@@ -707,9 +711,9 @@ export default {
 /* نص التسجيل */
 .register-text {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 22px;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
 }
 
@@ -725,8 +729,8 @@ export default {
 
 /* Loader الزر */
 .btn-loader {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border: 3px solid #1A1A2E;
   border-top: 3px solid transparent;
   border-radius: 50%;
@@ -741,47 +745,47 @@ export default {
 /* زر الدعم */
 .support-fab {
   position: absolute;
-  right: -18px;
-  top: 165px;
-  width: 52px;
-  height: 52px;
+  right: -10px;
+  top: 150px;
+  width: 56px;
+  height: 56px;
   cursor: pointer;
   z-index: 3;
   transition: transform 0.2s ease;
 }
 
 .support-fab:active {
-  transform: scale(1.1);
+  transform: scale(1.08);
 }
 
 .telegram-icon {
   position: absolute;
-  top: -6px;
-  right: -3px;
-  width: 26px;
-  height: 26px;
+  top: -8px;
+  right: -2px;
+  width: 28px;
+  height: 28px;
   background: #0088CC;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #FFFFFF;
-  font-size: 12px;
+  font-size: 14px;
   color: #FFFFFF;
-  box-shadow: 0 3px 12px rgba(0, 136, 204, 0.45);
+  box-shadow: 0 3px 12px rgba(0, 136, 204, 0.5);
   z-index: 2;
 }
 
 .headset-icon {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   background: #FFFFFF;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-  font-size: 22px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.35);
+  font-size: 24px;
   color: #2B2938;
 }
 
@@ -863,32 +867,33 @@ export default {
 @media (max-width: 480px) {
   .hero-image,
   .hero-overlay {
-    height: 380px;
+    height: 400px;
   }
   
   .logo-section {
-    margin-top: 75px;
-    margin-bottom: 18px;
+    margin-top: 60px;
+    margin-bottom: 12px;
   }
   
   .logo-frame {
-    width: 92px;
-    height: 92px;
+    width: 110px;
+    height: 110px;
   }
   
   .logo-white {
-    width: 92px;
-    height: 92px;
-    border-radius: 22px;
+    width: 110px;
+    height: 110px;
+    border-radius: 28px;
   }
   
   .logo-img {
-    width: 55px;
-    height: 55px;
+    width: 62px;
+    height: 62px;
   }
   
   .app-name {
-    font-size: 17px;
+    font-size: 20px;
+    letter-spacing: 3px;
   }
   
   .content-wrapper {
@@ -897,12 +902,116 @@ export default {
   
   .main-card {
     padding: 28px 20px 24px;
+    border-radius: 36px;
+  }
+  
+  .tabs {
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  
+  .tab {
+    font-size: 14px;
+  }
+  
+  .form-input {
+    height: 60px;
+    font-size: 15px;
+    padding: 0 48px 0 44px;
+    line-height: 60px;
+  }
+  
+  .country-select {
+    height: 60px;
+    font-size: 14px;
+    width: 95px;
+    background-position: left 10px center;
+  }
+  
+  .login-btn {
+    height: 70px;
+    font-size: 20px;
+  }
+  
+  .support-fab {
+    right: -6px;
+    top: 130px;
+    width: 52px;
+    height: 52px;
+  }
+  
+  .headset-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+  }
+  
+  .telegram-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+    top: -7px;
+    right: -1px;
+  }
+  
+  .input-icon,
+  .eye-icon {
+    font-size: 20px;
+  }
+  
+  .input-icon {
+    right: 16px;
+  }
+  
+  .eye-icon {
+    left: 16px;
+  }
+}
+
+@media (max-width: 390px) {
+  .hero-image,
+  .hero-overlay {
+    height: 370px;
+  }
+  
+  .logo-section {
+    margin-top: 50px;
+    margin-bottom: 10px;
+  }
+  
+  .logo-frame {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .logo-white {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+  }
+  
+  .logo-img {
+    width: 56px;
+    height: 56px;
+  }
+  
+  .app-name {
+    font-size: 18px;
+    letter-spacing: 2px;
+  }
+  
+  .content-wrapper {
+    width: 95%;
+  }
+  
+  .main-card {
+    padding: 24px 16px 22px;
     border-radius: 32px;
   }
   
   .tabs {
-    gap: 22px;
-    margin-bottom: 24px;
+    gap: 20px;
+    margin-bottom: 22px;
   }
   
   .tab {
@@ -912,22 +1021,26 @@ export default {
   .form-input {
     height: 56px;
     font-size: 14px;
+    padding: 0 44px 0 40px;
+    line-height: 56px;
   }
   
   .country-select {
-    width: 95px;
     height: 56px;
     font-size: 13px;
+    width: 90px;
+    background-position: left 8px center;
   }
   
   .login-btn {
-    height: 65px;
-    font-size: 19px;
+    height: 64px;
+    font-size: 18px;
+    border-radius: 44px;
   }
   
   .support-fab {
-    right: -14px;
-    top: 140px;
+    right: -4px;
+    top: 110px;
     width: 48px;
     height: 48px;
   }
@@ -941,7 +1054,22 @@ export default {
   .telegram-icon {
     width: 24px;
     height: 24px;
-    font-size: 11px;
+    font-size: 12px;
+    top: -6px;
+    right: -1px;
+  }
+  
+  .input-icon,
+  .eye-icon {
+    font-size: 18px;
+  }
+  
+  .input-icon {
+    right: 14px;
+  }
+  
+  .eye-icon {
+    left: 14px;
   }
 }
 
@@ -952,19 +1080,19 @@ export default {
   }
   
   .logo-section {
-    margin-top: 65px;
-    margin-bottom: 16px;
+    margin-top: 45px;
+    margin-bottom: 8px;
   }
   
   .logo-frame {
-    width: 84px;
-    height: 84px;
+    width: 90px;
+    height: 90px;
   }
   
   .logo-white {
-    width: 84px;
-    height: 84px;
-    border-radius: 20px;
+    width: 90px;
+    height: 90px;
+    border-radius: 22px;
   }
   
   .logo-img {
@@ -982,13 +1110,13 @@ export default {
   }
   
   .main-card {
-    padding: 24px 16px 20px;
+    padding: 20px 14px 18px;
     border-radius: 28px;
   }
   
   .tabs {
-    gap: 18px;
-    margin-bottom: 22px;
+    gap: 16px;
+    margin-bottom: 20px;
   }
   
   .tab {
@@ -998,29 +1126,27 @@ export default {
   .form-input {
     height: 52px;
     font-size: 13px;
-    padding: 0 44px 0 40px;
+    padding: 0 40px 0 36px;
+    line-height: 52px;
+    border-radius: 16px;
   }
   
   .country-select {
-    width: 88px;
     height: 52px;
     font-size: 12px;
+    width: 82px;
+    background-position: left 6px center;
   }
   
   .login-btn {
-    height: 60px;
-    font-size: 18px;
-    border-radius: 36px;
-  }
-  
-  .input-icon,
-  .eye-icon {
-    font-size: 18px;
+    height: 58px;
+    font-size: 17px;
+    border-radius: 40px;
   }
   
   .support-fab {
-    right: -10px;
-    top: 120px;
+    right: -2px;
+    top: 95px;
     width: 44px;
     height: 44px;
   }
@@ -1034,8 +1160,22 @@ export default {
   .telegram-icon {
     width: 22px;
     height: 22px;
-    font-size: 10px;
+    font-size: 11px;
     top: -5px;
+    right: 0px;
+  }
+  
+  .input-icon,
+  .eye-icon {
+    font-size: 16px;
+  }
+  
+  .input-icon {
+    right: 12px;
+  }
+  
+  .eye-icon {
+    left: 12px;
   }
 }
 </style>
