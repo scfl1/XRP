@@ -22,7 +22,6 @@
     <!-- الشعار واسم التطبيق -->
     <div class="logo-section">
       <div class="logo-frame">
-        <div class="logo-glass"></div>
         <div class="logo-white">
           <img :src="logo" class="logo-img" alt="Logo" />
         </div>
@@ -30,7 +29,7 @@
       <h1 class="app-name">SCFL</h1>
     </div>
 
-    <!-- المحتوى الرئيسي مع زر الدعم -->
+    <!-- المحتوى الرئيسي -->
     <div class="content-wrapper">
       <!-- البطاقة الرئيسية -->
       <div class="main-card">
@@ -150,7 +149,7 @@
         </p>
       </div>
 
-      <!-- زر الدعم بجانب البطاقة -->
+      <!-- زر الدعم -->
       <div class="support-fab">
         <div class="telegram-icon">
           <i class="fab fa-telegram-plane"></i>
@@ -380,7 +379,7 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 430px;
+  height: 50%;
   overflow: hidden;
   z-index: 0;
 }
@@ -397,11 +396,11 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 430px;
+  height: 50%;
   background: linear-gradient(
     to bottom,
-    rgba(11, 14, 22, 0.1) 0%,
-    rgba(11, 14, 22, 0.3) 60%,
+    rgba(11, 14, 22, 0) 0%,
+    rgba(11, 14, 22, 0.2) 50%,
     rgba(11, 14, 22, 0.9) 100%
   );
   z-index: 1;
@@ -410,57 +409,50 @@ export default {
 /* زر الرجوع */
 .back-btn {
   position: absolute;
-  top: 24px;
-  left: 24px;
+  top: 20px;
+  left: 20px;
   background: none;
   border: none;
   color: #FFFFFF;
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
   z-index: 10;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: transform 0.2s ease;
   padding: 0;
 }
 
 .back-btn:active {
-  transform: scale(1.2);
-  opacity: 0.8;
+  transform: scale(1.15);
 }
 
 /* محدد اللغة */
 .language-selector {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: 20px;
+  right: 20px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
   z-index: 10;
-  padding: 8px 12px;
-  transition: opacity 0.25s ease;
-}
-
-.language-selector:active {
-  opacity: 0.7;
+  padding: 6px 10px;
 }
 
 .language-selector span:first-child {
   color: #FFFFFF;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .lang-arrow {
-  color: #FFD500;
-  font-size: 10px;
-  margin-top: -2px;
-  transition: transform 0.25s ease;
+  color: #FFD400;
+  font-size: 9px;
+  margin-top: -1px;
 }
 
 /* قسم الشعار */
@@ -470,94 +462,74 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 95px;
-  margin-bottom: 26px;
+  margin-top: 85px;
+  margin-bottom: 20px;
 }
 
 .logo-frame {
   position: relative;
-  width: 110px;
-  height: 110px;
-  margin-bottom: 16px;
-}
-
-.logo-glass {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 110px;
-  height: 110px;
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  width: 95px;
+  height: 95px;
+  margin-bottom: 12px;
 }
 
 .logo-white {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 94px;
-  height: 94px;
-  background: #FFFFFF;
-  border-radius: 20px;
+  width: 95px;
+  height: 95px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
 .logo-img {
-  width: 66px;
-  height: 66px;
+  width: 55px;
+  height: 55px;
   object-fit: contain;
 }
 
 .app-name {
-  color: #FFD500;
-  font-size: 24px;
-  font-weight: 800;
-  letter-spacing: 4px;
+  color: #FFD400;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 3px;
   margin: 0;
   text-transform: uppercase;
-  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* المحتوى الرئيسي مع زر الدعم */
+/* المحتوى الرئيسي */
 .content-wrapper {
   position: relative;
   z-index: 2;
-  width: 90%;
-  max-width: 450px;
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-  margin-bottom: 50px;
+  width: 92%;
+  max-width: 440px;
+  margin-bottom: 40px;
 }
 
 /* البطاقة الرئيسية */
 .main-card {
-  flex: 1;
-  background: rgba(40, 36, 55, 0.88);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
+  width: 100%;
+  background: rgba(54, 54, 65, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 35px;
-  padding: 35px 26px 30px;
+  padding: 32px 24px 28px;
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 20px 45px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* التبويبات */
 .tabs {
   display: flex;
   justify-content: center;
-  gap: 28px;
-  margin-bottom: 30px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 26px;
+  margin-bottom: 28px;
 }
 
 .tab {
@@ -565,100 +537,85 @@ export default {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   user-select: none;
   padding: 4px 0;
-  position: relative;
   white-space: nowrap;
 }
 
 .tab.active {
-  color: #FFD500;
+  color: #FFD400;
   font-weight: 700;
-}
-
-.tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -17px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 35px;
-  height: 3px;
-  background: #FFD500;
-  border-radius: 2px;
 }
 
 /* رسالة الخطأ */
 .error-message {
-  background: rgba(255, 70, 70, 0.15);
-  border: 1px solid rgba(255, 70, 70, 0.25);
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
+  background: rgba(255, 70, 70, 0.12);
+  border: 1px solid rgba(255, 70, 70, 0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
   color: #FF6B6B;
   font-size: 13px;
   font-weight: 500;
   text-align: center;
-  backdrop-filter: blur(10px);
 }
 
 /* مجموعة الإدخال */
 .input-group {
   position: relative;
-  margin-bottom: 15px;
+  margin-bottom: 14px;
 }
 
 .input-icon {
   position: absolute;
-  right: 18px;
+  right: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: #FFD500;
-  font-size: 17px;
+  color: #FFD400;
+  font-size: 20px;
   z-index: 2;
   pointer-events: none;
-  transition: color 0.25s ease;
 }
 
 .eye-icon {
   position: absolute;
-  left: 18px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 17px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 20px;
   cursor: pointer;
   z-index: 2;
-  transition: color 0.25s ease;
+  transition: color 0.2s ease;
 }
 
 .eye-icon:active {
-  color: #FFD500;
+  color: #FFD400;
 }
 
 .form-input {
   width: 100%;
-  height: 60px;
-  padding: 0 50px 0 45px;
-  background: rgba(75, 70, 90, 0.55);
+  height: 58px;
+  padding: 0 48px 0 44px;
+  background: #5a5864;
   border: none;
-  border-radius: 20px;
+  border-radius: 18px;
   color: #FFFFFF;
   font-size: 15px;
   font-weight: 500;
   outline: none;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 
 .form-input::placeholder {
-  color: #C0C0C0;
+  color: #B8B8B8;
   font-weight: 400;
 }
 
 .form-input:focus {
-  background: rgba(85, 80, 100, 0.75);
-  box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.12), 0 0 20px rgba(255, 213, 0, 0.08);
+  background: #63616d;
+  box-shadow: 0 0 0 2px rgba(255, 212, 0, 0.15);
 }
 
 .form-input:disabled {
@@ -667,37 +624,36 @@ export default {
 
 /* مجموعة الهاتف */
 .phone-input-group {
-  margin-bottom: 15px;
+  margin-bottom: 14px;
 }
 
 .phone-wrapper {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .country-select {
-  width: 105px;
-  height: 60px;
-  padding: 0 12px;
-  background: rgba(75, 70, 90, 0.55);
+  width: 100px;
+  height: 58px;
+  padding: 0 10px;
+  background: #5a5864;
   border: none;
-  border-radius: 20px;
+  border-radius: 18px;
   color: #FFFFFF;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   outline: none;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23FFD500'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M5 7L1 3h8z' fill='%23FFD400'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: left 10px center;
+  background-position: left 8px center;
 }
 
 .country-select:focus {
-  background: rgba(85, 80, 100, 0.75);
-  box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.12);
+  background: #63616d;
 }
 
 .country-select option {
@@ -712,34 +668,30 @@ export default {
 .field-error {
   color: #FF6B6B;
   font-size: 12px;
-  margin-top: 8px;
+  margin-top: 6px;
   display: block;
-  padding-right: 16px;
+  padding-right: 14px;
   font-weight: 500;
 }
 
 /* زر تسجيل الدخول */
 .login-btn {
   width: 100%;
-  height: 65px;
-  background: #FFD500;
+  height: 70px;
+  background: #FFD400;
   border: none;
-  border-radius: 35px;
+  border-radius: 40px;
   color: #1A1A2E;
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 26px;
-  transition: all 0.25s ease;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-  letter-spacing: 0.5px;
-  position: relative;
-  overflow: hidden;
+  margin-top: 24px;
+  transition: all 0.2s ease;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
 }
 
 .login-btn:active:not(:disabled) {
   transform: scale(0.97);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
   background: #E8C400;
 }
 
@@ -751,17 +703,16 @@ export default {
 /* نص التسجيل */
 .register-text {
   text-align: center;
-  margin-top: 22px;
-  color: rgba(255, 255, 255, 0.55);
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 14px;
   font-weight: 500;
 }
 
 .register-link {
-  color: #FFD500;
+  color: #FFD400;
   text-decoration: none;
   font-weight: 700;
-  transition: opacity 0.25s ease;
 }
 
 .register-link:active {
@@ -783,17 +734,16 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-/* زر الدعم بجانب البطاقة */
+/* زر الدعم */
 .support-fab {
-  position: relative;
-  width: 55px;
-  height: 55px;
+  position: absolute;
+  right: -18px;
+  top: 120px;
+  width: 52px;
+  height: 52px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  margin-left: -12px;
-  margin-top: 40px;
   z-index: 3;
-  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
 .support-fab:active {
@@ -803,31 +753,31 @@ export default {
 .telegram-icon {
   position: absolute;
   top: -6px;
-  right: -2px;
-  width: 28px;
-  height: 28px;
+  right: -3px;
+  width: 26px;
+  height: 26px;
   background: #0088CC;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2.5px solid #FFFFFF;
-  font-size: 13px;
+  border: 2px solid #FFFFFF;
+  font-size: 12px;
   color: #FFFFFF;
-  box-shadow: 0 4px 15px rgba(0, 136, 204, 0.5);
+  box-shadow: 0 3px 12px rgba(0, 136, 204, 0.45);
   z-index: 2;
 }
 
 .headset-icon {
-  width: 55px;
-  height: 55px;
+  width: 52px;
+  height: 52px;
   background: #FFFFFF;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-  font-size: 24px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+  font-size: 22px;
   color: #2B2938;
 }
 
@@ -851,13 +801,13 @@ export default {
   width: 90%;
   max-width: 400px;
   border-radius: 25px;
-  border: 1px solid #FFD500;
+  border: 1px solid #FFD400;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .ad-box h2 {
-  background: #FFD500;
+  background: #FFD400;
   color: #1A1A2E;
   margin: 0;
   padding: 18px;
@@ -885,7 +835,7 @@ export default {
 }
 
 .ad-content::-webkit-scrollbar-thumb {
-  background: #FFD500;
+  background: #FFD400;
   border-radius: 10px;
 }
 
@@ -894,74 +844,56 @@ export default {
   padding: 16px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(255, 213, 0, 0.2);
-  color: #FFD500;
+  border-top: 1px solid rgba(255, 212, 0, 0.2);
+  color: #FFD400;
   cursor: pointer;
   font-weight: 700;
   font-size: 16px;
-  transition: background 0.25s ease;
 }
 
 .ad-btn:active {
-  background: rgba(255, 213, 0, 0.1);
+  background: rgba(255, 212, 0, 0.1);
 }
 
 /* تحسينات الشاشات الصغيرة */
 @media (max-width: 480px) {
-  .hero-image {
-    height: 380px;
-  }
-  
-  .hero-overlay {
-    height: 380px;
-  }
-  
   .logo-section {
-    margin-top: 80px;
-    margin-bottom: 22px;
+    margin-top: 75px;
+    margin-bottom: 18px;
   }
   
   .logo-frame {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .logo-glass {
-    width: 100px;
-    height: 100px;
-    border-radius: 24px;
+    width: 88px;
+    height: 88px;
   }
   
   .logo-white {
-    width: 86px;
-    height: 86px;
-    top: 7px;
-    left: 7px;
-    border-radius: 18px;
+    width: 88px;
+    height: 88px;
+    border-radius: 22px;
   }
   
   .logo-img {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
   }
   
   .app-name {
-    font-size: 22px;
-    letter-spacing: 3px;
+    font-size: 17px;
   }
   
   .content-wrapper {
-    width: 95%;
+    width: 94%;
   }
   
   .main-card {
-    padding: 30px 22px 26px;
+    padding: 28px 20px 24px;
     border-radius: 32px;
   }
   
   .tabs {
     gap: 22px;
-    margin-bottom: 25px;
+    margin-bottom: 24px;
   }
   
   .tab {
@@ -969,170 +901,31 @@ export default {
   }
   
   .form-input {
-    height: 56px;
-    font-size: 14px;
-    border-radius: 18px;
-  }
-  
-  .country-select {
-    width: 100px;
-    height: 56px;
-    font-size: 13px;
-    border-radius: 18px;
-  }
-  
-  .login-btn {
-    height: 60px;
-    font-size: 18px;
-    border-radius: 32px;
-  }
-  
-  .back-btn {
-    top: 20px;
-    left: 20px;
-  }
-  
-  .language-selector {
-    top: 20px;
-    right: 20px;
-  }
-  
-  .support-fab {
-    width: 50px;
-    height: 50px;
-    margin-top: 35px;
-    margin-left: -10px;
-  }
-  
-  .headset-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 22px;
-  }
-  
-  .telegram-icon {
-    width: 26px;
-    height: 26px;
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 360px) {
-  .hero-image {
-    height: 340px;
-  }
-  
-  .hero-overlay {
-    height: 340px;
-  }
-  
-  .logo-section {
-    margin-top: 65px;
-    margin-bottom: 18px;
-  }
-  
-  .logo-frame {
-    width: 92px;
-    height: 92px;
-  }
-  
-  .logo-glass {
-    width: 92px;
-    height: 92px;
-    border-radius: 22px;
-  }
-  
-  .logo-white {
-    width: 78px;
-    height: 78px;
-    top: 7px;
-    left: 7px;
-    border-radius: 16px;
-  }
-  
-  .logo-img {
-    width: 54px;
     height: 54px;
-  }
-  
-  .app-name {
-    font-size: 20px;
-  }
-  
-  .content-wrapper {
-    width: 96%;
-  }
-  
-  .main-card {
-    padding: 26px 18px 22px;
-    border-radius: 28px;
-  }
-  
-  .tabs {
-    gap: 18px;
-    margin-bottom: 22px;
-    padding-bottom: 12px;
-  }
-  
-  .tab {
-    font-size: 12px;
-  }
-  
-  .tab.active::after {
-    bottom: -13px;
-    width: 28px;
-    height: 2px;
-  }
-  
-  .form-input {
-    height: 52px;
-    font-size: 13px;
-    padding: 0 45px 0 40px;
-    border-radius: 16px;
+    font-size: 14px;
   }
   
   .country-select {
-    width: 90px;
-    height: 52px;
-    font-size: 12px;
-    border-radius: 16px;
-  }
-  
-  .login-btn {
-    height: 56px;
-    font-size: 17px;
-    border-radius: 28px;
-    margin-top: 22px;
-  }
-  
-  .input-icon,
-  .eye-icon {
-    font-size: 15px;
-  }
-  
-  .input-icon {
-    right: 14px;
-  }
-  
-  .eye-icon {
-    left: 14px;
-  }
-  
-  .register-text {
-    margin-top: 18px;
+    width: 95px;
+    height: 54px;
     font-size: 13px;
   }
   
+  .login-btn {
+    height: 65px;
+    font-size: 19px;
+  }
+  
   .support-fab {
-    width: 46px;
-    height: 46px;
-    margin-top: 30px;
-    margin-left: -8px;
+    right: -14px;
+    top: 100px;
+    width: 48px;
+    height: 48px;
   }
   
   .headset-icon {
-    width: 46px;
-    height: 46px;
+    width: 48px;
+    height: 48px;
     font-size: 20px;
   }
   
@@ -1140,8 +933,95 @@ export default {
     width: 24px;
     height: 24px;
     font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .logo-section {
+    margin-top: 65px;
+    margin-bottom: 16px;
+  }
+  
+  .logo-frame {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .logo-white {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+  }
+  
+  .logo-img {
+    width: 46px;
+    height: 46px;
+  }
+  
+  .app-name {
+    font-size: 16px;
+    letter-spacing: 2px;
+  }
+  
+  .content-wrapper {
+    width: 96%;
+  }
+  
+  .main-card {
+    padding: 24px 16px 20px;
+    border-radius: 28px;
+  }
+  
+  .tabs {
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  
+  .tab {
+    font-size: 12px;
+  }
+  
+  .form-input {
+    height: 50px;
+    font-size: 13px;
+    padding: 0 44px 0 40px;
+  }
+  
+  .country-select {
+    width: 88px;
+    height: 50px;
+    font-size: 12px;
+  }
+  
+  .login-btn {
+    height: 60px;
+    font-size: 18px;
+    border-radius: 36px;
+  }
+  
+  .input-icon,
+  .eye-icon {
+    font-size: 18px;
+  }
+  
+  .support-fab {
+    right: -10px;
+    top: 90px;
+    width: 44px;
+    height: 44px;
+  }
+  
+  .headset-icon {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  
+  .telegram-icon {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
     top: -5px;
-    right: -1px;
   }
 }
 </style>
