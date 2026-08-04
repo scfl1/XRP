@@ -131,8 +131,8 @@
             @focus="clearError"
           />
           <i 
-            class="fas fa-eye eye-icon" 
-            :class="{ 'fa-eye-slash': showPassword }"
+            class="fas eye-icon"
+            :class="showPassword ? 'fa-eye-slash' : 'fa-eye'"
             @click="togglePassword"
           ></i>
         </div>
@@ -159,37 +159,35 @@
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Popup إعلان -->
-  <div id="companyAd" class="ad-overlay" v-if="showAd">
-    <div class="ad-box">
-      <h2>✨ إعلان ✨</h2>
-      <div class="ad-content">
-        <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
-          <br><br>
-          يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
-          <br><br>
-          👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
-          <br>
-          💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
-          <br>
-          🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
-          <br>
-          🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
-          <br><br>
-          عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
-        </p>
+    <!-- Popup إعلان -->
+    <div id="companyAd" class="ad-overlay" v-if="showAd">
+      <div class="ad-box">
+        <h2>✨ إعلان ✨</h2>
+        <div class="ad-content">
+          <p>🎉🎉🎉🎉 مرحبا بالجميع! تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021 ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة. نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
+            <br><br>
+            يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee ، إلخ. لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم ، ويمكننا أيضًا تحقيق أرباح منه. عندما تتصاعد على منصتنا ، تشارك في مساعدة البائعين على زيادة المبيعات ، بحيث يمكنك أيضًا كسب المال منها. حتى يتمكن الجميع من إعادة الشحن بثقة ، هذا مشروع جيد لجني الأموال. 🔇🔇🔇
+            <br><br>
+            👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT ، الحد الأدنى للسحب النقدي: 3 USDT
+            <br>
+            💰2: تستثمر المنصة على مستوى العالم ، لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
+            <br>
+            🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة. يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم (مرة واحدة في اليوم ، صالحة لمدة 365 يومًا).
+            <br>
+            🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم ، لا يوجد حد زمني ، يمكنك سحب النقد في أي وقت ، ووقت الانسحاب هو 1 إلى 5 دقائق ، والحد الأدنى لمبلغ السحب هو 3 USDT ، ولا يوجد حد أعلى.
+            <br><br>
+            عندما يصل مبلغ إعادة الشحن إلى المبلغ المقابل التالي ، سيتم ترقية الحساب تلقائيًا إلى VIP. كلما زادت مبلغ إعادة الشحن ، كلما زاد عدد USDT في اليوم!
+          </p>
+        </div>
+        <button @click="closeAd" class="ad-btn">أنا أعرف</button>
       </div>
-      <button @click="closeAd" class="ad-btn">أنا أعرف</button>
     </div>
   </div>
 </template>
 
 <script>
 import { getAuth, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
 import router from "../router";
 import logo from "../assets/palm-gold.png";
 import loginBackground from "@/assets/login-bg.png";
@@ -477,7 +475,7 @@ export default {
 .logo-white {
   width: 120px;
   height: 120px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -745,7 +743,7 @@ export default {
 /* زر الدعم */
 .support-fab {
   position: absolute;
-  right: -10px;
+  right: -5px;
   top: 150px;
   width: 56px;
   height: 56px;
@@ -934,7 +932,7 @@ export default {
   }
   
   .support-fab {
-    right: -6px;
+    right: -3px;
     top: 130px;
     width: 52px;
     height: 52px;
@@ -1016,6 +1014,8 @@ export default {
   
   .tab {
     font-size: 13px;
+    white-space: normal;
+    text-align: center;
   }
   
   .form-input {
@@ -1039,7 +1039,7 @@ export default {
   }
   
   .support-fab {
-    right: -4px;
+    right: -2px;
     top: 110px;
     width: 48px;
     height: 48px;
@@ -1121,6 +1121,8 @@ export default {
   
   .tab {
     font-size: 12px;
+    white-space: normal;
+    text-align: center;
   }
   
   .form-input {
@@ -1145,7 +1147,7 @@ export default {
   }
   
   .support-fab {
-    right: -2px;
+    right: -1px;
     top: 95px;
     width: 44px;
     height: 44px;
