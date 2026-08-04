@@ -6,6 +6,8 @@
       <div class="cube cube-2"></div>
       <div class="cube cube-3"></div>
       <div class="cube cube-4"></div>
+      <div class="cube cube-5"></div>
+      <div class="cube cube-6"></div>
     </div>
 
     <!-- زر الرجوع -->
@@ -31,10 +33,14 @@
 
     <!-- زر الدعم العائم -->
     <div class="support-fab">
-      <div class="telegram-badge">
-        <i class="fab fa-telegram-plane"></i>
+      <div class="support-inner">
+        <div class="telegram-icon">
+          <i class="fab fa-telegram-plane"></i>
+        </div>
+        <div class="headset-icon">
+          <i class="fas fa-headset"></i>
+        </div>
       </div>
-      <i class="fas fa-headset"></i>
     </div>
 
     <!-- البطاقة الرئيسية -->
@@ -373,74 +379,133 @@ export default {
   overflow: hidden;
 }
 
-/* المكعبات ثلاثية الأبعاد في الخلفية */
+/* المكعبات ثلاثية الأبعاد الكبيرة في الخلفية */
 .bg-cubes {
   position: absolute;
-  top: 45%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 350px;
-  height: 350px;
+  width: 400px;
+  height: 400px;
   z-index: 0;
   pointer-events: none;
+  perspective: 1000px;
 }
 
 .cube {
   position: absolute;
   background: linear-gradient(135deg, 
-    rgba(45, 212, 168, 0.15) 0%, 
-    rgba(29, 186, 154, 0.08) 100%
+    rgba(45, 212, 168, 0.2) 0%, 
+    rgba(29, 186, 154, 0.12) 50%,
+    rgba(29, 186, 154, 0.05) 100%
   );
-  border: 1px solid rgba(45, 212, 168, 0.2);
-  border-radius: 15px;
-  backdrop-filter: blur(8px);
+  border: 2px solid rgba(45, 212, 168, 0.25);
+  border-radius: 18px;
+  backdrop-filter: blur(4px);
   transform: rotate(45deg);
   box-shadow: 
-    0 0 30px rgba(45, 212, 168, 0.1),
-    inset 0 0 20px rgba(45, 212, 168, 0.05);
+    0 0 40px rgba(45, 212, 168, 0.15),
+    inset 0 0 30px rgba(45, 212, 168, 0.08);
 }
 
 .cube-1 {
-  top: 25%;
-  left: 15%;
-  width: 80px;
-  height: 80px;
-  animation: floatCube 8s ease-in-out infinite;
+  top: 20%;
+  left: 10%;
+  width: 120px;
+  height: 120px;
+  animation: floatCube1 8s ease-in-out infinite;
+  background: linear-gradient(135deg, 
+    rgba(45, 212, 168, 0.25) 0%, 
+    rgba(29, 186, 154, 0.15) 100%
+  );
+  border-color: rgba(45, 212, 168, 0.3);
 }
 
 .cube-2 {
-  top: 45%;
-  right: 10%;
-  width: 100px;
-  height: 100px;
-  animation: floatCube 10s ease-in-out infinite reverse;
-  opacity: 0.8;
+  top: 35%;
+  right: 5%;
+  width: 140px;
+  height: 140px;
+  animation: floatCube2 10s ease-in-out infinite reverse;
+  background: linear-gradient(225deg, 
+    rgba(45, 212, 168, 0.2) 0%, 
+    rgba(29, 186, 154, 0.1) 100%
+  );
 }
 
 .cube-3 {
-  bottom: 20%;
-  left: 35%;
-  width: 65px;
-  height: 65px;
-  animation: floatCube 7s ease-in-out infinite 1s;
-  opacity: 0.6;
+  bottom: 15%;
+  left: 25%;
+  width: 100px;
+  height: 100px;
+  animation: floatCube3 7s ease-in-out infinite 1s;
+  background: linear-gradient(315deg, 
+    rgba(45, 212, 168, 0.18) 0%, 
+    rgba(29, 186, 154, 0.08) 100%
+  );
 }
 
 .cube-4 {
-  top: 60%;
-  left: 50%;
-  width: 75px;
-  height: 75px;
-  animation: floatCube 9s ease-in-out infinite 0.5s;
-  opacity: 0.7;
+  top: 50%;
+  left: 40%;
+  width: 110px;
+  height: 110px;
+  animation: floatCube1 9s ease-in-out infinite 0.5s;
+  background: linear-gradient(45deg, 
+    rgba(45, 212, 168, 0.22) 0%, 
+    rgba(29, 186, 154, 0.12) 100%
+  );
 }
 
-@keyframes floatCube {
+.cube-5 {
+  top: 10%;
+  right: 20%;
+  width: 90px;
+  height: 90px;
+  animation: floatCube3 11s ease-in-out infinite 2s;
+  background: linear-gradient(135deg, 
+    rgba(45, 212, 168, 0.15) 0%, 
+    rgba(29, 186, 154, 0.06) 100%
+  );
+  border-color: rgba(45, 212, 168, 0.2);
+}
+
+.cube-6 {
+  bottom: 25%;
+  right: 15%;
+  width: 130px;
+  height: 130px;
+  animation: floatCube2 8.5s ease-in-out infinite 1.5s;
+  background: linear-gradient(225deg, 
+    rgba(45, 212, 168, 0.2) 0%, 
+    rgba(29, 186, 154, 0.1) 100%
+  );
+}
+
+@keyframes floatCube1 {
   0%, 100% {
     transform: rotate(45deg) translateY(0px) scale(1);
   }
   50% {
-    transform: rotate(45deg) translateY(-20px) scale(1.05);
+    transform: rotate(47deg) translateY(-25px) scale(1.08);
+  }
+}
+
+@keyframes floatCube2 {
+  0%, 100% {
+    transform: rotate(45deg) translateY(0px) scale(1);
+  }
+  50% {
+    transform: rotate(43deg) translateY(25px) scale(1.06);
+  }
+}
+
+@keyframes floatCube3 {
+  0%, 100% {
+    transform: rotate(45deg) translateY(0px) scale(1);
+  }
+  50% {
+    transform: rotate(46deg) translateY(-18px) scale(1.05);
   }
 }
 
@@ -507,92 +572,103 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 110px;
-  margin-bottom: 30px;
+  margin-top: 100px;
+  margin-bottom: 28px;
 }
 
 .logo-outer-ring {
-  width: 118px;
-  height: 118px;
-  border-radius: 30px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  width: 130px;
+  height: 130px;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 10px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .logo-circle {
-  width: 98px;
-  height: 98px;
+  width: 108px;
+  height: 108px;
   background: #FFFFFF;
-  border-radius: 24px;
+  border-radius: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
 }
 
 .logo-img {
-  width: 70px;
-  height: 70px;
+  width: 78px;
+  height: 78px;
   object-fit: contain;
 }
 
 .app-name {
   color: #FFD500;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
-  letter-spacing: 3px;
+  letter-spacing: 4px;
   margin: 0;
   text-transform: uppercase;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
 }
 
 /* زر الدعم العائم */
 .support-fab {
   position: fixed;
-  right: 20px;
-  bottom: 45px;
-  width: 56px;
-  height: 56px;
-  background: #FFFFFF;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  right: 22px;
+  bottom: 50px;
+  width: 60px;
+  height: 60px;
   cursor: pointer;
   z-index: 100;
   transition: all 0.25s ease;
-  font-size: 22px;
-  color: #2B2938;
+}
+
+.support-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 .support-fab:active {
   transform: scale(1.1);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-.telegram-badge {
+.telegram-icon {
   position: absolute;
-  top: -6px;
-  right: -2px;
-  width: 26px;
-  height: 26px;
+  top: -8px;
+  right: -4px;
+  width: 30px;
+  height: 30px;
   background: #0088CC;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #FFFFFF;
-  font-size: 13px;
+  border: 2.5px solid #FFFFFF;
+  font-size: 14px;
   color: #FFFFFF;
-  box-shadow: 0 3px 12px rgba(0, 136, 204, 0.5);
+  box-shadow: 0 4px 15px rgba(0, 136, 204, 0.5);
+  z-index: 2;
+}
+
+.headset-icon {
+  width: 60px;
+  height: 60px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  font-size: 26px;
+  color: #2B2938;
 }
 
 /* البطاقة الرئيسية */
@@ -601,14 +677,14 @@ export default {
   z-index: 2;
   width: 90%;
   max-width: 390px;
-  background: rgba(65, 65, 80, 0.78);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(58, 52, 75, 0.85);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   border-radius: 35px;
   padding: 35px 26px 30px;
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+    0 20px 50px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
   margin-bottom: 50px;
 }
 
@@ -688,7 +764,7 @@ export default {
   left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 17px;
   cursor: pointer;
   z-index: 2;
@@ -703,7 +779,7 @@ export default {
   width: 100%;
   height: 60px;
   padding: 0 50px 0 45px;
-  background: rgba(93, 90, 103, 0.6);
+  background: rgba(75, 70, 90, 0.55);
   border: none;
   border-radius: 20px;
   color: #FFFFFF;
@@ -714,12 +790,12 @@ export default {
 }
 
 .form-input::placeholder {
-  color: #B8B8B8;
+  color: #C0C0C0;
   font-weight: 400;
 }
 
 .form-input:focus {
-  background: rgba(93, 90, 103, 0.85);
+  background: rgba(85, 80, 100, 0.75);
   box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.12), 0 0 20px rgba(255, 213, 0, 0.08);
 }
 
@@ -741,7 +817,7 @@ export default {
   width: 105px;
   height: 60px;
   padding: 0 12px;
-  background: rgba(93, 90, 103, 0.6);
+  background: rgba(75, 70, 90, 0.55);
   border: none;
   border-radius: 20px;
   color: #FFFFFF;
@@ -758,7 +834,7 @@ export default {
 }
 
 .country-select:focus {
-  background: rgba(93, 90, 103, 0.85);
+  background: rgba(85, 80, 100, 0.75);
   box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.12);
 }
 
@@ -927,35 +1003,65 @@ export default {
   }
   
   .bg-cubes {
-    width: 300px;
-    height: 300px;
+    width: 320px;
+    height: 320px;
+  }
+  
+  .cube-1 {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .cube-2 {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .cube-3 {
+    width: 85px;
+    height: 85px;
+  }
+  
+  .cube-4 {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .cube-5 {
+    width: 75px;
+    height: 75px;
+  }
+  
+  .cube-6 {
+    width: 110px;
+    height: 110px;
   }
   
   .logo-section {
-    margin-top: 95px;
-    margin-bottom: 25px;
+    margin-top: 85px;
+    margin-bottom: 24px;
   }
   
   .logo-outer-ring {
-    width: 108px;
-    height: 108px;
+    width: 120px;
+    height: 120px;
     border-radius: 28px;
   }
   
   .logo-circle {
-    width: 90px;
-    height: 90px;
-    border-radius: 22px;
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
   }
   
   .logo-img {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
   }
   
   .app-name {
-    font-size: 20px;
-    letter-spacing: 2px;
+    font-size: 22px;
+    letter-spacing: 3px;
   }
   
   .main-card {
@@ -1003,64 +1109,83 @@ export default {
   }
   
   .support-fab {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
-    right: 16px;
-    bottom: 35px;
+    right: 18px;
+    bottom: 40px;
+  }
+  
+  .headset-icon {
+    width: 54px;
+    height: 54px;
+    font-size: 24px;
+  }
+  
+  .telegram-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
   }
 }
 
 @media (max-width: 360px) {
   .bg-cubes {
-    width: 250px;
-    height: 250px;
+    width: 280px;
+    height: 280px;
   }
   
   .cube-1 {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .cube-2 {
     width: 80px;
     height: 80px;
   }
   
+  .cube-2 {
+    width: 100px;
+    height: 100px;
+  }
+  
   .cube-3 {
-    width: 50px;
-    height: 50px;
+    width: 70px;
+    height: 70px;
   }
   
   .cube-4 {
-    width: 60px;
-    height: 60px;
+    width: 75px;
+    height: 75px;
+  }
+  
+  .cube-5 {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .cube-6 {
+    width: 90px;
+    height: 90px;
   }
   
   .logo-section {
-    margin-top: 80px;
+    margin-top: 75px;
     margin-bottom: 22px;
   }
   
   .logo-outer-ring {
-    width: 98px;
-    height: 98px;
-    border-radius: 24px;
+    width: 110px;
+    height: 110px;
+    border-radius: 26px;
   }
   
   .logo-circle {
-    width: 82px;
-    height: 82px;
-    border-radius: 20px;
+    width: 92px;
+    height: 92px;
+    border-radius: 22px;
   }
   
   .logo-img {
-    width: 58px;
-    height: 58px;
+    width: 66px;
+    height: 66px;
   }
   
   .app-name {
-    font-size: 18px;
+    font-size: 20px;
   }
   
   .main-card {
@@ -1122,6 +1247,25 @@ export default {
   .register-text {
     margin-top: 18px;
     font-size: 13px;
+  }
+  
+  .support-fab {
+    right: 16px;
+    bottom: 35px;
+  }
+  
+  .headset-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
+  }
+  
+  .telegram-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+    top: -6px;
+    right: -2px;
   }
 }
 </style>
