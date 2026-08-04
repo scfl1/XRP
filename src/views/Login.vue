@@ -1,11 +1,12 @@
 <template>
   <div class="login-page">
-    <!-- شبكة المكعبات ثلاثية الأبعاد في الخلفية -->
-    <div class="bg-cubes-grid">
-      <div class="cube-row" v-for="row in 5" :key="'row-'+row">
-        <div class="cube-cell" v-for="col in 5" :key="'col-'+col" :style="getCubeStyle(row, col)"></div>
-      </div>
+    <!-- صورة الخلفية في الأعلى -->
+    <div class="hero-image">
+      <img :src="loginBackground" alt="Background" />
     </div>
+
+    <!-- طبقة تدرج شفافة فوق الصورة -->
+    <div class="hero-overlay"></div>
 
     <!-- زر الرجوع -->
     <button class="back-btn" @click="$router.go(-1)">
@@ -192,11 +193,13 @@ import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import router from "../router";
 import logo from "../assets/palm-gold.png";
+import loginBackground from "@/assets/login-bg.png";
 
 export default {
   data() {
     return {
       logo,
+      loginBackground,
       loginType: 'email',
       email: "",
       countryCode: "",
@@ -221,19 +224,6 @@ export default {
     }
   },
   methods: {
-    getCubeStyle(row, col) {
-      const size = 65 + Math.random() * 25;
-      const opacity = 0.03 + Math.random() * 0.08;
-      const duration = 6 + Math.random() * 8;
-      const delay = Math.random() * 3;
-      return {
-        width: size + 'px',
-        height: size + 'px',
-        opacity: opacity,
-        animationDuration: duration + 's',
-        animationDelay: delay + 's'
-      };
-    },
     togglePassword() {
       this.showPassword = !this.showPassword;
     },
@@ -376,14 +366,7 @@ export default {
 
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(160deg, 
-    #2DD4A8 0%,
-    #1DBA9A 15%,
-    #158574 30%,
-    #1F556E 50%,
-    #162D50 70%,
-    #0B0E16 100%
-  );
+  background: #0B0E16;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -391,44 +374,37 @@ export default {
   overflow: hidden;
 }
 
-/* شبكة المكعبات ثلاثية الأبعاد */
-.bg-cubes-grid {
+/* صورة الخلفية */
+.hero-image {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(45deg);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 430px;
+  overflow: hidden;
   z-index: 0;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
-.cube-row {
-  display: flex;
-  gap: 8px;
+.hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.cube-cell {
-  background: linear-gradient(135deg, 
-    rgba(45, 212, 168, 0.15) 0%, 
-    rgba(29, 186, 154, 0.08) 100%
+/* طبقة تدرج فوق الصورة */
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 430px;
+  background: linear-gradient(
+    to bottom,
+    rgba(11, 14, 22, 0.1) 0%,
+    rgba(11, 14, 22, 0.3) 60%,
+    rgba(11, 14, 22, 0.9) 100%
   );
-  border: 1.5px solid rgba(45, 212, 168, 0.2);
-  border-radius: 12px;
-  backdrop-filter: blur(2px);
-  animation: floatCube ease-in-out infinite;
-}
-
-@keyframes floatCube {
-  0%, 100% {
-    transform: translateY(0px) scale(1);
-    border-color: rgba(45, 212, 168, 0.2);
-  }
-  50% {
-    transform: translateY(-12px) scale(1.05);
-    border-color: rgba(45, 212, 168, 0.35);
-  }
+  z-index: 1;
 }
 
 /* زر الرجوع */
@@ -512,11 +488,11 @@ export default {
   width: 110px;
   height: 110px;
   border-radius: 26px;
-  background: rgba(255, 255, 255, 0.07);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .logo-white {
@@ -530,7 +506,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .logo-img {
@@ -564,14 +540,14 @@ export default {
 /* البطاقة الرئيسية */
 .main-card {
   flex: 1;
-  background: rgba(58, 52, 75, 0.85);
+  background: rgba(40, 36, 55, 0.88);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   border-radius: 35px;
   padding: 35px 26px 30px;
   box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    0 20px 50px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 /* التبويبات */
@@ -932,6 +908,14 @@ export default {
 
 /* تحسينات الشاشات الصغيرة */
 @media (max-width: 480px) {
+  .hero-image {
+    height: 380px;
+  }
+  
+  .hero-overlay {
+    height: 380px;
+  }
+  
   .logo-section {
     margin-top: 80px;
     margin-bottom: 22px;
@@ -1034,17 +1018,17 @@ export default {
 }
 
 @media (max-width: 360px) {
-  .bg-cubes-grid {
-    gap: 6px;
+  .hero-image {
+    height: 340px;
   }
   
-  .cube-row {
-    gap: 6px;
+  .hero-overlay {
+    height: 340px;
   }
   
   .logo-section {
-    margin-top: 70px;
-    margin-bottom: 20px;
+    margin-top: 65px;
+    margin-bottom: 18px;
   }
   
   .logo-frame {
