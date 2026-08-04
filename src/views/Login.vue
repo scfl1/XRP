@@ -1,22 +1,31 @@
 <template>
   <div class="login-page">
-    <!-- زر العودة -->
-    <button class="back-btn" @click="$router.go(-1)">
-      <i class="fas fa-arrow-right"></i>
-    </button>
-    
-    <!-- اللغة -->
-    <div class="language-selector">
-      <span>عربي</span>
-      <i class="fas fa-sort-down"></i>
+    <!-- مكعبات ثلاثية الأبعاد في الخلفية -->
+    <div class="bg-cubes">
+      <div class="cube cube-1"></div>
+      <div class="cube cube-2"></div>
+      <div class="cube cube-3"></div>
     </div>
 
-    <!-- الشعار -->
+    <!-- زر الرجوع -->
+    <button class="back-btn" @click="$router.go(-1)">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+
+    <!-- محدد اللغة -->
+    <div class="language-selector">
+      <span>عربي</span>
+      <span class="lang-arrow">▼</span>
+    </div>
+
+    <!-- الشعار واسم التطبيق -->
     <div class="logo-section">
-      <div class="logo-circle">
-        <img :src="logo" class="logo-img" alt="Palm Treasure Logo" />
+      <div class="logo-outer-ring">
+        <div class="logo-circle">
+          <img :src="logo" class="logo-img" alt="Logo" />
+        </div>
       </div>
-      <h1 class="app-name">PALM TREASURE</h1>
+      <h1 class="app-name">SCFL</h1>
     </div>
 
     <!-- زر الدعم العائم -->
@@ -29,22 +38,22 @@
 
     <!-- البطاقة الرئيسية -->
     <div class="main-card">
-      <!-- تبويبات تسجيل الدخول -->
-      <div class="tabs-container">
-        <button 
-          class="tab-btn" 
+      <!-- التبويبات -->
+      <div class="tabs">
+        <span 
+          class="tab" 
           :class="{ active: loginType === 'email' }"
           @click="loginType = 'email'"
         >
           تسجيل الدخول بالبريد الإلكتروني
-        </button>
-        <button 
-          class="tab-btn" 
+        </span>
+        <span 
+          class="tab" 
           :class="{ active: loginType === 'phone' }"
           @click="loginType = 'phone'"
         >
           تسجيل الدخول عبر الهاتف
-        </button>
+        </span>
       </div>
 
       <!-- رسالة الخطأ -->
@@ -52,9 +61,9 @@
         {{ errorMessage }}
       </div>
 
-      <!-- نموذج البريد الإلكتروني -->
+      <!-- حقل البريد الإلكتروني -->
       <template v-if="loginType === 'email'">
-        <div class="input-wrapper">
+        <div class="input-group">
           <i class="fas fa-envelope input-icon"></i>
           <input
             type="email"
@@ -67,44 +76,44 @@
         </div>
       </template>
 
-      <!-- نموذج الهاتف -->
+      <!-- حقل الهاتف -->
       <template v-if="loginType === 'phone'">
-        <div class="phone-group">
-          <div class="phone-row">
-            <select v-model="countryCode" class="country-select-inline">
+        <div class="phone-input-group">
+          <div class="phone-wrapper">
+            <select v-model="countryCode" class="country-select">
               <option value="">الرمز</option>
-              <option value="+964">🇮🇶 +964</option>
-              <option value="+966">🇸🇦 +966</option>
-              <option value="+971">🇦🇪 +971</option>
-              <option value="+965">🇰🇼 +965</option>
-              <option value="+974">🇶🇦 +974</option>
-              <option value="+973">🇧🇭 +973</option>
-              <option value="+968">🇴🇲 +968</option>
-              <option value="+962">🇯🇴 +962</option>
-              <option value="+20">🇪🇬 +20</option>
-              <option value="+963">🇸🇾 +963</option>
-              <option value="+961">🇱🇧 +961</option>
-              <option value="+218">🇱🇾 +218</option>
-              <option value="+216">🇹🇳 +216</option>
-              <option value="+213">🇩🇿 +213</option>
-              <option value="+212">🇲🇦 +212</option>
-              <option value="+222">🇲🇷 +222</option>
-              <option value="+249">🇸🇩 +249</option>
-              <option value="+967">🇾🇪 +967</option>
-              <option value="+970">🇵🇸 +970</option>
-              <option value="+90">🇹🇷 +90</option>
-              <option value="+44">🇬🇧 +44</option>
-              <option value="+1">🇺🇸 +1</option>
-              <option value="+49">🇩🇪 +49</option>
-              <option value="+33">🇫🇷 +33</option>
-              <option value="+39">🇮🇹 +39</option>
-              <option value="+34">🇪🇸 +34</option>
+              <option value="+964">+964</option>
+              <option value="+966">+966</option>
+              <option value="+971">+971</option>
+              <option value="+965">+965</option>
+              <option value="+974">+974</option>
+              <option value="+973">+973</option>
+              <option value="+968">+968</option>
+              <option value="+962">+962</option>
+              <option value="+20">+20</option>
+              <option value="+963">+963</option>
+              <option value="+961">+961</option>
+              <option value="+218">+218</option>
+              <option value="+216">+216</option>
+              <option value="+213">+213</option>
+              <option value="+212">+212</option>
+              <option value="+222">+222</option>
+              <option value="+249">+249</option>
+              <option value="+967">+967</option>
+              <option value="+970">+970</option>
+              <option value="+90">+90</option>
+              <option value="+44">+44</option>
+              <option value="+1">+1</option>
+              <option value="+49">+49</option>
+              <option value="+33">+33</option>
+              <option value="+39">+39</option>
+              <option value="+34">+34</option>
             </select>
             <input
               type="tel"
               v-model="phoneNumber"
               placeholder="رقم الهاتف"
-              class="form-input phone-number-input"
+              class="form-input phone-input"
               :disabled="!countryCode"
               @input="validatePhoneNumber"
               @keyup.enter="loginUser"
@@ -115,8 +124,8 @@
         </div>
       </template>
 
-      <!-- كلمة المرور -->
-      <div class="input-wrapper">
+      <!-- حقل كلمة المرور -->
+      <div class="input-group">
         <i class="fas fa-lock input-icon"></i>
         <input
           :type="showPassword ? 'text' : 'password'"
@@ -140,21 +149,9 @@
       </button>
 
       <!-- رابط التسجيل -->
-      <p class="register-link">
-        ليس لديك حساب؟
-        <router-link to="/register">سجل</router-link>
+      <p class="register-text">
+        لا حساب؟ <router-link to="/register" class="register-link">سجل</router-link>
       </p>
-    </div>
-
-    <!-- تسجيل الدخول عبر جوجل -->
-    <div class="google-section">
-      <div class="divider-text">
-        <span>أو</span>
-      </div>
-      <button class="google-btn" @click="loginWithGoogle" :disabled="loading">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-        تسجيل الدخول عبر جوجل
-      </button>
     </div>
   </div>
 
@@ -403,260 +400,305 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap');
 
 * {
-  font-family: 'Cairo', 'Tajawal', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Cairo', sans-serif;
 }
 
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1DBA9A 0%, #2B6B8A 30%, #1A1A2E 70%, #0A0C10 100%);
+  background: linear-gradient(160deg, 
+    #1DBA9A 0%, 
+    #1F8A7A 15%, 
+    #1F556E 35%, 
+    #1A2A4A 55%, 
+    #0B0E16 100%
+  );
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 20px;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
-.login-page::before {
-  content: '';
+/* المكعبات ثلاثية الأبعاد في الخلفية */
+.bg-cubes {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: inherit;
-  filter: blur(20px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
   z-index: 0;
+  pointer-events: none;
 }
 
-/* زر العودة */
+.cube {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: rgba(29, 186, 154, 0.08);
+  border: 1px solid rgba(29, 186, 154, 0.15);
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  transform: rotate(45deg);
+}
+
+.cube-1 {
+  top: 30%;
+  left: 20%;
+  width: 70px;
+  height: 70px;
+  animation: floatCube 8s ease-in-out infinite;
+}
+
+.cube-2 {
+  top: 50%;
+  right: 15%;
+  width: 90px;
+  height: 90px;
+  animation: floatCube 10s ease-in-out infinite reverse;
+}
+
+.cube-3 {
+  bottom: 20%;
+  left: 40%;
+  width: 60px;
+  height: 60px;
+  animation: floatCube 7s ease-in-out infinite;
+}
+
+@keyframes floatCube {
+  0%, 100% {
+    transform: rotate(45deg) translateY(0px);
+  }
+  50% {
+    transform: rotate(45deg) translateY(-15px);
+  }
+}
+
+/* زر الرجوع */
 .back-btn {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  background: transparent;
+  top: 24px;
+  left: 24px;
+  background: none;
   border: none;
   color: #FFFFFF;
-  font-size: 24px;
+  font-size: 22px;
   cursor: pointer;
   z-index: 10;
-  padding: 10px;
-  transition: all 0.3s ease;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+  padding: 0;
 }
 
-.back-btn:hover {
-  transform: scale(1.1);
-  color: #FFD500;
+.back-btn:active {
+  transform: scale(1.15);
 }
 
 /* محدد اللغة */
 .language-selector {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 24px;
+  right: 24px;
   display: flex;
   align-items: center;
-  gap: 5px;
-  color: #FFFFFF;
-  font-size: 16px;
+  gap: 6px;
   cursor: pointer;
   z-index: 10;
   padding: 8px 12px;
-  transition: all 0.3s ease;
 }
 
-.language-selector i {
+.language-selector span:first-child {
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.lang-arrow {
   color: #FFD500;
-  font-size: 14px;
+  font-size: 10px;
   margin-top: -2px;
 }
 
-.language-selector:hover {
-  opacity: 0.8;
-}
-
-/* الشعار */
+/* قسم الشعار */
 .logo-section {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 80px;
-  margin-bottom: 30px;
+  margin-top: 120px;
+  margin-bottom: 35px;
+}
+
+.logo-outer-ring {
+  width: 115px;
+  height: 115px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .logo-circle {
   width: 100px;
   height: 100px;
   background: #FFFFFF;
-  border-radius: 30px;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-  margin-bottom: 15px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .logo-img {
-  width: 75px;
-  height: 75px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
 }
 
 .app-name {
   color: #FFD500;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 3px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
   margin: 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
 }
 
 /* زر الدعم العائم */
 .support-fab {
   position: fixed;
   right: 20px;
-  bottom: 40px;
-  width: 60px;
-  height: 60px;
+  bottom: 50px;
+  width: 56px;
+  height: 56px;
   background: #FFFFFF;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   z-index: 100;
-  transition: all 0.3s ease;
-  font-size: 24px;
+  transition: all 0.25s ease;
+  font-size: 22px;
   color: #2B2938;
 }
 
-.support-fab:hover {
+.support-fab:active {
   transform: scale(1.1);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .telegram-badge {
   position: absolute;
-  top: -10px;
-  right: -5px;
-  width: 28px;
-  height: 28px;
+  top: -8px;
+  right: -4px;
+  width: 26px;
+  height: 26px;
   background: #0088CC;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #FFFFFF;
-  font-size: 14px;
+  font-size: 12px;
   color: #FFFFFF;
-  box-shadow: 0 3px 10px rgba(0, 136, 204, 0.5);
+  box-shadow: 0 3px 10px rgba(0, 136, 204, 0.4);
 }
 
 /* البطاقة الرئيسية */
 .main-card {
   position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 450px;
-  background: rgba(43, 41, 56, 0.85);
-  backdrop-filter: blur(25px);
+  z-index: 2;
+  width: 90%;
+  max-width: 390px;
+  background: rgba(65, 65, 80, 0.78);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-radius: 35px;
-  padding: 35px 25px;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 38px 28px 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 50px;
 }
 
 /* التبويبات */
-.tabs-container {
+.tabs {
   display: flex;
   justify-content: center;
-  gap: 30px;
-  margin-bottom: 35px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 15px;
+  gap: 32px;
+  margin-bottom: 32px;
 }
 
-.tab-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 16px;
-  font-weight: 600;
+.tab {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  padding: 8px 0;
-  transition: all 0.3s ease;
-  position: relative;
-  white-space: nowrap;
+  transition: all 0.25s ease;
+  user-select: none;
+  padding: 4px 0;
 }
 
-.tab-btn.active {
+.tab.active {
   color: #FFD500;
   font-weight: 700;
 }
 
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -17px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 40px;
-  height: 3px;
-  background: #FFD500;
-  border-radius: 3px;
-}
-
-.tab-btn:hover:not(.active) {
-  color: rgba(255, 255, 255, 0.7);
-}
-
 /* رسالة الخطأ */
 .error-message {
-  background: rgba(255, 80, 80, 0.15);
-  border: 1px solid rgba(255, 80, 80, 0.3);
+  background: rgba(255, 70, 70, 0.15);
   border-radius: 12px;
-  padding: 12px 15px;
-  margin-bottom: 20px;
+  padding: 12px 16px;
+  margin-bottom: 22px;
   color: #FF6B6B;
   font-size: 13px;
-  text-align: center;
   font-weight: 500;
+  text-align: center;
   backdrop-filter: blur(10px);
 }
 
-/* حقول الإدخال */
-.input-wrapper {
+/* مجموعة الإدخال */
+.input-group {
   position: relative;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .input-icon {
   position: absolute;
-  right: 20px;
+  right: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: #FFD500;
-  font-size: 18px;
+  font-size: 17px;
   z-index: 2;
-  transition: all 0.3s ease;
+  pointer-events: none;
 }
 
 .eye-icon {
   position: absolute;
-  left: 20px;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.5);
-  font-size: 18px;
+  font-size: 17px;
   cursor: pointer;
   z-index: 2;
-  transition: all 0.3s ease;
+  transition: color 0.25s ease;
 }
 
 .eye-icon:hover {
@@ -665,70 +707,69 @@ export default {
 
 .form-input {
   width: 100%;
-  padding: 18px 55px 18px 50px;
-  background: rgba(91, 88, 101, 0.5);
-  border: 2px solid transparent;
+  height: 60px;
+  padding: 0 50px 0 45px;
+  background: rgba(93, 90, 103, 0.65);
+  border: none;
   border-radius: 20px;
   color: #FFFFFF;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  outline: none;
+  transition: background 0.25s ease, box-shadow 0.25s ease;
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #B8B8B8;
   font-weight: 400;
 }
 
 .form-input:focus {
-  outline: none;
-  border-color: rgba(255, 213, 0, 0.5);
-  background: rgba(91, 88, 101, 0.7);
-  box-shadow: 0 0 20px rgba(255, 213, 0, 0.1);
+  background: rgba(93, 90, 103, 0.85);
+  box-shadow: 0 0 0 3px rgba(255, 213, 0, 0.1);
 }
 
 .form-input:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
 /* مجموعة الهاتف */
-.phone-group {
-  margin-bottom: 18px;
+.phone-input-group {
+  margin-bottom: 16px;
 }
 
-.phone-row {
+.phone-wrapper {
   display: flex;
   gap: 10px;
 }
 
-.country-select-inline {
-  width: 120px;
-  padding: 18px 15px;
-  background: rgba(91, 88, 101, 0.5);
-  border: 2px solid transparent;
+.country-select {
+  width: 105px;
+  height: 60px;
+  padding: 0 12px;
+  background: rgba(93, 90, 103, 0.65);
+  border: none;
   border-radius: 20px;
   color: #FFFFFF;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  appearance: none;
-}
-
-.country-select-inline:focus {
   outline: none;
-  border-color: rgba(255, 213, 0, 0.5);
+  transition: background 0.25s ease;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
-.country-select-inline option {
-  background: #2B2938;
+.country-select:focus {
+  background: rgba(93, 90, 103, 0.85);
+}
+
+.country-select option {
+  background: #3A3748;
   color: #FFFFFF;
 }
 
-.phone-number-input {
+.phone-input {
   flex: 1;
 }
 
@@ -737,145 +778,66 @@ export default {
   font-size: 12px;
   margin-top: 8px;
   display: block;
-  padding-right: 15px;
+  padding-right: 16px;
   font-weight: 500;
 }
 
 /* زر تسجيل الدخول */
 .login-btn {
   width: 100%;
-  padding: 20px;
-  background: linear-gradient(135deg, #FFD500 0%, #FFC700 100%);
+  height: 65px;
+  background: #FFD500;
   border: none;
-  border-radius: 40px;
+  border-radius: 35px;
   color: #1A1A2E;
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
-  margin-top: 25px;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 25px rgba(255, 213, 0, 0.3);
-  letter-spacing: 1px;
-}
-
-.login-btn:hover:not(:disabled) {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(255, 213, 0, 0.5);
-  background: linear-gradient(135deg, #FFE44D 0%, #FFD500 100%);
+  margin-top: 28px;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.5px;
 }
 
 .login-btn:active:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 15px rgba(255, 213, 0, 0.3);
+  transform: scale(0.98);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 .login-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* رابط التسجيل */
-.register-link {
+/* نص التسجيل */
+.register-text {
   text-align: center;
-  margin-top: 25px;
+  margin-top: 24px;
   color: rgba(255, 255, 255, 0.6);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
 }
 
-.register-link a {
+.register-link {
   color: #FFD500;
   text-decoration: none;
   font-weight: 700;
-  transition: all 0.3s ease;
-  margin-right: 5px;
+  transition: opacity 0.25s ease;
 }
 
-.register-link a:hover {
-  color: #FFE44D;
-  text-decoration: underline;
+.register-link:active {
+  opacity: 0.7;
 }
 
-/* قسم جوجل */
-.google-section {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 450px;
-  margin-top: 30px;
-  margin-bottom: 40px;
-}
-
-.divider-text {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 14px;
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.divider-text::before,
-.divider-text::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 35%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.divider-text::before {
-  left: 0;
-}
-
-.divider-text::after {
-  right: 0;
-}
-
-.google-btn {
-  width: 100%;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 25px;
-  color: #FFFFFF;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-}
-
-.google-btn img {
-  width: 22px;
-  height: 22px;
-}
-
-.google-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-2px);
-}
-
-.google-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Loader */
+/* Loader الزر */
 .btn-loader {
   width: 24px;
   height: 24px;
   border: 3px solid #1A1A2E;
-  border-top: 3px solid #FFD500;
+  border-top: 3px solid transparent;
   border-radius: 50%;
   display: inline-block;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
 
 @keyframes spin {
@@ -898,40 +860,40 @@ export default {
 }
 
 .ad-box {
-  background: linear-gradient(135deg, #1A1A2E 0%, #2B2938 100%);
+  background: #1A1A2E;
   width: 90%;
-  max-width: 450px;
+  max-width: 400px;
   border-radius: 25px;
-  border: 2px solid #FFD500;
+  border: 1px solid #FFD500;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .ad-box h2 {
-  background: linear-gradient(135deg, #FFD500 0%, #FFC700 100%);
+  background: #FFD500;
   color: #1A1A2E;
   margin: 0;
   padding: 18px;
-  font-size: 20px;
+  font-size: 18px;
   text-align: center;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .ad-content {
-  padding: 25px;
+  padding: 22px;
   color: #FFFFFF;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.8;
-  max-height: 350px;
+  max-height: 320px;
   overflow-y: auto;
 }
 
 .ad-content::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
 }
 
 .ad-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
 }
 
@@ -942,83 +904,141 @@ export default {
 
 .ad-btn {
   width: 100%;
-  padding: 18px;
+  padding: 16px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(255, 213, 0, 0.3);
+  border-top: 1px solid rgba(255, 213, 0, 0.2);
   color: #FFD500;
   cursor: pointer;
-  font-weight: 800;
-  font-size: 18px;
-  transition: all 0.3s ease;
+  font-weight: 700;
+  font-size: 16px;
+  transition: background 0.25s ease;
 }
 
-.ad-btn:hover {
+.ad-btn:active {
   background: rgba(255, 213, 0, 0.1);
 }
 
-/* تحسينات للهواتف */
+/* تحسينات الشاشات الصغيرة */
 @media (max-width: 480px) {
   .login-page {
-    padding: 15px;
+    padding: 0;
   }
   
-  .main-card {
-    padding: 30px 20px;
-    border-radius: 30px;
+  .logo-section {
+    margin-top: 100px;
+    margin-bottom: 30px;
   }
   
-  .tabs-container {
-    gap: 20px;
-  }
-  
-  .tab-btn {
-    font-size: 14px;
-  }
-  
-  .form-input {
-    font-size: 15px;
-    padding: 16px 50px 16px 45px;
-  }
-  
-  .login-btn {
-    font-size: 18px;
-    padding: 18px;
+  .logo-outer-ring {
+    width: 105px;
+    height: 105px;
+    border-radius: 26px;
   }
   
   .logo-circle {
-    width: 85px;
-    height: 85px;
+    width: 92px;
+    height: 92px;
+    border-radius: 22px;
   }
   
   .logo-img {
-    width: 65px;
-    height: 65px;
+    width: 66px;
+    height: 66px;
   }
   
   .app-name {
-    font-size: 20px;
+    font-size: 18px;
+  }
+  
+  .main-card {
+    width: 92%;
+    padding: 32px 22px 28px;
+    border-radius: 32px;
+  }
+  
+  .tabs {
+    gap: 24px;
+  }
+  
+  .tab {
+    font-size: 13px;
+  }
+  
+  .form-input {
+    height: 56px;
+    font-size: 14px;
+  }
+  
+  .country-select {
+    height: 56px;
+    font-size: 13px;
+  }
+  
+  .login-btn {
+    height: 60px;
+    font-size: 18px;
+  }
+  
+  .back-btn {
+    top: 20px;
+    left: 20px;
+  }
+  
+  .language-selector {
+    top: 20px;
+    right: 20px;
   }
   
   .support-fab {
     width: 50px;
     height: 50px;
     font-size: 20px;
+    right: 16px;
+    bottom: 40px;
   }
 }
 
 @media (max-width: 360px) {
-  .tabs-container {
-    gap: 15px;
+  .logo-section {
+    margin-top: 85px;
   }
   
-  .tab-btn {
-    font-size: 13px;
+  .main-card {
+    width: 94%;
+    padding: 28px 18px 24px;
   }
   
-  .country-select-inline {
-    width: 100px;
+  .tabs {
+    gap: 20px;
+  }
+  
+  .tab {
     font-size: 12px;
+  }
+  
+  .form-input {
+    height: 52px;
+    font-size: 13px;
+    border-radius: 18px;
+  }
+  
+  .country-select {
+    width: 95px;
+    height: 52px;
+    border-radius: 18px;
+    font-size: 12px;
+  }
+  
+  .login-btn {
+    height: 56px;
+    font-size: 17px;
+    border-radius: 30px;
+  }
+  
+  .input-icon,
+  .eye-icon {
+    font-size: 15px;
   }
 }
 </style>
