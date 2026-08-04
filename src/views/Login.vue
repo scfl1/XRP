@@ -1,13 +1,10 @@
 <template>
   <div class="login-page">
-    <!-- المكعبات ثلاثية الأبعاد في الخلفية -->
-    <div class="bg-cubes">
-      <div class="cube cube-1"></div>
-      <div class="cube cube-2"></div>
-      <div class="cube cube-3"></div>
-      <div class="cube cube-4"></div>
-      <div class="cube cube-5"></div>
-      <div class="cube cube-6"></div>
+    <!-- شبكة المكعبات ثلاثية الأبعاد في الخلفية -->
+    <div class="bg-cubes-grid">
+      <div class="cube-row" v-for="row in 5" :key="'row-'+row">
+        <div class="cube-cell" v-for="col in 5" :key="'col-'+col" :style="getCubeStyle(row, col)"></div>
+      </div>
     </div>
 
     <!-- زر الرجوع -->
@@ -23,17 +20,137 @@
 
     <!-- الشعار واسم التطبيق -->
     <div class="logo-section">
-      <div class="logo-outer-ring">
-        <div class="logo-circle">
+      <div class="logo-frame">
+        <div class="logo-glass"></div>
+        <div class="logo-white">
           <img :src="logo" class="logo-img" alt="Logo" />
         </div>
       </div>
       <h1 class="app-name">SCFL</h1>
     </div>
 
-    <!-- زر الدعم العائم -->
-    <div class="support-fab">
-      <div class="support-inner">
+    <!-- المحتوى الرئيسي مع زر الدعم -->
+    <div class="content-wrapper">
+      <!-- البطاقة الرئيسية -->
+      <div class="main-card">
+        <!-- التبويبات -->
+        <div class="tabs">
+          <span 
+            class="tab" 
+            :class="{ active: loginType === 'email' }"
+            @click="loginType = 'email'"
+          >
+            تسجيل الدخول بالبريد الإلكتروني
+          </span>
+          <span 
+            class="tab" 
+            :class="{ active: loginType === 'phone' }"
+            @click="loginType = 'phone'"
+          >
+            تسجيل الدخول عبر الهاتف
+          </span>
+        </div>
+
+        <!-- رسالة الخطأ -->
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <!-- حقل البريد الإلكتروني -->
+        <template v-if="loginType === 'email'">
+          <div class="input-group">
+            <i class="fas fa-envelope input-icon"></i>
+            <input
+              type="email"
+              v-model="email"
+              placeholder="البريد الإلكتروني"
+              class="form-input"
+              @keyup.enter="loginUser"
+              @focus="clearError"
+            />
+          </div>
+        </template>
+
+        <!-- حقل الهاتف -->
+        <template v-if="loginType === 'phone'">
+          <div class="phone-input-group">
+            <div class="phone-wrapper">
+              <select v-model="countryCode" class="country-select">
+                <option value="">الرمز</option>
+                <option value="+964">+964</option>
+                <option value="+966">+966</option>
+                <option value="+971">+971</option>
+                <option value="+965">+965</option>
+                <option value="+974">+974</option>
+                <option value="+973">+973</option>
+                <option value="+968">+968</option>
+                <option value="+962">+962</option>
+                <option value="+20">+20</option>
+                <option value="+963">+963</option>
+                <option value="+961">+961</option>
+                <option value="+218">+218</option>
+                <option value="+216">+216</option>
+                <option value="+213">+213</option>
+                <option value="+212">+212</option>
+                <option value="+222">+222</option>
+                <option value="+249">+249</option>
+                <option value="+967">+967</option>
+                <option value="+970">+970</option>
+                <option value="+90">+90</option>
+                <option value="+44">+44</option>
+                <option value="+1">+1</option>
+                <option value="+49">+49</option>
+                <option value="+33">+33</option>
+                <option value="+39">+39</option>
+                <option value="+34">+34</option>
+              </select>
+              <input
+                type="tel"
+                v-model="phoneNumber"
+                placeholder="رقم الهاتف"
+                class="form-input phone-input"
+                :disabled="!countryCode"
+                @input="validatePhoneNumber"
+                @keyup.enter="loginUser"
+                @focus="clearError"
+              />
+            </div>
+            <span v-if="phoneError" class="field-error">{{ phoneError }}</span>
+          </div>
+        </template>
+
+        <!-- حقل كلمة المرور -->
+        <div class="input-group">
+          <i class="fas fa-lock input-icon"></i>
+          <input
+            :type="showPassword ? 'text' : 'password'"
+            v-model="password"
+            placeholder="كلمة المرور"
+            class="form-input"
+            @keyup.enter="loginUser"
+            @focus="clearError"
+          />
+          <i 
+            class="fas fa-eye eye-icon" 
+            :class="{ 'fa-eye-slash': showPassword }"
+            @click="togglePassword"
+          ></i>
+        </div>
+
+        <!-- زر تسجيل الدخول -->
+        <button class="login-btn" @click="loginUser" :disabled="loading">
+          <span v-if="!loading">تسجيل الدخول</span>
+          <span v-else class="btn-loader"></span>
+        </button>
+
+        <!-- رابط التسجيل -->
+        <p class="register-text">
+          لا حساب؟ <router-link to="/register" class="register-link">سجل</router-link>
+        </p>
+      </div>
+
+      <!-- زر الدعم بجانب البطاقة -->
+      <div class="support-fab">
         <div class="telegram-icon">
           <i class="fab fa-telegram-plane"></i>
         </div>
@@ -41,124 +158,6 @@
           <i class="fas fa-headset"></i>
         </div>
       </div>
-    </div>
-
-    <!-- البطاقة الرئيسية -->
-    <div class="main-card">
-      <!-- التبويبات -->
-      <div class="tabs">
-        <span 
-          class="tab" 
-          :class="{ active: loginType === 'email' }"
-          @click="loginType = 'email'"
-        >
-          تسجيل الدخول بالبريد الإلكتروني
-        </span>
-        <span 
-          class="tab" 
-          :class="{ active: loginType === 'phone' }"
-          @click="loginType = 'phone'"
-        >
-          تسجيل الدخول عبر الهاتف
-        </span>
-      </div>
-
-      <!-- رسالة الخطأ -->
-      <div v-if="errorMessage" class="error-message">
-        {{ errorMessage }}
-      </div>
-
-      <!-- حقل البريد الإلكتروني -->
-      <template v-if="loginType === 'email'">
-        <div class="input-group">
-          <i class="fas fa-envelope input-icon"></i>
-          <input
-            type="email"
-            v-model="email"
-            placeholder="البريد الإلكتروني"
-            class="form-input"
-            @keyup.enter="loginUser"
-            @focus="clearError"
-          />
-        </div>
-      </template>
-
-      <!-- حقل الهاتف -->
-      <template v-if="loginType === 'phone'">
-        <div class="phone-input-group">
-          <div class="phone-wrapper">
-            <select v-model="countryCode" class="country-select">
-              <option value="">الرمز</option>
-              <option value="+964">+964</option>
-              <option value="+966">+966</option>
-              <option value="+971">+971</option>
-              <option value="+965">+965</option>
-              <option value="+974">+974</option>
-              <option value="+973">+973</option>
-              <option value="+968">+968</option>
-              <option value="+962">+962</option>
-              <option value="+20">+20</option>
-              <option value="+963">+963</option>
-              <option value="+961">+961</option>
-              <option value="+218">+218</option>
-              <option value="+216">+216</option>
-              <option value="+213">+213</option>
-              <option value="+212">+212</option>
-              <option value="+222">+222</option>
-              <option value="+249">+249</option>
-              <option value="+967">+967</option>
-              <option value="+970">+970</option>
-              <option value="+90">+90</option>
-              <option value="+44">+44</option>
-              <option value="+1">+1</option>
-              <option value="+49">+49</option>
-              <option value="+33">+33</option>
-              <option value="+39">+39</option>
-              <option value="+34">+34</option>
-            </select>
-            <input
-              type="tel"
-              v-model="phoneNumber"
-              placeholder="رقم الهاتف"
-              class="form-input phone-input"
-              :disabled="!countryCode"
-              @input="validatePhoneNumber"
-              @keyup.enter="loginUser"
-              @focus="clearError"
-            />
-          </div>
-          <span v-if="phoneError" class="field-error">{{ phoneError }}</span>
-        </div>
-      </template>
-
-      <!-- حقل كلمة المرور -->
-      <div class="input-group">
-        <i class="fas fa-lock input-icon"></i>
-        <input
-          :type="showPassword ? 'text' : 'password'"
-          v-model="password"
-          placeholder="كلمة المرور"
-          class="form-input"
-          @keyup.enter="loginUser"
-          @focus="clearError"
-        />
-        <i 
-          class="fas fa-eye eye-icon" 
-          :class="{ 'fa-eye-slash': showPassword }"
-          @click="togglePassword"
-        ></i>
-      </div>
-
-      <!-- زر تسجيل الدخول -->
-      <button class="login-btn" @click="loginUser" :disabled="loading">
-        <span v-if="!loading">تسجيل الدخول</span>
-        <span v-else class="btn-loader"></span>
-      </button>
-
-      <!-- رابط التسجيل -->
-      <p class="register-text">
-        لا حساب؟ <router-link to="/register" class="register-link">سجل</router-link>
-      </p>
     </div>
   </div>
 
@@ -222,6 +221,19 @@ export default {
     }
   },
   methods: {
+    getCubeStyle(row, col) {
+      const size = 65 + Math.random() * 25;
+      const opacity = 0.03 + Math.random() * 0.08;
+      const duration = 6 + Math.random() * 8;
+      const delay = Math.random() * 3;
+      return {
+        width: size + 'px',
+        height: size + 'px',
+        opacity: opacity,
+        animationDuration: duration + 's',
+        animationDelay: delay + 's'
+      };
+    },
     togglePassword() {
       this.showPassword = !this.showPassword;
     },
@@ -379,133 +391,43 @@ export default {
   overflow: hidden;
 }
 
-/* المكعبات ثلاثية الأبعاد الكبيرة في الخلفية */
-.bg-cubes {
+/* شبكة المكعبات ثلاثية الأبعاد */
+.bg-cubes-grid {
   position: absolute;
-  top: 40%;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 400px;
-  height: 400px;
+  transform: translate(-50%, -50%) rotate(45deg);
   z-index: 0;
   pointer-events: none;
-  perspective: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.cube {
-  position: absolute;
-  background: linear-gradient(135deg, 
-    rgba(45, 212, 168, 0.2) 0%, 
-    rgba(29, 186, 154, 0.12) 50%,
-    rgba(29, 186, 154, 0.05) 100%
-  );
-  border: 2px solid rgba(45, 212, 168, 0.25);
-  border-radius: 18px;
-  backdrop-filter: blur(4px);
-  transform: rotate(45deg);
-  box-shadow: 
-    0 0 40px rgba(45, 212, 168, 0.15),
-    inset 0 0 30px rgba(45, 212, 168, 0.08);
+.cube-row {
+  display: flex;
+  gap: 8px;
 }
 
-.cube-1 {
-  top: 20%;
-  left: 10%;
-  width: 120px;
-  height: 120px;
-  animation: floatCube1 8s ease-in-out infinite;
-  background: linear-gradient(135deg, 
-    rgba(45, 212, 168, 0.25) 0%, 
-    rgba(29, 186, 154, 0.15) 100%
-  );
-  border-color: rgba(45, 212, 168, 0.3);
-}
-
-.cube-2 {
-  top: 35%;
-  right: 5%;
-  width: 140px;
-  height: 140px;
-  animation: floatCube2 10s ease-in-out infinite reverse;
-  background: linear-gradient(225deg, 
-    rgba(45, 212, 168, 0.2) 0%, 
-    rgba(29, 186, 154, 0.1) 100%
-  );
-}
-
-.cube-3 {
-  bottom: 15%;
-  left: 25%;
-  width: 100px;
-  height: 100px;
-  animation: floatCube3 7s ease-in-out infinite 1s;
-  background: linear-gradient(315deg, 
-    rgba(45, 212, 168, 0.18) 0%, 
-    rgba(29, 186, 154, 0.08) 100%
-  );
-}
-
-.cube-4 {
-  top: 50%;
-  left: 40%;
-  width: 110px;
-  height: 110px;
-  animation: floatCube1 9s ease-in-out infinite 0.5s;
-  background: linear-gradient(45deg, 
-    rgba(45, 212, 168, 0.22) 0%, 
-    rgba(29, 186, 154, 0.12) 100%
-  );
-}
-
-.cube-5 {
-  top: 10%;
-  right: 20%;
-  width: 90px;
-  height: 90px;
-  animation: floatCube3 11s ease-in-out infinite 2s;
+.cube-cell {
   background: linear-gradient(135deg, 
     rgba(45, 212, 168, 0.15) 0%, 
-    rgba(29, 186, 154, 0.06) 100%
+    rgba(29, 186, 154, 0.08) 100%
   );
-  border-color: rgba(45, 212, 168, 0.2);
+  border: 1.5px solid rgba(45, 212, 168, 0.2);
+  border-radius: 12px;
+  backdrop-filter: blur(2px);
+  animation: floatCube ease-in-out infinite;
 }
 
-.cube-6 {
-  bottom: 25%;
-  right: 15%;
-  width: 130px;
-  height: 130px;
-  animation: floatCube2 8.5s ease-in-out infinite 1.5s;
-  background: linear-gradient(225deg, 
-    rgba(45, 212, 168, 0.2) 0%, 
-    rgba(29, 186, 154, 0.1) 100%
-  );
-}
-
-@keyframes floatCube1 {
+@keyframes floatCube {
   0%, 100% {
-    transform: rotate(45deg) translateY(0px) scale(1);
+    transform: translateY(0px) scale(1);
+    border-color: rgba(45, 212, 168, 0.2);
   }
   50% {
-    transform: rotate(47deg) translateY(-25px) scale(1.08);
-  }
-}
-
-@keyframes floatCube2 {
-  0%, 100% {
-    transform: rotate(45deg) translateY(0px) scale(1);
-  }
-  50% {
-    transform: rotate(43deg) translateY(25px) scale(1.06);
-  }
-}
-
-@keyframes floatCube3 {
-  0%, 100% {
-    transform: rotate(45deg) translateY(0px) scale(1);
-  }
-  50% {
-    transform: rotate(46deg) translateY(-18px) scale(1.05);
+    transform: translateY(-12px) scale(1.05);
+    border-color: rgba(45, 212, 168, 0.35);
   }
 }
 
@@ -572,39 +494,48 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 100px;
-  margin-bottom: 28px;
+  margin-top: 95px;
+  margin-bottom: 26px;
 }
 
-.logo-outer-ring {
-  width: 130px;
-  height: 130px;
-  border-radius: 32px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 18px;
-  box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.15);
+.logo-frame {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin-bottom: 16px;
 }
 
-.logo-circle {
-  width: 108px;
-  height: 108px;
-  background: #FFFFFF;
+.logo-glass {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 110px;
+  height: 110px;
   border-radius: 26px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.18);
+}
+
+.logo-white {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 94px;
+  height: 94px;
+  background: #FFFFFF;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.08);
 }
 
 .logo-img {
-  width: 78px;
-  height: 78px;
+  width: 66px;
+  height: 66px;
   object-fit: contain;
 }
 
@@ -618,65 +549,21 @@ export default {
   text-shadow: 0 2px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* زر الدعم العائم */
-.support-fab {
-  position: fixed;
-  right: 22px;
-  bottom: 50px;
-  width: 60px;
-  height: 60px;
-  cursor: pointer;
-  z-index: 100;
-  transition: all 0.25s ease;
-}
-
-.support-inner {
+/* المحتوى الرئيسي مع زر الدعم */
+.content-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.support-fab:active {
-  transform: scale(1.1);
-}
-
-.telegram-icon {
-  position: absolute;
-  top: -8px;
-  right: -4px;
-  width: 30px;
-  height: 30px;
-  background: #0088CC;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2.5px solid #FFFFFF;
-  font-size: 14px;
-  color: #FFFFFF;
-  box-shadow: 0 4px 15px rgba(0, 136, 204, 0.5);
   z-index: 2;
-}
-
-.headset-icon {
-  width: 60px;
-  height: 60px;
-  background: #FFFFFF;
-  border-radius: 50%;
+  width: 90%;
+  max-width: 450px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
-  font-size: 26px;
-  color: #2B2938;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 50px;
 }
 
 /* البطاقة الرئيسية */
 .main-card {
-  position: relative;
-  z-index: 2;
-  width: 90%;
-  max-width: 390px;
+  flex: 1;
   background: rgba(58, 52, 75, 0.85);
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
@@ -685,7 +572,6 @@ export default {
   box-shadow: 
     0 20px 50px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(255, 255, 255, 0.08);
-  margin-bottom: 50px;
 }
 
 /* التبويبات */
@@ -921,6 +807,54 @@ export default {
   to { transform: rotate(360deg); }
 }
 
+/* زر الدعم بجانب البطاقة */
+.support-fab {
+  position: relative;
+  width: 55px;
+  height: 55px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin-left: -12px;
+  margin-top: 40px;
+  z-index: 3;
+  flex-shrink: 0;
+}
+
+.support-fab:active {
+  transform: scale(1.1);
+}
+
+.telegram-icon {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  width: 28px;
+  height: 28px;
+  background: #0088CC;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid #FFFFFF;
+  font-size: 13px;
+  color: #FFFFFF;
+  box-shadow: 0 4px 15px rgba(0, 136, 204, 0.5);
+  z-index: 2;
+}
+
+.headset-icon {
+  width: 55px;
+  height: 55px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  font-size: 24px;
+  color: #2B2938;
+}
+
 /* الإعلان */
 .ad-overlay {
   position: fixed;
@@ -998,65 +932,33 @@ export default {
 
 /* تحسينات الشاشات الصغيرة */
 @media (max-width: 480px) {
-  .login-page {
-    padding: 0;
+  .logo-section {
+    margin-top: 80px;
+    margin-bottom: 22px;
   }
   
-  .bg-cubes {
-    width: 320px;
-    height: 320px;
-  }
-  
-  .cube-1 {
+  .logo-frame {
     width: 100px;
     height: 100px;
   }
   
-  .cube-2 {
-    width: 120px;
-    height: 120px;
-  }
-  
-  .cube-3 {
-    width: 85px;
-    height: 85px;
-  }
-  
-  .cube-4 {
-    width: 90px;
-    height: 90px;
-  }
-  
-  .cube-5 {
-    width: 75px;
-    height: 75px;
-  }
-  
-  .cube-6 {
-    width: 110px;
-    height: 110px;
-  }
-  
-  .logo-section {
-    margin-top: 85px;
-    margin-bottom: 24px;
-  }
-  
-  .logo-outer-ring {
-    width: 120px;
-    height: 120px;
-    border-radius: 28px;
-  }
-  
-  .logo-circle {
+  .logo-glass {
     width: 100px;
     height: 100px;
     border-radius: 24px;
   }
   
+  .logo-white {
+    width: 86px;
+    height: 86px;
+    top: 7px;
+    left: 7px;
+    border-radius: 18px;
+  }
+  
   .logo-img {
-    width: 72px;
-    height: 72px;
+    width: 60px;
+    height: 60px;
   }
   
   .app-name {
@@ -1064,8 +966,11 @@ export default {
     letter-spacing: 3px;
   }
   
+  .content-wrapper {
+    width: 95%;
+  }
+  
   .main-card {
-    width: 92%;
     padding: 30px 22px 26px;
     border-radius: 32px;
   }
@@ -1109,87 +1014,72 @@ export default {
   }
   
   .support-fab {
-    right: 18px;
-    bottom: 40px;
+    width: 50px;
+    height: 50px;
+    margin-top: 35px;
+    margin-left: -10px;
   }
   
   .headset-icon {
-    width: 54px;
-    height: 54px;
-    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    font-size: 22px;
   }
   
   .telegram-icon {
-    width: 28px;
-    height: 28px;
-    font-size: 13px;
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 360px) {
-  .bg-cubes {
-    width: 280px;
-    height: 280px;
+  .bg-cubes-grid {
+    gap: 6px;
   }
   
-  .cube-1 {
-    width: 80px;
-    height: 80px;
-  }
-  
-  .cube-2 {
-    width: 100px;
-    height: 100px;
-  }
-  
-  .cube-3 {
-    width: 70px;
-    height: 70px;
-  }
-  
-  .cube-4 {
-    width: 75px;
-    height: 75px;
-  }
-  
-  .cube-5 {
-    width: 65px;
-    height: 65px;
-  }
-  
-  .cube-6 {
-    width: 90px;
-    height: 90px;
+  .cube-row {
+    gap: 6px;
   }
   
   .logo-section {
-    margin-top: 75px;
-    margin-bottom: 22px;
+    margin-top: 70px;
+    margin-bottom: 20px;
   }
   
-  .logo-outer-ring {
-    width: 110px;
-    height: 110px;
-    border-radius: 26px;
+  .logo-frame {
+    width: 92px;
+    height: 92px;
   }
   
-  .logo-circle {
+  .logo-glass {
     width: 92px;
     height: 92px;
     border-radius: 22px;
   }
   
+  .logo-white {
+    width: 78px;
+    height: 78px;
+    top: 7px;
+    left: 7px;
+    border-radius: 16px;
+  }
+  
   .logo-img {
-    width: 66px;
-    height: 66px;
+    width: 54px;
+    height: 54px;
   }
   
   .app-name {
     font-size: 20px;
   }
   
+  .content-wrapper {
+    width: 96%;
+  }
+  
   .main-card {
-    width: 94%;
     padding: 26px 18px 22px;
     border-radius: 28px;
   }
@@ -1250,22 +1140,24 @@ export default {
   }
   
   .support-fab {
-    right: 16px;
-    bottom: 35px;
+    width: 46px;
+    height: 46px;
+    margin-top: 30px;
+    margin-left: -8px;
   }
   
   .headset-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 22px;
+    width: 46px;
+    height: 46px;
+    font-size: 20px;
   }
   
   .telegram-icon {
-    width: 26px;
-    height: 26px;
-    font-size: 12px;
-    top: -6px;
-    right: -2px;
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+    top: -5px;
+    right: -1px;
   }
 }
 </style>
