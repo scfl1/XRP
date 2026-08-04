@@ -1,185 +1,156 @@
 <template>
-  <div class="container">
-    <div class="login-card">
-      <!-- عنوان "عربي" في الأعلى -->
-      <div class="lang-label">
-        <i class="fas fa-globe"></i> عربي
-      </div>
+  <div class="login-page">
+    <!-- زر العودة -->
+    <button class="back-btn" @click="$router.go(-1)">
+      <i class="fas fa-arrow-right"></i>
+    </button>
+    
+    <!-- اللغة -->
+    <div class="language-selector">
+      <span>عربي</span>
+      <i class="fas fa-sort-down"></i>
+    </div>
 
-      <!-- رسالة الخطأ العامة -->
-      <div v-if="errorMessage" class="error-message-box">
-        {{ errorMessage }}
+    <!-- الشعار -->
+    <div class="logo-section">
+      <div class="logo-circle">
+        <img :src="logo" class="logo-img" alt="Palm Treasure Logo" />
       </div>
+      <h1 class="app-name">PALM TREASURE</h1>
+    </div>
 
-      <!-- خيارات تسجيل الدخول -->
-      <div class="login-options">
+    <!-- زر الدعم العائم -->
+    <div class="support-fab">
+      <div class="telegram-badge">
+        <i class="fab fa-telegram-plane"></i>
+      </div>
+      <i class="fas fa-headset"></i>
+    </div>
+
+    <!-- البطاقة الرئيسية -->
+    <div class="main-card">
+      <!-- تبويبات تسجيل الدخول -->
+      <div class="tabs-container">
         <button 
-          class="login-option" 
-          :class="{ active: loginType === 'phone' }"
-          @click="loginType = 'phone'"
-        >
-          <i class="fas fa-phone-alt"></i> الهاتف
-        </button>
-        <button 
-          class="login-option" 
+          class="tab-btn" 
           :class="{ active: loginType === 'email' }"
           @click="loginType = 'email'"
         >
-          <i class="fas fa-envelope"></i> البريد الإلكتروني
+          تسجيل الدخول بالبريد الإلكتروني
+        </button>
+        <button 
+          class="tab-btn" 
+          :class="{ active: loginType === 'phone' }"
+          @click="loginType = 'phone'"
+        >
+          تسجيل الدخول عبر الهاتف
         </button>
       </div>
 
-      <!-- حقل البريد الإلكتروني -->
+      <!-- رسالة الخطأ -->
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+
+      <!-- نموذج البريد الإلكتروني -->
       <template v-if="loginType === 'email'">
-        <div class="input-group">
-          <label class="field-label">
-            <i class="far fa-envelope"></i> بريد إلكتروني
-          </label>
-          <div class="input-icon-wrap">
-            <input
-              type="email"
-              v-model="email"
-              placeholder="example@domain.com"
-              class="input-field"
-              :class="{ 'input-error': errorMessage }"
-              @keyup.enter="loginUser"
-              @focus="clearError"
-            />
-            <i class="fas fa-user-circle"></i>
-          </div>
+        <div class="input-wrapper">
+          <i class="fas fa-envelope input-icon"></i>
+          <input
+            type="email"
+            v-model="email"
+            placeholder="البريد الإلكتروني"
+            class="form-input"
+            @keyup.enter="loginUser"
+            @focus="clearError"
+          />
         </div>
       </template>
 
-      <!-- حقل رقم الهاتف -->
+      <!-- نموذج الهاتف -->
       <template v-if="loginType === 'phone'">
-        <div class="input-group">
-          <label class="field-label">
-            <i class="fas fa-phone"></i> رقم الهاتف
-          </label>
-          <div class="phone-input-container">
-            <select v-model="countryCode" class="country-select">
-              <option value="">اختر الرمز</option>
-              <option value="+964">🇮🇶 العراق (+964)</option>
-              <option value="+966">🇸🇦 السعودية (+966)</option>
-              <option value="+971">🇦🇪 الإمارات (+971)</option>
-              <option value="+965">🇰🇼 الكويت (+965)</option>
-              <option value="+974">🇶🇦 قطر (+974)</option>
-              <option value="+973">🇧🇭 البحرين (+973)</option>
-              <option value="+968">🇴🇲 عمان (+968)</option>
-              <option value="+962">🇯🇴 الأردن (+962)</option>
-              <option value="+20">🇪🇬 مصر (+20)</option>
-              <option value="+963">🇸🇾 سوريا (+963)</option>
-              <option value="+961">🇱🇧 لبنان (+961)</option>
-              <option value="+218">🇱🇾 ليبيا (+218)</option>
-              <option value="+216">🇹🇳 تونس (+216)</option>
-              <option value="+213">🇩🇿 الجزائر (+213)</option>
-              <option value="+212">🇲🇦 المغرب (+212)</option>
-              <option value="+222">🇲🇷 موريتانيا (+222)</option>
-              <option value="+249">🇸🇩 السودان (+249)</option>
-              <option value="+967">🇾🇪 اليمن (+967)</option>
-              <option value="+970">🇵🇸 فلسطين (+970)</option>
-              <option value="+90">🇹🇷 تركيا (+90)</option>
-              <option value="+44">🇬🇧 بريطانيا (+44)</option>
-              <option value="+1">🇺🇸 أمريكا (+1)</option>
-              <option value="+49">🇩🇪 ألمانيا (+49)</option>
-              <option value="+33">🇫🇷 فرنسا (+33)</option>
-              <option value="+39">🇮🇹 إيطاليا (+39)</option>
-              <option value="+34">🇪🇸 إسبانيا (+34)</option>
-              <option value="+31">🇳🇱 هولندا (+31)</option>
-              <option value="+46">🇸🇪 السويد (+46)</option>
-              <option value="+47">🇳🇴 النرويج (+47)</option>
-              <option value="+45">🇩🇰 الدنمارك (+45)</option>
-              <option value="+358">🇫🇮 فنلندا (+358)</option>
-              <option value="+41">🇨🇭 سويسرا (+41)</option>
-              <option value="+43">🇦🇹 النمسا (+43)</option>
-              <option value="+32">🇧🇪 بلجيكا (+32)</option>
-              <option value="+48">🇵🇱 بولندا (+48)</option>
-              <option value="+420">🇨🇿 التشيك (+420)</option>
-              <option value="+36">🇭🇺 المجر (+36)</option>
-              <option value="+40">🇷🇴 رومانيا (+40)</option>
-              <option value="+359">🇧🇬 بلغاريا (+359)</option>
-              <option value="+30">🇬🇷 اليونان (+30)</option>
-              <option value="+351">🇵🇹 البرتغال (+351)</option>
-              <option value="+7">🇷🇺 روسيا (+7)</option>
-              <option value="+380">🇺🇦 أوكرانيا (+380)</option>
-              <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
-              <option value="+995">🇬🇪 جورجيا (+995)</option>
-              <option value="+994">🇦🇿 أذربيجان (+994)</option>
-              <option value="+374">🇦🇲 أرمينيا (+374)</option>
-              <option value="+998">🇺🇿 أوزبكستان (+998)</option>
-              <option value="+996">🇰🇬 قرغيزستان (+996)</option>
-              <option value="+992">🇹🇯 طاجيكستان (+992)</option>
-              <option value="+993">🇹🇲 تركمانستان (+993)</option>
-              <option value="+86">🇨🇳 الصين (+86)</option>
-              <option value="+91">🇮🇳 الهند (+91)</option>
-              <option value="+92">🇵🇰 باكستان (+92)</option>
-              <option value="+93">🇦🇫 أفغانستان (+93)</option>
-              <option value="+94">🇱🇰 سريلانكا (+94)</option>
-              <option value="+95">🇲🇲 ميانمار (+95)</option>
-              <option value="+66">🇹🇭 تايلاند (+66)</option>
-              <option value="+84">🇻🇳 فيتنام (+84)</option>
-              <option value="+60">🇲🇾 ماليزيا (+60)</option>
-              <option value="+65">🇸🇬 سنغافورة (+65)</option>
-              <option value="+62">🇮🇩 إندونيسيا (+62)</option>
-              <option value="+63">🇵🇭 الفلبين (+63)</option>
-              <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
-              <option value="+81">🇯🇵 اليابان (+81)</option>
+        <div class="phone-group">
+          <div class="phone-row">
+            <select v-model="countryCode" class="country-select-inline">
+              <option value="">الرمز</option>
+              <option value="+964">🇮🇶 +964</option>
+              <option value="+966">🇸🇦 +966</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+965">🇰🇼 +965</option>
+              <option value="+974">🇶🇦 +974</option>
+              <option value="+973">🇧🇭 +973</option>
+              <option value="+968">🇴🇲 +968</option>
+              <option value="+962">🇯🇴 +962</option>
+              <option value="+20">🇪🇬 +20</option>
+              <option value="+963">🇸🇾 +963</option>
+              <option value="+961">🇱🇧 +961</option>
+              <option value="+218">🇱🇾 +218</option>
+              <option value="+216">🇹🇳 +216</option>
+              <option value="+213">🇩🇿 +213</option>
+              <option value="+212">🇲🇦 +212</option>
+              <option value="+222">🇲🇷 +222</option>
+              <option value="+249">🇸🇩 +249</option>
+              <option value="+967">🇾🇪 +967</option>
+              <option value="+970">🇵🇸 +970</option>
+              <option value="+90">🇹🇷 +90</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+33">🇫🇷 +33</option>
+              <option value="+39">🇮🇹 +39</option>
+              <option value="+34">🇪🇸 +34</option>
             </select>
             <input
               type="tel"
               v-model="phoneNumber"
               placeholder="رقم الهاتف"
-              class="phone-input"
-              :class="{ 'input-error': errorMessage || phoneError }"
+              class="form-input phone-number-input"
               :disabled="!countryCode"
               @input="validatePhoneNumber"
               @keyup.enter="loginUser"
               @focus="clearError"
             />
           </div>
-          <span v-if="phoneError" class="validation-error">{{ phoneError }}</span>
+          <span v-if="phoneError" class="field-error">{{ phoneError }}</span>
         </div>
       </template>
 
-      <!-- حقل كلمة المرور -->
-      <div class="input-group">
-        <label class="field-label">
-          <i class="fas fa-lock"></i> كلمة سر الدخول
-        </label>
-        <div class="input-icon-wrap">
-          <input
-            :type="showPassword ? 'text' : 'password'"
-            v-model="password"
-            placeholder="••••••••"
-            class="input-field"
-            :class="{ 'input-error': errorMessage }"
-            @keyup.enter="loginUser"
-            @focus="clearError"
-          />
-          <i class="fas fa-key"></i>
-          <span class="toggle-password" @click="togglePassword">
-            {{ showPassword ? "إخفاء" : "إظهار" }}
-          </span>
-        </div>
+      <!-- كلمة المرور -->
+      <div class="input-wrapper">
+        <i class="fas fa-lock input-icon"></i>
+        <input
+          :type="showPassword ? 'text' : 'password'"
+          v-model="password"
+          placeholder="كلمة المرور"
+          class="form-input"
+          @keyup.enter="loginUser"
+          @focus="clearError"
+        />
+        <i 
+          class="fas fa-eye eye-icon" 
+          :class="{ 'fa-eye-slash': showPassword }"
+          @click="togglePassword"
+        ></i>
       </div>
 
       <!-- زر تسجيل الدخول -->
       <button class="login-btn" @click="loginUser" :disabled="loading">
-        <span v-if="!loading"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</span>
-        <span v-else class="loader"></span>
+        <span v-if="!loading">تسجيل الدخول</span>
+        <span v-else class="btn-loader"></span>
       </button>
 
-      <!-- رابط "لا حساب؟ يسجل" -->
-      <div class="signup-link">
-        <i class="fas fa-user-plus"></i> لا حساب؟
-        <router-link to="/register"><i class="fas fa-arrow-left"></i> يسجل</router-link>
-      </div>
+      <!-- رابط التسجيل -->
+      <p class="register-link">
+        ليس لديك حساب؟
+        <router-link to="/register">سجل</router-link>
+      </p>
+    </div>
 
-      <!-- تسجيل الدخول عبر جوجل -->
-      <div class="divider">
+    <!-- تسجيل الدخول عبر جوجل -->
+    <div class="google-section">
+      <div class="divider-text">
         <span>أو</span>
       </div>
-      
       <button class="google-btn" @click="loginWithGoogle" :disabled="loading">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
         تسجيل الدخول عبر جوجل
@@ -371,13 +342,21 @@ export default {
         loginEmail = this.generatePhoneEmail(this.fullPhoneNumber);
       } else {
         if (!this.validateEmail(this.email)) {
-          this.errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+          if (this.loginType === 'phone') {
+            this.errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
+          } else {
+            this.errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+          }
           return;
         }
       }
 
       if (this.password.length < 6) {
-        this.errorMessage = "كلمة المرور يجب أن تكون 6 أحرف على الأقل.";
+        if (this.loginType === 'phone') {
+          this.errorMessage = "رقم الهاتف أو كلمة المرور غير صحيحة.";
+        } else {
+          this.errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+        }
         return;
       }
 
@@ -424,353 +403,463 @@ export default {
 </script>
 
 <style scoped>
-/* ===== التنسيقات المطابقة للصورة ===== */
-.container {
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap');
+
+* {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+}
+
+.login-page {
   min-height: 100vh;
+  background: linear-gradient(135deg, #1DBA9A 0%, #2B6B8A 30%, #1A1A2E 70%, #0A0C10 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  filter: blur(20px);
+  z-index: 0;
+}
+
+/* زر العودة */
+.back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  color: #FFFFFF;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10;
+  padding: 10px;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  transform: scale(1.1);
+  color: #FFD500;
+}
+
+/* محدد اللغة */
+.language-selector {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #FFFFFF;
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 10;
+  padding: 8px 12px;
+  transition: all 0.3s ease;
+}
+
+.language-selector i {
+  color: #FFD500;
+  font-size: 14px;
+  margin-top: -2px;
+}
+
+.language-selector:hover {
+  opacity: 0.8;
+}
+
+/* الشعار */
+.logo-section {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 80px;
+  margin-bottom: 30px;
+}
+
+.logo-circle {
+  width: 100px;
+  height: 100px;
+  background: #FFFFFF;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  margin-bottom: 15px;
+}
+
+.logo-img {
+  width: 75px;
+  height: 75px;
+  object-fit: contain;
+}
+
+.app-name {
+  color: #FFD500;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* زر الدعم العائم */
+.support-fab {
+  position: fixed;
+  right: 20px;
+  bottom: 40px;
+  width: 60px;
+  height: 60px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  z-index: 100;
+  transition: all 0.3s ease;
+  font-size: 24px;
+  color: #2B2938;
+}
+
+.support-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.telegram-badge {
+  position: absolute;
+  top: -10px;
+  right: -5px;
+  width: 28px;
+  height: 28px;
+  background: #0088CC;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FFFFFF;
+  font-size: 14px;
+  color: #FFFFFF;
+  box-shadow: 0 3px 10px rgba(0, 136, 204, 0.5);
+}
+
+/* البطاقة الرئيسية */
+.main-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 450px;
+  background: rgba(43, 41, 56, 0.85);
+  backdrop-filter: blur(25px);
+  border-radius: 35px;
+  padding: 35px 25px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* التبويبات */
+.tabs-container {
   display: flex;
   justify-content: center;
-  align-items: center;
-  background: linear-gradient(145deg, #f0f4fa 0%, #d9e2ef 100%);
-  padding: 20px;
-  direction: rtl;
+  gap: 30px;
+  margin-bottom: 35px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 15px;
 }
 
-.login-card {
-  background-color: #ffffff;
-  width: 100%;
-  max-width: 420px;
-  padding: 2.5rem 2rem 2rem 2rem;
-  border-radius: 36px;
-  box-shadow: 0 20px 40px rgba(0, 20, 40, 0.2), 0 6px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-/* عنوان "عربي" في الأعلى */
-.lang-label {
-  font-size: 0.9rem;
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 16px;
   font-weight: 600;
-  color: #1e2a3a;
-  letter-spacing: 0.5px;
-  margin-bottom: 1.8rem;
-  display: flex;
-  justify-content: flex-end;
-  border-bottom: 1px solid #eef2f7;
-  padding-bottom: 0.6rem;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: all 0.3s ease;
+  position: relative;
+  white-space: nowrap;
 }
 
-.lang-label i {
-  margin-left: 6px;
-  color: #2c3e50;
+.tab-btn.active {
+  color: #FFD500;
+  font-weight: 700;
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -17px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: #FFD500;
+  border-radius: 3px;
+}
+
+.tab-btn:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* رسالة الخطأ */
-.error-message-box {
-  background: rgba(255, 107, 107, 0.12);
-  border: 1px solid rgba(255, 107, 107, 0.3);
+.error-message {
+  background: rgba(255, 80, 80, 0.15);
+  border: 1px solid rgba(255, 80, 80, 0.3);
   border-radius: 12px;
-  padding: 10px 15px;
+  padding: 12px 15px;
   margin-bottom: 20px;
-  color: #dc3545;
+  color: #FF6B6B;
   font-size: 13px;
   text-align: center;
   font-weight: 500;
+  backdrop-filter: blur(10px);
 }
 
-/* خيارات تسجيل الدخول */
-.login-options {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 2rem;
-  background: #f2f6fc;
-  padding: 6px;
-  border-radius: 60px;
-  border: 1px solid #e2e9f2;
-}
-
-.login-option {
-  flex: 1;
-  text-align: center;
-  padding: 0.7rem 0.2rem;
-  border-radius: 40px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  background: transparent;
-  color: #3a4a5e;
-  transition: 0.2s;
-  border: none;
-}
-
-.login-option.active {
-  background: #ffffff;
-  color: #0b1b2b;
-  box-shadow: 0 4px 10px rgba(0, 20, 40, 0.08);
-  border: 1px solid #d0dcec;
-}
-
-.login-option i {
-  margin-left: 8px;
-  font-size: 0.9rem;
-}
-
-/* مجموعات الحقول */
-.input-group {
-  margin-bottom: 1.5rem;
-}
-
-.field-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #1f2a3a;
-  margin-bottom: 0.4rem;
-}
-
-.field-label i {
-  color: #3f5a7a;
-  font-size: 0.9rem;
-  opacity: 0.7;
-}
-
-/* حقل الإدخال مع أيقونة */
-.input-icon-wrap {
+/* حقول الإدخال */
+.input-wrapper {
   position: relative;
+  margin-bottom: 18px;
 }
 
-.input-field {
-  width: 100%;
-  padding: 0.9rem 2.8rem 0.9rem 1.2rem;
-  border-radius: 40px;
-  border: 1.5px solid #dbe2ec;
-  background-color: #fafcff;
-  font-size: 1rem;
-  color: #1a2636;
-  outline: none;
-  transition: 0.2s;
-  box-sizing: border-box;
-}
-
-.input-field:focus {
-  border-color: #3b6c9c;
-  box-shadow: 0 0 0 3px rgba(59, 108, 156, 0.15);
-  background-color: #ffffff;
-}
-
-.input-field::placeholder {
-  color: #a0b2c9;
-  font-weight: 400;
-  font-size: 0.95rem;
-}
-
-.input-icon-wrap i {
+.input-icon {
   position: absolute;
-  right: 1.2rem;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
-  color: #7a8da5;
-  font-size: 1rem;
-  pointer-events: none;
+  color: #FFD500;
+  font-size: 18px;
+  z-index: 2;
+  transition: all 0.3s ease;
 }
 
-.input-error {
-  border-color: #dc3545 !important;
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2) !important;
-}
-
-/* حقل الهاتف */
-.phone-input-container {
-  display: flex;
-  gap: 8px;
-}
-
-.country-select {
-  width: 120px;
-  padding: 0.9rem 0.8rem;
-  border-radius: 40px;
-  border: 1.5px solid #dbe2ec;
-  background-color: #fafcff;
-  font-size: 0.9rem;
-  color: #1a2636;
-  outline: none;
-  transition: 0.2s;
+.eye-icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
   cursor: pointer;
+  z-index: 2;
+  transition: all 0.3s ease;
 }
 
-.country-select:focus {
-  border-color: #3b6c9c;
-  box-shadow: 0 0 0 3px rgba(59, 108, 156, 0.15);
+.eye-icon:hover {
+  color: #FFD500;
 }
 
-.phone-input {
-  flex: 1;
-  padding: 0.9rem 1.2rem;
-  border-radius: 40px;
-  border: 1.5px solid #dbe2ec;
-  background-color: #fafcff;
-  font-size: 1rem;
-  color: #1a2636;
+.form-input {
+  width: 100%;
+  padding: 18px 55px 18px 50px;
+  background: rgba(91, 88, 101, 0.5);
+  border: 2px solid transparent;
+  border-radius: 20px;
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+}
+
+.form-input:focus {
   outline: none;
-  transition: 0.2s;
+  border-color: rgba(255, 213, 0, 0.5);
+  background: rgba(91, 88, 101, 0.7);
+  box-shadow: 0 0 20px rgba(255, 213, 0, 0.1);
 }
 
-.phone-input:focus {
-  border-color: #3b6c9c;
-  box-shadow: 0 0 0 3px rgba(59, 108, 156, 0.15);
-  background-color: #ffffff;
-}
-
-.phone-input:disabled {
-  opacity: 0.6;
+.form-input:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.validation-error {
-  color: #dc3545;
-  font-size: 12px;
-  margin-top: 5px;
-  display: block;
+/* مجموعة الهاتف */
+.phone-group {
+  margin-bottom: 18px;
 }
 
-/* زر إظهار/إخفاء كلمة المرور */
-.toggle-password {
-  position: absolute;
-  left: 1.2rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #3b6c9c;
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background: #f0f4fa;
-  padding: 2px 10px;
+.phone-row {
+  display: flex;
+  gap: 10px;
+}
+
+.country-select-inline {
+  width: 120px;
+  padding: 18px 15px;
+  background: rgba(91, 88, 101, 0.5);
+  border: 2px solid transparent;
   border-radius: 20px;
-  user-select: none;
+  color: #FFFFFF;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  appearance: none;
 }
 
-.toggle-password:hover {
-  background: #d9e2ef;
+.country-select-inline:focus {
+  outline: none;
+  border-color: rgba(255, 213, 0, 0.5);
+}
+
+.country-select-inline option {
+  background: #2B2938;
+  color: #FFFFFF;
+}
+
+.phone-number-input {
+  flex: 1;
+}
+
+.field-error {
+  color: #FF6B6B;
+  font-size: 12px;
+  margin-top: 8px;
+  display: block;
+  padding-right: 15px;
+  font-weight: 500;
 }
 
 /* زر تسجيل الدخول */
 .login-btn {
   width: 100%;
-  background: #1f3a5a;
+  padding: 20px;
+  background: linear-gradient(135deg, #FFD500 0%, #FFC700 100%);
   border: none;
-  padding: 0.95rem;
-  border-radius: 60px;
-  color: white;
-  font-weight: 700;
-  font-size: 1.1rem;
-  letter-spacing: 0.3px;
-  margin: 0.5rem 0 1.5rem 0;
+  border-radius: 40px;
+  color: #1A1A2E;
+  font-size: 20px;
+  font-weight: 800;
   cursor: pointer;
-  transition: 0.2s;
-  box-shadow: 0 8px 16px rgba(26, 55, 94, 0.25);
-  border: 1px solid #2b4b70;
+  margin-top: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(255, 213, 0, 0.3);
+  letter-spacing: 1px;
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #17304d;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(20, 50, 80, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(255, 213, 0, 0.5);
+  background: linear-gradient(135deg, #FFE44D 0%, #FFD500 100%);
 }
 
 .login-btn:active:not(:disabled) {
-  transform: scale(0.97);
-  background: #0f263d;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 15px rgba(255, 213, 0, 0.3);
 }
 
 .login-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
-.login-btn i {
-  margin-left: 10px;
-}
-
-/* رابط "لا حساب؟ يسجل" */
-.signup-link {
+/* رابط التسجيل */
+.register-link {
   text-align: center;
-  font-size: 1rem;
+  margin-top: 25px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
   font-weight: 500;
-  color: #1f2e42;
-  border-top: 1px solid #e7edf6;
-  padding-top: 1.5rem;
-  margin-top: 0.2rem;
 }
 
-.signup-link a {
-  color: #1f3a5a;
-  font-weight: 700;
+.register-link a {
+  color: #FFD500;
   text-decoration: none;
-  margin-right: 8px;
-  border-bottom: 2px solid transparent;
-  transition: 0.15s;
-  padding-bottom: 2px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  margin-right: 5px;
 }
 
-.signup-link a:hover {
-  border-bottom-color: #1f3a5a;
-  color: #0f263d;
+.register-link a:hover {
+  color: #FFE44D;
+  text-decoration: underline;
 }
 
-.signup-link i {
-  margin-right: 6px;
-  color: #2b4b70;
-  font-size: 0.9rem;
+/* قسم جوجل */
+.google-section {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 450px;
+  margin-top: 30px;
+  margin-bottom: 40px;
 }
 
-/* فاصل */
-.divider {
-  display: flex;
-  align-items: center;
+.divider-text {
   text-align: center;
-  margin: 20px 0;
-  color: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  margin-bottom: 20px;
+  position: relative;
 }
 
-.divider::before,
-.divider::after {
+.divider-text::before,
+.divider-text::after {
   content: '';
-  flex: 1;
-  border-bottom: 1px solid #e7edf6;
+  position: absolute;
+  top: 50%;
+  width: 35%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.divider span {
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 500;
+.divider-text::before {
+  left: 0;
 }
 
-/* زر جوجل */
+.divider-text::after {
+  right: 0;
+}
+
 .google-btn {
   width: 100%;
-  padding: 11px;
-  border: 1px solid #dbe2ec;
-  background: #ffffff;
-  color: #1f2a3a;
-  border-radius: 60px;
-  font-size: 0.95rem;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  color: #FFFFFF;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .google-btn img {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
 }
 
 .google-btn:hover:not(:disabled) {
-  background: #f5f7fa;
-  border-color: #c0cbd8;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .google-btn:disabled {
@@ -779,95 +868,157 @@ export default {
 }
 
 /* Loader */
-.loader {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #ffffff;
-  border-top: 2px solid #D4AF37;
+.btn-loader {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #1A1A2E;
+  border-top: 3px solid #FFD500;
   border-radius: 50%;
   display: inline-block;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* ===== الإعلان ===== */
+/* الإعلان */
 .ad-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .ad-box {
-  background: #11151C;
+  background: linear-gradient(135deg, #1A1A2E 0%, #2B2938 100%);
   width: 90%;
-  max-width: 400px;
-  border-radius: 20px;
-  border: 1px solid #D4AF37;
+  max-width: 450px;
+  border-radius: 25px;
+  border: 2px solid #FFD500;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .ad-box h2 {
-  background: #D4AF37;
-  color: #0A0C10;
+  background: linear-gradient(135deg, #FFD500 0%, #FFC700 100%);
+  color: #1A1A2E;
   margin: 0;
-  padding: 15px;
-  font-size: 18px;
+  padding: 18px;
+  font-size: 20px;
   text-align: center;
+  font-weight: 800;
 }
 
 .ad-content {
-  padding: 20px;
-  color: #fff;
+  padding: 25px;
+  color: #FFFFFF;
   font-size: 14px;
-  max-height: 300px;
+  line-height: 1.8;
+  max-height: 350px;
   overflow-y: auto;
+}
+
+.ad-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ad-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.ad-content::-webkit-scrollbar-thumb {
+  background: #FFD500;
+  border-radius: 10px;
 }
 
 .ad-btn {
   width: 100%;
-  padding: 15px;
+  padding: 18px;
   background: transparent;
   border: none;
-  border-top: 1px solid rgba(212, 175, 55, 0.3);
-  color: #D4AF37;
+  border-top: 1px solid rgba(255, 213, 0, 0.3);
+  color: #FFD500;
   cursor: pointer;
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 800;
+  font-size: 18px;
+  transition: all 0.3s ease;
 }
 
 .ad-btn:hover {
-  background: rgba(212, 175, 55, 0.05);
+  background: rgba(255, 213, 0, 0.1);
 }
 
-/* استجابة للشاشات الصغيرة */
+/* تحسينات للهواتف */
 @media (max-width: 480px) {
-  .login-card {
-    padding: 1.8rem 1.2rem 1.5rem;
+  .login-page {
+    padding: 15px;
   }
-  .login-option {
-    font-size: 0.8rem;
-    padding: 0.6rem 0;
+  
+  .main-card {
+    padding: 30px 20px;
+    border-radius: 30px;
   }
+  
+  .tabs-container {
+    gap: 20px;
+  }
+  
+  .tab-btn {
+    font-size: 14px;
+  }
+  
+  .form-input {
+    font-size: 15px;
+    padding: 16px 50px 16px 45px;
+  }
+  
   .login-btn {
-    font-size: 1rem;
-    padding: 0.8rem;
+    font-size: 18px;
+    padding: 18px;
   }
-  .country-select {
+  
+  .logo-circle {
+    width: 85px;
+    height: 85px;
+  }
+  
+  .logo-img {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .app-name {
+    font-size: 20px;
+  }
+  
+  .support-fab {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .tabs-container {
+    gap: 15px;
+  }
+  
+  .tab-btn {
+    font-size: 13px;
+  }
+  
+  .country-select-inline {
     width: 100px;
-    font-size: 0.8rem;
-    padding: 0.8rem 0.5rem;
+    font-size: 12px;
   }
 }
 </style>
