@@ -379,7 +379,7 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 50%;
+  height: 430px;
   overflow: hidden;
   z-index: 0;
 }
@@ -396,7 +396,7 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 50%;
+  height: 430px;
   background: linear-gradient(
     to bottom,
     rgba(11, 14, 22, 0) 0%,
@@ -468,14 +468,14 @@ export default {
 
 .logo-frame {
   position: relative;
-  width: 95px;
-  height: 95px;
+  width: 100px;
+  height: 100px;
   margin-bottom: 12px;
 }
 
 .logo-white {
-  width: 95px;
-  height: 95px;
+  width: 100px;
+  height: 100px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -488,8 +488,8 @@ export default {
 }
 
 .logo-img {
-  width: 55px;
-  height: 55px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
 }
 
@@ -499,6 +499,7 @@ export default {
   font-weight: 700;
   letter-spacing: 3px;
   margin: 0;
+  margin-top: -4px;
   text-transform: uppercase;
 }
 
@@ -506,7 +507,7 @@ export default {
 .content-wrapper {
   position: relative;
   z-index: 2;
-  width: 92%;
+  width: 95%;
   max-width: 440px;
   margin-bottom: 40px;
 }
@@ -596,7 +597,7 @@ export default {
 
 .form-input {
   width: 100%;
-  height: 58px;
+  height: 60px;
   padding: 0 48px 0 44px;
   background: #5a5864;
   border: none;
@@ -634,7 +635,7 @@ export default {
 
 .country-select {
   width: 100px;
-  height: 58px;
+  height: 60px;
   padding: 0 10px;
   background: #5a5864;
   border: none;
@@ -676,7 +677,7 @@ export default {
 
 /* زر تسجيل الدخول */
 .login-btn {
-  width: 100%;
+  width: 98%;
   height: 70px;
   background: #FFD400;
   border: none;
@@ -686,6 +687,9 @@ export default {
   font-weight: 700;
   cursor: pointer;
   margin-top: 24px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
   transition: all 0.2s ease;
   box-shadow: 0 5px 18px rgba(0, 0, 0, 0.15);
 }
@@ -738,7 +742,7 @@ export default {
 .support-fab {
   position: absolute;
   right: -18px;
-  top: 120px;
+  top: 165px;
   width: 52px;
   height: 52px;
   cursor: pointer;
@@ -857,25 +861,30 @@ export default {
 
 /* تحسينات الشاشات الصغيرة */
 @media (max-width: 480px) {
+  .hero-image,
+  .hero-overlay {
+    height: 380px;
+  }
+  
   .logo-section {
     margin-top: 75px;
     margin-bottom: 18px;
   }
   
   .logo-frame {
-    width: 88px;
-    height: 88px;
+    width: 92px;
+    height: 92px;
   }
   
   .logo-white {
-    width: 88px;
-    height: 88px;
+    width: 92px;
+    height: 92px;
     border-radius: 22px;
   }
   
   .logo-img {
-    width: 50px;
-    height: 50px;
+    width: 55px;
+    height: 55px;
   }
   
   .app-name {
@@ -901,13 +910,13 @@ export default {
   }
   
   .form-input {
-    height: 54px;
+    height: 56px;
     font-size: 14px;
   }
   
   .country-select {
     width: 95px;
-    height: 54px;
+    height: 56px;
     font-size: 13px;
   }
   
@@ -918,7 +927,7 @@ export default {
   
   .support-fab {
     right: -14px;
-    top: 100px;
+    top: 140px;
     width: 48px;
     height: 48px;
   }
@@ -937,25 +946,30 @@ export default {
 }
 
 @media (max-width: 360px) {
+  .hero-image,
+  .hero-overlay {
+    height: 340px;
+  }
+  
   .logo-section {
     margin-top: 65px;
     margin-bottom: 16px;
   }
   
   .logo-frame {
-    width: 80px;
-    height: 80px;
+    width: 84px;
+    height: 84px;
   }
   
   .logo-white {
-    width: 80px;
-    height: 80px;
+    width: 84px;
+    height: 84px;
     border-radius: 20px;
   }
   
   .logo-img {
-    width: 46px;
-    height: 46px;
+    width: 50px;
+    height: 50px;
   }
   
   .app-name {
@@ -982,14 +996,14 @@ export default {
   }
   
   .form-input {
-    height: 50px;
+    height: 52px;
     font-size: 13px;
     padding: 0 44px 0 40px;
   }
   
   .country-select {
     width: 88px;
-    height: 50px;
+    height: 52px;
     font-size: 12px;
   }
   
@@ -1006,7 +1020,7 @@ export default {
   
   .support-fab {
     right: -10px;
-    top: 90px;
+    top: 120px;
     width: 44px;
     height: 44px;
   }
