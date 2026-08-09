@@ -1,5 +1,5 @@
 <template>
-  <div class="register-page">
+  <div class="register-page" dir="rtl">
 
     <!-- =========================
          القسم العلوي / الخلفية
@@ -62,7 +62,7 @@
         </div>
 
 
-        <!-- رسالة الخطأ العامة -->
+        <!-- رسالة الخطأ -->
         <div
           v-if="errorMessage"
           class="error-message-box"
@@ -632,7 +632,7 @@ export default {
         if (this.inviteCode) {
           const q = query(
             collection(db, "users"),
-            where("referralCode", "=="", this.inviteCode)
+            where("referralCode", "==", this.inviteCode)
           );
           const querySnapshot = await getDocs(q);
           if (!querySnapshot.empty) {
