@@ -37,132 +37,6 @@
       </div>
     </transition>
 
-    <!-- ==================== REVIEW MODAL (نافذة التقييم) ==================== -->
-    <transition name="modal-fade-scale">
-      <div v-if="showReviewModal" class="custom-modal-overlay" @click.self="closeReviewModal">
-        <div class="custom-modal-container review-modal">
-          <div class="custom-modal-header success">
-            <div class="header-icon">
-              <i class="fas fa-star"></i>
-            </div>
-            <h3>قيم المنصة</h3>
-            <button class="modal-close-btn" @click="closeReviewModal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          
-          <div class="custom-modal-body">
-            <!-- تقييم بالنجوم -->
-            <div class="rating-stars">
-              <span 
-                v-for="star in 5" 
-                :key="star"
-                class="star"
-                :class="{ active: star <= reviewData.rating }"
-                @click="reviewData.rating = star"
-              >
-                ★
-              </span>
-            </div>
-            
-            <!-- حقل كتابة الرسالة -->
-            <div class="review-message-input">
-              <textarea 
-                v-model="reviewData.message" 
-                placeholder="اكتب تقييمك للمنصة..."
-                rows="4"
-                class="gold-input-field"
-              ></textarea>
-            </div>
-            
-            <!-- زر إرسال التقييم -->
-            <button 
-              class="submit-review-btn" 
-              @click="submitReview" 
-              :disabled="reviewData.rating === 0 || isSubmittingReview"
-            >
-              <i class="fas fa-paper-plane"></i> 
-              {{ isSubmittingReview ? 'جاري الإرسال...' : 'إرسال التقييم' }}
-            </button>
-            
-            <!-- عرض التقييمات -->
-            <div class="previous-reviews">
-              <h4>آخر التقييمات <i class="fas fa-comments"></i></h4>
-              <div class="reviews-list">
-                <div v-for="(review, index) in fakeReviews" :key="index" class="review-item">
-                  <div class="review-avatar">
-                    {{ review.name.charAt(0).toUpperCase() }}
-                  </div>
-                  <div class="review-content">
-                    <div class="review-header">
-                      <span class="review-name">{{ review.name }}</span>
-                      <span class="review-country">{{ review.flag }}</span>
-                      <span class="review-time">{{ review.time }}</span>
-                    </div>
-                    <div class="review-stars">
-                      <span v-for="s in 5" :key="s" class="small-star" :class="{ active: s <= review.rating }">★</span>
-                    </div>
-                    <p class="review-text">{{ review.message }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="modal-gold-line"></div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- ==================== TOAST NOTIFICATION SYSTEM ==================== -->
-    <transition-group 
-      name="toast" 
-      tag="div" 
-      class="toast-container"
-    >
-      <div 
-        v-for="toast in toasts" 
-        :key="toast.id"
-        class="toast-notification"
-        :class="[toast.type, { 'toast-hiding': toast.isHiding }]"
-        @mouseenter="pauseAutoHide(toast.id)"
-        @mouseleave="resumeAutoHide(toast.id)"
-      >
-        <div class="toast-glow"></div>
-        
-        <div class="toast-content">
-          <div class="toast-header">
-            <span class="toast-icon" :class="toast.type">
-              {{ toast.type === 'deposit' ? '💰' : '💸' }}
-            </span>
-            <span class="toast-flag">{{ toast.flag }}</span>
-            <span class="toast-time">{{ toast.timestampEn }}</span>
-          </div>
-          
-          <div class="toast-body">
-            <div class="toast-email">{{ toast.email }}</div>
-            <div class="toast-action">
-              <span class="action-label">{{ toast.actionLabel }}</span>
-              <span class="action-amount" :class="toast.type">
-                {{ toast.type === 'deposit' ? '+' : '-' }}{{ formatNumber(toast.amount) }} USDT
-              </span>
-            </div>
-          </div>
-          
-          <div class="toast-progress" :style="{ width: toast.progress + '%' }"></div>
-        </div>
-        
-        <button class="toast-close" @click="removeToast(toast.id)">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-    </transition-group>
-
-    <!-- ==================== HIDDEN AUDIO ELEMENT ==================== -->
-    <audio ref="notificationSound" preload="auto">
-      <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-click-234.mp3" type="audio/mpeg">
-    </audio>
-
     <!-- ==================== HEADER ==================== -->
     <header class="app-header">
       <div class="header-top">
@@ -193,33 +67,25 @@
       </div>
     </header>
 
-    <!-- ==================== BALANCE CARDS SECTION ==================== -->
-    <div class="balance-cards-section">
-      <!-- بطاقة رصيد الأرباح القابل للسحب -->
-      <div class="balance-card withdrawable-card">
-        <div class="card-content">
-          <div class="card-title">{{ t('withdrawableBalance') }}</div>
-          <div class="card-amount"><span class="currency-symbol withdrawable-text">USDT</span> {{ formatNumber(vipBalance) }}</div>
+    <!-- ==================== UNIFIED BALANCE ==================== -->
+    <div class="balance-single-section">
+      <div class="balance-single-card">
+        <div class="balance-single-top">
+          <div>
+            <div class="balance-single-label">{{ t('totalBalance') }}</div>
+            <div class="balance-single-subtitle">{{ t('availableBalance') }}</div>
+          </div>
+          <div class="xrp-mark">XRP</div>
         </div>
-        <div class="card-arrow">
-          <i class="fas fa-chevron-left"></i>
+        <div class="balance-single-value">
+          <span>{{ formatNumber(totalBalance) }}</span>
+          <small>USDT</small>
         </div>
-        <div class="card-icon-wrapper withdrawable">
-          <i class="fas fa-wallet"></i>
-        </div>
-      </div>
-
-      <!-- بطاقة رصيد الترقية -->
-      <div class="balance-card upgrade-card">
-        <div class="card-content">
-          <div class="card-title">{{ t('upgradeBalance') }}</div>
-          <div class="card-amount"><span class="currency-symbol upgrade-text">USDT</span> {{ formatNumber(depositBalance) }}</div>
-        </div>
-        <div class="card-arrow">
-          <i class="fas fa-chevron-left"></i>
-        </div>
-        <div class="card-icon-wrapper upgrade">
-          <i class="fas fa-arrow-up"></i>
+        <div class="balance-single-footer">
+          <span><i class="fas fa-circle-check"></i> {{ t('unifiedBalance') }}</span>
+          <button class="refresh-btn light" @click="refreshBalance" :disabled="refreshing">
+            <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -283,9 +149,9 @@
     </div>
 
     <!-- ==================== PROMO BANNER ==================== -->
-    <div class="promo-banner" @click="openReviewModal">
+    <div class="promo-banner">
       <span class="banner-emoji">⭐</span>
-      <span class="banner-text">قيم المنصة وانضم إلى آلاف المستخدمين الراضين</span>
+      <span class="banner-text">إدارة أبسط، رصيد موحّد، وتجربة XRP بتصميم أبيض وأسود</span>
     </div>
 
     <!-- ==================== MAIN MENU ==================== -->
@@ -312,55 +178,15 @@
         <span class="menu-title">{{ t('aboutCompany') }}</span>
         <i class="fas fa-chevron-left menu-arrow"></i>
       </div>
-
-      <div class="menu-item special small" @click="showTermsModal">
-        <div class="menu-icon gold">
-          <i class="fas fa-file-contract"></i>
-        </div>
-        <span class="menu-title">{{ t('termsConditions') }}</span>
-        <i class="fas fa-chevron-left menu-arrow"></i>
       </div>
-    </div>
 
-    <!-- ==================== QUICK STATS SECTION ==================== -->
-    <div class="stats-section">
-      <h3 class="section-title">{{ t('quickStats') }}</h3>
-      <div class="stats-grid">
-        <div class="stat-card gold-border" @click="showTotalPaidInfo">
-          <div class="stat-icon">$</div>
-          <div class="stat-value">
-            <span>+${{ formatLargeNumber(totalPaid) }}</span>
-          </div>
-          <div class="stat-label">{{ t('totalPaid') }}</div>
-        </div>
-        <div class="stat-card" @click="showActiveMembersInfo">
-          <div class="stat-icon"><i class="fas fa-users"></i></div>
-          <div class="stat-value">
-            <span>+{{ formatLargeNumber(activeMembers) }}</span>
-          </div>
-          <div class="stat-label">{{ t('activeMembers') }}</div>
-        </div>
-
-        <div class="stat-card" @click="openReviewModal">
-          <div class="stat-icon"><i class="fas fa-star"></i></div>
-          <div class="stat-value">{{ averageRating }}</div>
-          <div class="stat-label">{{ t('rating') }}</div>
-        </div>
-
-        <div class="stat-card" @click="showCountriesInfo">
-          <div class="stat-icon"><i class="fas fa-globe"></i></div>
-          <div class="stat-value">+150</div>
-          <div class="stat-label">{{ t('countries') }}</div>
-        </div>
-      </div>
-    </div>
 
     <!-- ==================== MODAL: COMPANY INFO ==================== -->
     <transition name="modal">
       <div v-if="showCompany" class="modal-overlay" @click.self="closeCompanyModal">
         <div class="modal-content" @click.stop>
           <div class="modal-header">
-            <h3>🌴 Palm Treasure</h3>
+            <h3>XRP</h3>
             <button class="close-btn" @click="closeCompanyModal">
               <i class="fas fa-times"></i>
             </button>
@@ -369,16 +195,10 @@
           <div class="modal-body">
             <div class="company-text">
               <p>
-                مرحباً بالجميع 🌟<br><br>
-                يسرّنا أن نعرفكم بشركة Palm Treasure التي تأسست في إنجلترا بتاريخ 5 فبراير 2026، وهي شركة استثمارية متخصصة في مجال التجارة الإلكترونية. تمتلك الشركة فريقاً تقنياً محترفاً وخبرة مالية قوية، ويقع مقرها الرئيسي حالياً في منطقة الأعمال المركزية في إنجلترا.<br><br>
-                وانطلاقاً من رؤيتنا للتوسع وبناء شبكة تعاون واسعة، قمنا بإنشاء فروع ووكالات في عدد من الدول العربية مثل لبنان، الجزائر، ليبيا، والعراق، ونسعى خلال المرحلة القادمة إلى توسيع نشاطنا وانتشارنا في مختلف دول الشرق الأوسط.<br><br>
-                لقد جاء تأسيس هذه الشركة بعد دراسة عميقة لما حدث خلال عامي 2024 و2025، حيث ظهرت العديد من المنصات الوهمية التي خدعت الكثير من الناس ولم تستمر طويلاً. ومن هنا كان هدفنا واضحاً: تحويل هذا المجال إلى منصة حقيقية وموثوقة يستفيد منها الأعضاء كما تستفيد منها الشركة، ضمن نظام عادل وشفاف.<br><br>
-                وقد تحقق هذا المشروع بجهود كبيرة من الفريق التقني تحت إشراف المهندس أليكس ديروب، الذي لعب دوراً أساسياً في تطوير النظام التقني للشركة. وتقديراً لجهوده المميزة ومساهمته في نجاح هذا المشروع، تمت ترقيته إلى منصب نائب المدير.<br><br>
-                نحن في Palm Treasure نؤمن بأن النجاح الحقيقي يجب أن يكون متاحاً للجميع، لذلك تم تصميم هذا المشروع ليكون فرصة متاحة لكل الناس، وخاصة للطبقة المتوسطة وذوي الدخل المحدود، حتى يتمكنوا من تحسين أوضاعهم والمشاركة في فرص الاقتصاد الرقمي.<br><br>
-                ولهذا السبب تم وضع نظام واضح وقوانين عادلة تضمن حماية حقوق الموظفين والأعضاء قبل حقوق المستثمرين، مع مراعاة الظروف الاقتصادية والاجتماعية في المجتمعات العربية.<br><br>
-                وسيتم تطبيق هذا النظام المبرمج في معظم الدول العربية ابتداءً من 1 مارس 2026 وحتى نهاية عام 2028، وخلال هذه الفترة سيتم تقييم الأداء والنتائج. وبعد ذلك قد يتم تطوير النظام وإجراء بعض التعديلات بناءً على كفاءة الأعضاء وجهودهم وإخلاصهم في العمل.<br><br>
-                كما نعمل منذ الآن على التخطيط لمجموعة من الفرص المستقبلية والمشاريع الجديدة التي ستوفر المزيد من الإمكانيات لأعضاء الشركة في السنوات القادمة.<br><br>
-                نتمنى للجميع التوفيق، ونسعد بانضمامكم إلى مجتمع Palm Treasure 🌴
+                مرحباً بكم في الواجهة الرقمية الجديدة. تم تصميم هذه الصفحة لتقديم تجربة بسيطة وواضحة لإدارة الرصيد والخدمات الرقمية من مكان واحد.<br><br>
+                تعتمد الواجهة على تصميم أبيض وأسود حديث مع إبراز XRP كهوية بصرية للأصل الرقمي، مع عرض الرصيد بشكل موحّد بدلاً من تقسيمه إلى أرصدة منفصلة.<br><br>
+                هدفنا من هذا التصميم هو جعل الوصول إلى المعلومات والعمليات الأساسية أكثر سهولة، وتقليل العناصر المشتتة، وتقديم تجربة استخدام سريعة ومتناسقة على الهاتف والكمبيوتر.<br><br>
+                نحرص على إبقاء المعلومات المعروضة داخل الحساب واضحة وقابلة للمراجعة، وأي تفاصيل مالية أو شروط تشغيلية يجب أن تعتمد على بيانات الحساب الفعلية وإعدادات النظام، وليس على أرقام أو إشعارات تجريبية.
               </p>
             </div>
 
@@ -421,83 +241,6 @@
       </div>
     </transition>
 
-    <!-- ==================== MODAL: TERMS & CONDITIONS ==================== -->
-    <transition name="modal">
-      <div v-if="showTerms" class="modal-overlay" @click.self="closeTermsModal">
-        <div class="modal-content" @click.stop>
-          <div class="modal-header">
-            <h3>📜 {{ t('termsConditions') }}</h3>
-            <button class="close-btn" @click="closeTermsModal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="terms-text">
-              <h4>📊 {{ t('businessContracts') }}</h4>
-              <p>
-                في عالم الأعمال الحديث، لا يُقاس النجاح فقط بما يحققه الشخص لنفسه، بل بقدرته على بناء فريق قوي وفعّال يقوده نحو التقدم والازدهار.<br><br>
-                عند وصول عدد أعضاء فريقك إلى 70 عضواً نشطاً أو أكثر، تقوم الشركة بإبرام عقد رسمي معك.
-              </p>
-
-              <div class="salary-table">
-                <div class="table-row">
-                  <span>70 عضو</span>
-                  <span>مساعد فريق</span>
-                  <span class="highlight">$200/شهر</span>
-                </div>
-                <div class="table-row">
-                  <span>140 عضو</span>
-                  <span>مشرف فريق</span>
-                  <span class="highlight">$350/شهر</span>
-                </div>
-                <div class="table-row">
-                  <span>300 عضو</span>
-                  <span>مدير فريق</span>
-                  <span class="highlight">$500/شهر</span>
-                </div>
-              </div>
-
-              <h4>💵 {{ t('vipWithdrawalSchedule') }}</h4>
-              <div class="schedule-list">
-                <div v-for="day in withdrawalDays" :key="day.id" class="schedule-item">
-                  <span class="day">{{ day.day }}</span>
-                  <span class="vips">{{ day.vips }}</span>
-                </div>
-              </div>
-
-              <h4>👑 مميزات VIP 8 فأعلى</h4>
-              <div class="vip-features">
-                <div class="feature-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span>يمكن السحب في أي وقت - لا يوجد يوم محدد</span>
-                </div>
-                <div class="feature-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span>يمكن سحب أي مبلغ - لا يوجد حد أدنى</span>
-                </div>
-                <div class="feature-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span>أولوية معالجة طلبات السحب</span>
-                </div>
-                <div class="feature-item">
-                  <i class="fas fa-check-circle"></i>
-                  <span>دعم فني على مدار الساعة</span>
-                </div>
-              </div>
-
-              <div class="info-note">
-                <i class="fas fa-info-circle"></i>
-                <p>ملاحظة: يستطيع أعضاء VIP 8 فأعلى سحب أرباحهم في أي وقت وأي مبلغ يريدونه دون التقيد بيوم محدد أو حد أدنى للسحب.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn-ok" @click="acceptTerms">{{ t('iAccept') }}</button>
-          </div>
-        </div>
-      </div>
-    </transition>
 
     <!-- ==================== SIDEBAR ==================== -->
     <transition name="slide">
@@ -506,7 +249,7 @@
     <transition name="slide">
       <aside v-if="sidebarOpen" class="sidebar">
         <div class="sidebar-header">
-          <span>🌴 Palm Treasure</span>
+          <span>XRP</span>
           <button @click="toggleSidebar"><i class="fas fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
@@ -537,82 +280,17 @@ export default {
   data() {
     return {
       username: "جار التحميل...",
-      vipBalance: 0,
-      depositBalance: 0,
+      balance: 0,
       currentUserUid: null,
       refreshing: false,
       
       showCompany: false,
-      showTerms: false,
       sidebarOpen: false,
       searchQuery: "",
       unreadCount: 3,
       currentLang: localStorage.getItem("app_language") || "AR",
 
       // ==================== REVIEW SYSTEM ====================
-      showReviewModal: false,
-      isSubmittingReview: false,
-      reviewData: {
-        rating: 0,
-        message: ""
-      },
-      fakeReviews: [],
-      
-      // قائمة الأسماء الوهمية للتقييمات اليومية
-      reviewsList: [
-        { name: "أحمد محمد", country: "🇸🇦", rating: 5, message: "منصة رائعة جداً، أرباح يومية ممتازة وسحب فوري" },
-        { name: "سارة خالد", country: "🇪🇬", rating: 5, message: "تجربة ممتازة، دعم فني متجاوب وفريق محترم" },
-        { name: "محمد علي", country: "🇦🇪", rating: 4, message: "منصة موثوقة وأرباحها حقيقية، أنصح بها الجميع" },
-        { name: "نورة عبدالله", country: "🇰🇼", rating: 5, message: "أفضل منصة استثمارية جربتها، أرباح يومية ثابتة" },
-        { name: "عمر سعيد", country: "🇶🇦", rating: 5, message: "سحبت أرباحي بكل سهولة، شكراً لفريق Palm Treasure" },
-        { name: "فاطمة الزهراء", country: "🇲🇦", rating: 5, message: "منصة مذهلة وسهلة الاستخدام، أرباح رائعة" },
-        { name: "يوسف حسن", country: "🇯🇴", rating: 4, message: "تجربة ممتازة وسحب سريع، أنصح بالاستثمار" },
-        { name: "ليلى عماد", country: "🇱🇧", rating: 5, message: "أفضل قرار استثماري اتخذته، شكراً لكم" },
-        { name: "عبدالله سعد", country: "🇧🇭", rating: 5, message: "منصة تستحق الثقة، أرباح يومية مضمونة" },
-        { name: "منى حسين", country: "🇩🇿", rating: 4, message: "تجربة جميلة وسهلة، أنصح الجميع بالتسجيل" },
-        { name: "خالد العتيبي", country: "🇸🇦", rating: 5, message: "أفضل منصة في الوطن العربي، شكراً لكم" },
-        { name: "ريم حسام", country: "🇪🇬", rating: 5, message: "سحبت أرباحي خلال دقائق، منصة موثوقة 100%" },
-        { name: "سيف الدين", country: "🇸🇾", rating: 4, message: "منصة ممتازة وأداء رائع، أنصح بها" },
-        { name: "هدى ناصر", country: "🇮🇶", rating: 5, message: "تجربة فريدة من نوعها، أرباح حقيقية وليست وهمية" },
-        { name: "وليد السعيد", country: "🇱🇾", rating: 5, message: "الحمد لله وجدت منصة موثوقة، ألف شكر لكم" },
-        { name: "أمل السالم", country: "🇹🇳", rating: 4, message: "منصة تستحق التقدير، دعم فني رائع" },
-        { name: "ناصر القحطاني", country: "🇸🇦", rating: 5, message: "أفضل قرار استثماري في حياتي" },
-        { name: "مها السيد", country: "🇪🇬", rating: 5, message: "منصة مذهلة وسحب فوري، أنصح الجميع بالتسجيل" }
-      ],
-      
-      // أوقات عشوائية
-      timesList: ["الآن", "قبل دقيقة", "قبل 5 دقائق", "قبل ساعة", "قبل ساعتين", "قبل 3 ساعات", "قبل 5 ساعات", "قبل يوم", "قبل يومين", "قبل 3 أيام"],
-
-      // ==================== CUSTOM MODAL SYSTEM ====================
-      modal: {
-        visible: false,
-        type: 'info',
-        title: '',
-        message: '',
-        icon: 'fas fa-info-circle',
-        buttonText: '',
-        confirmText: '',
-        cancelText: '',
-        size: 'small',
-        callback: null
-      },
-
-      // ==================== STATIC STATS ====================
-      totalPaid: 35000000,
-      activeMembers: 250000,
-
-      // ==================== TOAST NOTIFICATION SYSTEM ====================
-      toasts: [],
-      toastInterval: null,
-      audioEnabled: false,
-      pausedToasts: new Set(),
-      
-      realNames: [
-        'ahmad', 'mohamed', 'ali', 'omar', 'youssef', 'khaled', 'hassan',
-        'nour', 'sara', 'fatima', 'mariam', 'layla', 'rana', 'huda',
-        'amr', 'tarek', 'saif', 'karim', 'samir', 'waleed', 'john', 'emma',
-        'david', 'sophia', 'james', 'lisa', 'robert', 'maria'
-      ],
       
       flags: [
         '🇸🇦', '🇪🇬', '🇩🇿', '🇲🇦', '🇮🇶', '🇸🇩', '🇯🇴', '🇱🇧', '🇵🇸', '🇦🇪', '🇶🇦', '🇰🇼',
@@ -673,9 +351,8 @@ export default {
           myReferrals: 'إحالاتي',
           transactions: 'المعاملات',
           viewHistory: 'عرض السجل',
-          globalPartnerships: 'شراكة عالمية مع Amazon, eBay, TikTok, AliExpress, Alibaba, Shopee',
+          globalPartnerships: 'تجربة رقمية حديثة بهوية XRP',
           aboutCompany: 'الشركة',
-          termsConditions: 'الشروط والأحكام',
           vipPlans: 'خطط العضوية',
           daily: 'يومي',
           commissionSystem: 'نظام العمولات',
@@ -690,26 +367,13 @@ export default {
           vip: 'VIP',
           tasks: 'المهام',
           profile: 'حسابي',
-          quickStats: 'إحصائيات سريعة',
-          totalPaid: 'إجمالي المدفوعات',
-          activeMembers: 'عضو نشط',
-          rating: 'التقييم',
-          countries: 'الدول',
           agency: 'وكالة',
           program: 'تحميل التطبيق',
-          totalPaidInfo: 'إجمالي المدفوعات: $35,000,000',
-          activeMembersInfo: 'عدد الأعضاء النشطين: 250,000 عضو',
-          countriesInfo: 'عدد الدول: أكثر من 150 دولة حول العالم',
-          termsAccepted: 'تمت الموافقة على الشروط والأحكام بنجاح ✓',
           balanceUpdated: 'تم تحديث الرصيد بنجاح ✓',
           refreshError: 'حدث خطأ في تحديث الرصيد، حاول مرة أخرى',
           languageChanged: 'تم تغيير اللغة بنجاح',
           reviewSubmitted: 'تم إرسال تقييمك بنجاح! شكراً لك على مشاركتنا رأيك',
           pleaseSelectRating: 'الرجاء اختيار تقييم بالنجوم أولاً',
-          withdrawableBalance: 'الأرباح القابل للسحب',
-          withdrawableDesc: 'أرباح VIP المتاحة للسحب',
-          upgradeBalance: 'رصيد الترقية',
-          upgradeDesc: 'مخصص للترقية إلى مستويات VIP'
         },
         EN: {
           totalBalance: 'Total Balance',
@@ -724,9 +388,8 @@ export default {
           myReferrals: 'My Referrals',
           transactions: 'Transactions',
           viewHistory: 'View History',
-          globalPartnerships: 'Global Partnerships: Amazon, eBay, TikTok, AliExpress, Alibaba, Shopee',
+          globalPartnerships: 'Modern digital experience with XRP identity',
           aboutCompany: 'Company',
-          termsConditions: 'Terms & Conditions',
           vipPlans: 'Membership Plans',
           daily: 'Daily',
           commissionSystem: 'Commission System',
@@ -741,26 +404,13 @@ export default {
           vip: 'VIP',
           tasks: 'Tasks',
           profile: 'Profile',
-          quickStats: 'Quick Stats',
-          totalPaid: 'Total Paid',
-          activeMembers: 'Active Members',
-          rating: 'Rating',
-          countries: 'Countries',
           agency: 'Agency',
           program: 'Download App',
-          totalPaidInfo: 'Total Paid: $35,000,000',
-          activeMembersInfo: 'Active Members: 250,000 members',
-          countriesInfo: 'Countries: More than 150 countries worldwide',
-          termsAccepted: 'Terms and conditions accepted successfully ✓',
           balanceUpdated: 'Balance updated successfully ✓',
           refreshError: 'Error refreshing balance, please try again',
           languageChanged: 'Language changed successfully',
           reviewSubmitted: 'Your review has been submitted successfully! Thank you for sharing your feedback',
           pleaseSelectRating: 'Please select a star rating first',
-          withdrawableBalance: 'Withdrawable Balance',
-          withdrawableDesc: 'VIP profits available for withdrawal',
-          upgradeBalance: 'Upgrade Balance',
-          upgradeDesc: 'For upgrading to VIP levels'
         }
       }
     };
@@ -768,172 +418,19 @@ export default {
 
   computed: {
     totalBalance() {
-      return this.vipBalance + this.depositBalance;
+      return this.balance;
     },
-    
-    averageRating() {
-      if (this.fakeReviews.length === 0) return "0";
-      const sum = this.fakeReviews.reduce((acc, r) => acc + r.rating, 0);
-      return (sum / this.fakeReviews.length).toFixed(1);
-    }
   },
 
   created() {
     this.initAuth();
-    this.initToastSystem();
-    this.loadDailyReviews();
   },
 
   mounted() {
-    document.addEventListener('click', this.enableAudio, { once: true });
-    document.addEventListener('touchstart', this.enableAudio, { once: true });
-  },
-
-  beforeUnmount() {
-    if (this.toastInterval) {
-      clearInterval(this.toastInterval);
-    }
-    document.removeEventListener('click', this.enableAudio);
-    document.removeEventListener('touchstart', this.enableAudio);
   },
 
   methods: {
-    // ==================== REVIEW SYSTEM METHODS ====================
-    
-    // جلب تقييمات عشوائية مختلفة كل يوم
-    getDailyRandomReviews() {
-      const today = new Date().toDateString();
-      const savedDate = localStorage.getItem('reviews_date');
-      let reviews = localStorage.getItem('daily_reviews');
-      
-      if (savedDate !== today || !reviews) {
-        // خلط الأسماء بشكل عشوائي
-        const shuffled = [...this.reviewsList];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        
-        // اختيار 8 تقييمات عشوائية وإضافة أوقات عشوائية
-        reviews = shuffled.slice(0, 8).map((item) => ({
-          name: item.name,
-          flag: item.country,
-          rating: item.rating,
-          message: item.message,
-          time: this.timesList[Math.floor(Math.random() * this.timesList.length)]
-        }));
-        
-        localStorage.setItem('daily_reviews', JSON.stringify(reviews));
-        localStorage.setItem('reviews_date', today);
-        console.log("تم تحديث التقييمات اليومية");
-      } else {
-        reviews = JSON.parse(reviews);
-      }
-      
-      return reviews;
-    },
-    
-    loadDailyReviews() {
-      // جلب التقييمات اليومية العشوائية
-      this.fakeReviews = this.getDailyRandomReviews();
-      
-      // إضافة تقييمات المستخدمين السابقة إن وجدت
-      const savedUserReviews = localStorage.getItem('user_reviews');
-      if (savedUserReviews) {
-        const userReviews = JSON.parse(savedUserReviews);
-        // إضافة تقييمات المستخدمين في الأعلى
-        this.fakeReviews = [...userReviews, ...this.fakeReviews];
-      }
-    },
-    
-    openReviewModal() {
-      this.showReviewModal = true;
-      this.reviewData = { rating: 0, message: "" };
-      this.isSubmittingReview = false;
-      document.body.style.overflow = 'hidden';
-    },
 
-    closeReviewModal() {
-      this.showReviewModal = false;
-      document.body.style.overflow = 'auto';
-    },
-
-    async submitReview() {
-      if (this.reviewData.rating === 0) {
-        this.showErrorMessage(this.t('pleaseSelectRating'));
-        return;
-      }
-      
-      this.isSubmittingReview = true;
-      
-      // الحصول على اسم المستخدم الحقيقي
-      let userName = this.username || "مستخدم";
-      
-      // محاولة جلب اسم المستخدم من Firestore إذا كان متاحاً
-      if (this.currentUserUid) {
-        try {
-          const userSnap = await getDoc(doc(db, "users", this.currentUserUid));
-          if (userSnap.exists() && userSnap.data().username) {
-            userName = userSnap.data().username;
-          }
-        } catch (e) {
-          console.log("Could not fetch username:", e);
-        }
-      }
-      
-      // إضافة التقييم الجديد
-      const newReview = {
-        name: userName,
-        flag: "⭐",
-        rating: this.reviewData.rating,
-        message: this.reviewData.message || "منصة رائعة! أنصح بها الجميع",
-        time: "الآن"
-      };
-      
-      // حفظ التقييمات في localStorage
-      const savedUserReviews = localStorage.getItem('user_reviews');
-      let userReviews = savedUserReviews ? JSON.parse(savedUserReviews) : [];
-      userReviews.unshift(newReview);
-      localStorage.setItem('user_reviews', JSON.stringify(userReviews));
-      
-      // تحديث قائمة التقييمات المعروضة
-      this.fakeReviews = [...userReviews, ...this.getDailyRandomReviews()];
-      
-      this.isSubmittingReview = false;
-      this.closeReviewModal();
-      this.showSuccessMessage(this.t('reviewSubmitted'));
-    },
-
-    // ==================== STATS INFO METHODS ====================
-    showTotalPaidInfo() {
-      this.showModal({
-        type: 'info',
-        title: this.t('totalPaid'),
-        message: this.t('totalPaidInfo'),
-        buttonText: this.t('understood'),
-        size: 'small'
-      });
-    },
-
-    showActiveMembersInfo() {
-      this.showModal({
-        type: 'info',
-        title: this.t('activeMembers'),
-        message: this.t('activeMembersInfo'),
-        buttonText: this.t('understood'),
-        size: 'small'
-      });
-    },
-
-    showCountriesInfo() {
-      this.showModal({
-        type: 'info',
-        title: this.t('countries'),
-        message: this.t('countriesInfo'),
-        buttonText: this.t('understood'),
-        size: 'small'
-      });
-    },
 
     // ==================== CUSTOM MODAL METHODS ====================
     showModal(options) {
@@ -1017,203 +514,12 @@ export default {
       return num.toFixed(0);
     },
 
-    generateRandomEmail() {
-      const name = this.realNames[Math.floor(Math.random() * this.realNames.length)];
-      const starsCount = Math.floor(Math.random() * 5) + 3;
-      const stars = '*'.repeat(starsCount);
-      const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'protonmail.com'];
-      const domain = domains[Math.floor(Math.random() * domains.length)];
-      return `${name}${stars}@${domain}`;
-    },
-
-    getRandomAmount() {
-      return this.amounts[Math.floor(Math.random() * this.amounts.length)];
-    },
-
-    getRandomFlag() {
-      return this.flags[Math.floor(Math.random() * this.flags.length)];
-    },
-
-    getRandomDuration() {
-      return Math.floor(Math.random() * 1000) + 2000;
-    },
-
-    getCurrentTimeEnglish() {
-      const now = new Date();
-      return now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
-    },
-
-    generateRandomToast() {
-      const types = ['deposit', 'withdraw'];
-      const type = types[Math.floor(Math.random() * types.length)];
-      const amount = this.getRandomAmount();
-      
-      const toast = {
-        id: Date.now() + Math.random(),
-        type: type,
-        email: this.generateRandomEmail(),
-        amount: amount,
-        flag: this.getRandomFlag(),
-        timestampEn: this.getCurrentTimeEnglish(),
-        actionLabel: type === 'deposit' ? this.t('deposit') : this.t('withdraw'),
-        progress: 100,
-        duration: this.getRandomDuration(),
-        isHiding: false,
-        hideTimer: null,
-        progressTimer: null,
-        startTime: null
-      };
-      
-      this.showToast(toast);
-    },
-
-    showToast(toast) {
-      this.playNotificationSound();
-      
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      
-      this.toasts.unshift(toast);
-      this.startAutoHide(toast);
-      
-      if (this.toasts.length > 5) {
-        const oldestToast = this.toasts[this.toasts.length - 1];
-        if (oldestToast.hideTimer) {
-          clearTimeout(oldestToast.hideTimer);
-        }
-        if (oldestToast.progressTimer) {
-          clearInterval(oldestToast.progressTimer);
-        }
-        this.toasts.pop();
-      }
-    },
-
-    startAutoHide(toast) {
-      const interval = 50;
-      const steps = toast.duration / interval;
-      let currentStep = 0;
-      toast.startTime = Date.now();
-      
-      toast.progressTimer = setInterval(() => {
-        if (this.pausedToasts.has(toast.id)) return;
-        
-        currentStep++;
-        toast.progress = 100 - (currentStep / steps * 100);
-        
-        if (currentStep >= steps) {
-          clearInterval(toast.progressTimer);
-          this.startFadeOut(toast);
-        }
-      }, interval);
-    },
-
-    startFadeOut(toast) {
-      if (toast.isHiding) return;
-      
-      toast.isHiding = true;
-      
-      const fadeOutDuration = Math.floor(Math.random() * 300) + 500;
-      
-      toast.hideTimer = setTimeout(() => {
-        this.removeToast(toast.id);
-      }, fadeOutDuration);
-    },
-
-    removeToast(id) {
-      const toast = this.toasts.find(t => t.id === id);
-      if (toast) {
-        if (toast.progressTimer) clearInterval(toast.progressTimer);
-        if (toast.hideTimer) clearTimeout(toast.hideTimer);
-      }
-      this.toasts = this.toasts.filter(t => t.id !== id);
-      this.pausedToasts.delete(id);
-    },
-
-    pauseAutoHide(id) {
-      this.pausedToasts.add(id);
-      const toast = this.toasts.find(t => t.id === id);
-      if (toast && toast.progressTimer) {
-        clearInterval(toast.progressTimer);
-      }
-    },
-
-    resumeAutoHide(id) {
-      this.pausedToasts.delete(id);
-      const toast = this.toasts.find(t => t.id === id);
-      if (toast && !toast.isHiding && toast.progress > 0 && toast.startTime) {
-        const elapsed = Date.now() - toast.startTime;
-        const remaining = toast.duration - elapsed;
-        
-        if (remaining > 0) {
-          const interval = 50;
-          const steps = remaining / interval;
-          let currentStep = 0;
-          
-          toast.progressTimer = setInterval(() => {
-            if (this.pausedToasts.has(toast.id)) return;
-            
-            currentStep++;
-            const newProgress = 100 - ((elapsed + (currentStep * interval)) / toast.duration * 100);
-            toast.progress = Math.max(0, newProgress);
-            
-            if (currentStep >= steps) {
-              clearInterval(toast.progressTimer);
-              this.startFadeOut(toast);
-            }
-          }, interval);
-        } else {
-          this.startFadeOut(toast);
-        }
-      } else if (toast && toast.isHiding) {
-        this.startFadeOut(toast);
-      }
-    },
-
-    async playNotificationSound() {
-      if (!this.audioEnabled) return;
-      
-      try {
-        const audio = this.$refs.notificationSound;
-        if (audio) {
-          audio.currentTime = 0;
-          await audio.play().catch(e => console.log('Audio play prevented:', e));
-        }
-      } catch (error) {
-        console.log('Sound playback error:', error);
-      }
-    },
-
-    enableAudio() {
-      this.audioEnabled = true;
-      const audio = this.$refs.notificationSound;
-      if (audio) {
-        audio.volume = 0.3;
-        audio.play().then(() => {
-          audio.pause();
-          audio.currentTime = 0;
-        }).catch(() => {});
-      }
-    },
-
-    formatNumber(num) {
-      return num.toFixed(2);
-    },
-
-    initToastSystem() {
-      this.toastInterval = setInterval(() => {
-        if (this.toasts.length < 5) {
-          this.generateRandomToast();
-        }
-      }, Math.random() * 3000 + 2000);
-    },
 
     async initAuth() {
       onAuthStateChanged(auth, async (user) => {
         if (!user) {
           this.username = "Guest";
-          this.vipBalance = 0;
-          this.depositBalance = 0;
+          this.balance = 0;
           this.$router.push("/login");
           return;
         }
@@ -1233,8 +539,7 @@ export default {
           this.username = data.username || data.email || "User";
           
           // ✅ الإصلاح النهائي باستخدام Nullish Coalescing
-          this.vipBalance = Number(data.vipBalance ?? data.balance ?? 0);
-          this.depositBalance = Number(data.depositBalance ?? 0);
+          this.balance = Number(data.balance ?? ((Number(data.vipBalance ?? 0)) + (Number(data.depositBalance ?? 0))));
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -1252,8 +557,7 @@ export default {
           const data = docSnap.data();
           
           // ✅ الإصلاح النهائي باستخدام Nullish Coalescing
-          this.vipBalance = Number(data.vipBalance ?? data.balance ?? 0);
-          this.depositBalance = Number(data.depositBalance ?? 0);
+          this.balance = Number(data.balance ?? ((Number(data.vipBalance ?? 0)) + (Number(data.depositBalance ?? 0))));
           
           this.showSuccessMessage(this.t('balanceUpdated'));
         }
@@ -1303,21 +607,6 @@ export default {
       this.showCompany = false;
       document.body.style.overflow = 'auto';
     },
-
-    showTermsModal() {
-      this.showTerms = true;
-      document.body.style.overflow = 'hidden';
-    },
-
-    closeTermsModal() {
-      this.showTerms = false;
-      document.body.style.overflow = 'auto';
-    },
-
-    acceptTerms() {
-      this.closeTermsModal();
-      this.showSuccessMessage(this.t('termsAccepted'));
-    }
   }
 };
 </script>
@@ -1334,114 +623,6 @@ export default {
   overflow-x: hidden;
 }
 
-/* ==================== BALANCE CARDS SECTION (تم ضبط المسافات) ==================== */
-.balance-cards-section {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding: 0 16px;
-  margin-bottom: 16px;
-}
-
-.balance-card {
-  background: rgba(15, 20, 25, 0.5);
-  border-radius: 14px;
-  padding: 12px 6px; /* تم تقليل الـ padding ليعطي مساحة أكبر للعناصر */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.balance-card.withdrawable-card {
-  border: 1px solid rgba(76, 175, 80, 0.25);
-}
-
-.balance-card.upgrade-card {
-  border: 1px solid rgba(33, 150, 243, 0.25);
-}
-
-.balance-card:hover {
-  transform: translateY(-2px);
-}
-
-.card-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-  margin: 0 auto; /* توسيط النص بشكل كامل */
-}
-
-.card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.card-amount {
-  font-size: 16px;
-  font-weight: 700;
-  font-family: 'Cairo', monospace, sans-serif;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.currency-symbol {
-  font-size: 13px;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.currency-symbol.withdrawable-text {
-  color: #4CAF50 !important;
-}
-
-.currency-symbol.upgrade-text {
-  color: #2196F3 !important;
-}
-
-.card-arrow {
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
-  padding: 0 8px; /* تقليل المسافة للسماح للبطاقة بالظهور */
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.balance-card:hover .card-arrow {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.card-icon-wrapper {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-  margin: 0 4px; /* تقريب الأيقونة من النص */
-}
-
-.card-icon-wrapper.withdrawable {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4CAF50;
-  border: 1px solid rgba(76, 175, 80, 0.2);
-}
-
-.card-icon-wrapper.upgrade {
-  background: rgba(33, 150, 243, 0.15);
-  color: #2196F3;
-  border: 1px solid rgba(33, 150, 243, 0.2);
-}
 
 /* ==================== CUSTOM MODAL SYSTEM ==================== */
 .custom-modal-overlay {
@@ -1818,272 +999,6 @@ export default {
   margin: 0;
 }
 
-/* ==================== TOAST NOTIFICATION SYSTEM ==================== */
-.toast-container {
-  position: fixed;
-  top: 50%;
-  right: 20px;
-  left: auto;
-  transform: translateY(-50%);
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  width: auto;
-  max-width: 300px;
-  pointer-events: none;
-}
-
-.home-container[dir="rtl"] .toast-container {
-  right: auto;
-  left: 20px;
-  align-items: flex-start;
-}
-
-.toast-enter-active {
-  animation: toastFadeIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes toastFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateX(60px) scale(0.85);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-.toast-leave-active {
-  animation: toastFadeOut 0.65s ease-out forwards;
-}
-
-@keyframes toastFadeOut {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(50px) scale(0.9);
-  }
-}
-
-.home-container[dir="rtl"] .toast-enter-active {
-  animation: toastFadeInRTL 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes toastFadeInRTL {
-  0% {
-    opacity: 0;
-    transform: translateX(-60px) scale(0.85);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-.home-container[dir="rtl"] .toast-leave-active {
-  animation: toastFadeOutRTL 0.65s ease-out forwards;
-}
-
-@keyframes toastFadeOutRTL {
-  0% {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-50px) scale(0.9);
-  }
-}
-
-.toast-notification {
-  position: relative;
-  background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 12px;
-  padding: 12px 16px;
-  width: 100%;
-  min-width: 240px;
-  max-width: 280px;
-  pointer-events: auto;
-  overflow: hidden;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s ease;
-}
-
-.toast-notification:hover {
-  transform: translateX(-4px);
-}
-
-.home-container[dir="rtl"] .toast-notification:hover {
-  transform: translateX(4px);
-}
-
-.toast-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.6), transparent);
-  animation: glow-move 1.5s linear infinite;
-}
-
-@keyframes glow-move {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.toast-notification.deposit {
-  border-right: 3px solid #4CAF50;
-  border-left: none;
-}
-
-.home-container[dir="rtl"] .toast-notification.deposit {
-  border-left: 3px solid #4CAF50;
-  border-right: none;
-}
-
-.toast-notification.withdraw {
-  border-right: 3px solid #F44336;
-  border-left: none;
-}
-
-.home-container[dir="rtl"] .toast-notification.withdraw {
-  border-left: 3px solid #F44336;
-  border-right: none;
-}
-
-.toast-notification.deposit .toast-icon {
-  color: #4CAF50;
-}
-
-.toast-notification.withdraw .toast-icon {
-  color: #F44336;
-}
-
-.toast-content {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.toast-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.toast-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: bold;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.toast-flag {
-  font-size: 15px;
-}
-
-.toast-time {
-  margin-right: auto;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
-  font-family: monospace;
-}
-
-.home-container[dir="rtl"] .toast-time {
-  margin-right: 0;
-  margin-left: auto;
-}
-
-.toast-body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.toast-email {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
-  font-family: monospace;
-  letter-spacing: 0.3px;
-}
-
-.toast-action {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.action-label {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  font-weight: 500;
-}
-
-.action-amount {
-  font-size: 13px;
-  font-weight: 700;
-  font-family: monospace;
-}
-
-.action-amount.deposit {
-  color: #4CAF50;
-}
-
-.action-amount.withdraw {
-  color: #F44336;
-}
-
-.toast-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #D4AF37, #F6E27A);
-  transition: width 0.05s linear;
-}
-
-.toast-close {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: rgba(255, 255, 255, 0.4);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 10px;
-  transition: all 0.2s;
-  padding: 0;
-}
-
-.home-container[dir="rtl"] .toast-close {
-  right: auto;
-  left: 6px;
-}
-
-.toast-close:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-}
 
 /* ==================== QUICK STATS SECTION ==================== */
 .stats-section {
@@ -3007,16 +1922,6 @@ export default {
     font-size: 18px;
   }
   
-  .toast-container {
-    max-width: 260px;
-    right: 10px;
-  }
-  
-  .home-container[dir="rtl"] .toast-container {
-    right: auto;
-    left: 10px;
-  }
-  
   .custom-modal-container.review-modal {
     max-width: 95%;
   }
@@ -3064,19 +1969,6 @@ export default {
     grid-template-columns: 1fr 1fr;
   }
   
-  .toast-container {
-    max-width: 240px;
-  }
-  
-  .toast-notification {
-    padding: 10px 12px;
-    min-width: 200px;
-  }
-  
-  .toast-email {
-    font-size: 10px;
-  }
-  
   .action-amount {
     font-size: 12px;
   }
@@ -3096,9 +1988,48 @@ export default {
 }
 
 @media print {
-  .toast-container,
   .custom-modal-overlay {
     display: none !important;
   }
 }
+
+/* ==================== XRP MONOCHROME REDESIGN ==================== */
+.home-container { min-height:100vh; background:#f4f4f4 !important; color:#111 !important; font-family:'Cairo',sans-serif; }
+.app-header { background:#fff !important; color:#111 !important; border-bottom:1px solid #e7e7e7; }
+.balance-display,.balance-label,.welcome-text,.user-name,.amount,.currency { color:#111 !important; }
+.balance-label,.welcome-text { color:#777 !important; }
+.menu-btn,.notif-btn,.refresh-btn { color:#111 !important; background:#fff !important; border:1px solid #e5e5e5 !important; }
+.balance-cards-section { display:block !important; padding:0 16px !important; }
+.balance-single-section { padding:0 16px 18px; }
+.balance-single-card { background:#111; color:#fff; border-radius:24px; padding:22px; box-shadow:0 12px 30px rgba(0,0,0,.12); }
+.balance-single-top,.balance-single-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.balance-single-label { font-size:13px; color:#aaa; }
+.balance-single-subtitle { margin-top:4px; font-size:11px; color:#777; }
+.xrp-mark { min-width:48px; height:48px; border-radius:14px; display:grid; place-items:center; background:#fff; color:#111; font-weight:900; letter-spacing:.5px; }
+.balance-single-value { margin:20px 0; display:flex; align-items:baseline; gap:8px; }
+.balance-single-value span { font-size:34px; font-weight:900; letter-spacing:-1px; }
+.balance-single-value small { font-size:13px; color:#aaa; font-weight:700; }
+.balance-single-footer { padding-top:14px; border-top:1px solid #2b2b2b; font-size:11px; color:#aaa; }
+.refresh-btn.light { color:#111 !important; background:#fff !important; border:0 !important; width:34px; height:34px; border-radius:10px; }
+.search-section { padding:0 16px 18px !important; }
+.search-box { background:#fff !important; border:1px solid #e2e2e2 !important; box-shadow:none !important; }
+.search-box input { color:#111 !important; }
+.quick-actions { padding:0 16px !important; gap:10px !important; }
+.action-card,.menu-item { background:#fff !important; border:1px solid #e4e4e4 !important; box-shadow:0 5px 18px rgba(0,0,0,.04) !important; color:#111 !important; }
+.action-title,.action-subtitle,.menu-title { color:#111 !important; }
+.action-subtitle { color:#888 !important; }
+.action-icon,.menu-icon { background:#111 !important; color:#fff !important; }
+.promo-banner { margin:0 16px 18px !important; background:#111 !important; color:#fff !important; border:0 !important; box-shadow:none !important; }
+.main-menu { padding:0 16px !important; }
+.menu-arrow { color:#aaa !important; }
+.sidebar { background:#fff !important; color:#111 !important; }
+.sidebar-header { background:#111 !important; color:#fff !important; }
+.sidebar-nav a,.sidebar-footer button { color:#111 !important; }
+.modal-overlay { background:rgba(0,0,0,.55) !important; }
+.modal-content { background:#fff !important; border:1px solid #111 !important; color:#111 !important; }
+.modal-header { background:#111 !important; color:#fff !important; }
+.modal-body,.company-text,.terms-text { color:#222 !important; }
+.btn-ok { background:#111 !important; color:#fff !important; }
+.gold,.gold-border,.section-title,.vip-section h4,.commission-section h4 { color:#111 !important; border-color:#ddd !important; }
+
 </style>
