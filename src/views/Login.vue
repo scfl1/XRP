@@ -1,62 +1,94 @@
 <template>
-  <div class="container">
+  <div
+    class="container"
+    :style="{ backgroundImage: `url(${loginBg})` }"
+  >
+    <div class="background-overlay"></div>
+
     <div class="card">
 
-      <!-- الشعار -->
-      <div class="brand-header">
-        <div class="logo-wrapper">
-          <img
-            :src="logo"
-            class="luxury-logo"
-            alt="XRP Logo"
-          />
+      <!-- ==================== الشعار ==================== -->
+      <div
+        class="brand-header"
+        :style="{ backgroundImage: `url(${xrpBg})` }"
+      >
+        <div class="brand-overlay"></div>
+
+        <div
+          class="logo-background"
+          :style="{ backgroundImage: `url(${logoBg})` }"
+        >
+          <div class="logo-background-overlay"></div>
+
+          <div class="logo-wrapper">
+            <img
+              :src="logo"
+              class="luxury-logo"
+              alt="XRP Logo"
+            />
+          </div>
         </div>
 
-        <!-- اسم XRP أسفل الشعار -->
         <div class="xrp-name">XRP</div>
+
         <div class="brand-line"></div>
+
+        <div class="brand-subtitle">
+          DIGITAL ASSET
+        </div>
       </div>
 
+      <!-- ==================== العنوان ==================== -->
       <h2 class="title">تسجيل الدخول</h2>
-      <p class="subtitle">مرحبًا بك، قم بتسجيل الدخول إلى حسابك</p>
 
-      <!-- رسالة الخطأ -->
-      <div v-if="errorMessage" class="error-message-box">
+      <p class="subtitle">
+        مرحبًا بك، قم بتسجيل الدخول إلى حسابك
+      </p>
+
+      <!-- ==================== رسالة الخطأ ==================== -->
+      <div
+        v-if="errorMessage"
+        class="error-message-box"
+      >
         <i class="fas fa-circle-exclamation"></i>
         <span>{{ errorMessage }}</span>
       </div>
 
-      <!-- اختيار نوع الدخول -->
+      <!-- ==================== نوع الدخول ==================== -->
       <div class="login-type-selector">
+
         <button
+          type="button"
           class="type-btn"
           :class="{ active: loginType === 'email' }"
           @click="loginType = 'email'; clearError()"
-          type="button"
         >
           <i class="fas fa-envelope"></i>
           <span>البريد الإلكتروني</span>
         </button>
 
         <button
+          type="button"
           class="type-btn"
           :class="{ active: loginType === 'phone' }"
           @click="loginType = 'phone'; clearError()"
-          type="button"
         >
           <i class="fas fa-phone"></i>
           <span>رقم الهاتف</span>
         </button>
+
       </div>
 
-      <!-- تسجيل الدخول بالبريد الإلكتروني -->
+      <!-- ==================== البريد الإلكتروني ==================== -->
       <template v-if="loginType === 'email'">
+
         <label class="label">
           <i class="fas fa-envelope"></i>
           البريد الإلكتروني
         </label>
 
         <div class="field-wrapper">
+
           <i class="fas fa-envelope field-icon"></i>
 
           <input
@@ -64,22 +96,29 @@
             v-model="email"
             placeholder="أدخل البريد الإلكتروني"
             class="input input-with-icon"
-            :class="{ 'input-error': errorMessage && loginType === 'email' }"
+            :class="{
+              'input-error':
+                errorMessage && loginType === 'email'
+            }"
             autocomplete="email"
             @keyup.enter="loginUser"
             @focus="clearError"
           />
+
         </div>
+
       </template>
 
-      <!-- تسجيل الدخول برقم الهاتف -->
+      <!-- ==================== رقم الهاتف ==================== -->
       <template v-if="loginType === 'phone'">
+
         <label class="label">
           <i class="fas fa-phone"></i>
           رقم الهاتف مع رمز الدولة
         </label>
 
         <div class="phone-input-container">
+
           <select
             v-model="countryCode"
             class="country-select"
@@ -159,7 +198,10 @@
             v-model="phoneNumber"
             placeholder="رقم الهاتف"
             class="phone-input"
-            :class="{ 'input-error': errorMessage && loginType === 'phone' }"
+            :class="{
+              'input-error':
+                errorMessage && loginType === 'phone'
+            }"
             :disabled="!countryCode"
             inputmode="numeric"
             autocomplete="tel"
@@ -167,21 +209,27 @@
             @keyup.enter="loginUser"
             @focus="clearError"
           />
+
         </div>
 
-        <span v-if="phoneError" class="validation-error">
+        <span
+          v-if="phoneError"
+          class="validation-error"
+        >
           <i class="fas fa-circle-exclamation"></i>
           {{ phoneError }}
         </span>
+
       </template>
 
-      <!-- كلمة المرور -->
+      <!-- ==================== كلمة المرور ==================== -->
       <label class="label">
         <i class="fas fa-lock"></i>
         كلمة المرور
       </label>
 
       <div class="input-box">
+
         <i class="fas fa-lock field-icon"></i>
 
         <input
@@ -199,113 +247,130 @@
           type="button"
           class="toggle"
           @click="togglePassword"
-          :aria-label="showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
         >
-          <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-          <span>{{ showPassword ? "إخفاء" : "إظهار" }}</span>
+          <i
+            :class="
+              showPassword
+                ? 'fas fa-eye-slash'
+                : 'fas fa-eye'
+            "
+          ></i>
+
+          <span>
+            {{ showPassword ? "إخفاء" : "إظهار" }}
+          </span>
         </button>
+
       </div>
 
-      <!-- زر تسجيل الدخول -->
+      <!-- ==================== تسجيل الدخول ==================== -->
       <button
+        type="button"
         class="btn"
         @click="loginUser"
         :disabled="loading"
-        type="button"
       >
+
         <span v-if="!loading">
           <i class="fas fa-right-to-bracket"></i>
           تسجيل الدخول
         </span>
 
-        <span v-else class="loading-content">
+        <span
+          v-else
+          class="loading-content"
+        >
           <span class="loader"></span>
           جارٍ تسجيل الدخول...
         </span>
+
       </button>
 
-      <!-- رابط إنشاء الحساب -->
+      <!-- ==================== إنشاء حساب ==================== -->
       <p class="link">
         ليس لديك حساب؟
+
         <router-link to="/register">
           إنشاء حساب جديد
         </router-link>
       </p>
 
-      <!-- خط سفلي -->
+      <!-- ==================== العلامة السفلية ==================== -->
       <div class="bottom-brand">
-        <span class="bottom-dot"></span>
+
+        <span class="bottom-line"></span>
+
         <span>XRP</span>
-        <span class="bottom-dot"></span>
+
+        <span class="bottom-line"></span>
+
       </div>
 
     </div>
   </div>
 
-  <!-- Popup إعلان -->
+  <!-- ==================== الإعلان ==================== -->
   <div
+    v-if="showAd"
     id="companyAd"
     class="ad-overlay"
-    v-if="showAd"
     @click.self="closeAd"
   >
+
     <div class="ad-box">
 
       <div class="ad-header">
+
         <div class="ad-icon">
           <i class="fas fa-bullhorn"></i>
         </div>
+
         <h2>إعلان</h2>
+
       </div>
 
       <div class="ad-content">
+
         <p>
           🎉 مرحبا بالجميع!
+
+          <br><br>
+
           تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021
           ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة.
-          نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي
-          وقوة مالية قوية.
 
           <br><br>
 
-          يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية
-          مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee،
-          لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم،
-          ويمكننا أيضًا تحقيق أرباح منه.
+          يتعاون Palm Treasure مع شركات التجارة الإلكترونية
+          لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم.
 
           <br><br>
 
-          👍 1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT،
-          الحد الأدنى للسحب النقدي: 3 USDT
+          👍 الحد الأدنى لمبلغ إعادة الشحن: 12 USDT
 
           <br>
 
-          💰 2: تستثمر المنصة على مستوى العالم،
-          لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
+          💰 الحد الأدنى للسحب النقدي: 3 USDT
 
           <br>
 
-          🌈 3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً
-          في سنغافورة. يمكنك الحصول على الربح من خلال استكمال
-          أوامر التاجر كل يوم.
+          🌈 يمكنك إكمال المهام اليومية وفقًا للشروط
+          الموضحة داخل المنصة.
 
-          <br>
-
-          🕯 4: يمكنك سحب النقد مرة واحدة فقط في اليوم،
-          ولا يوجد حد زمني للسحب، والحد الأدنى لمبلغ السحب
-          هو 3 USDT.
         </p>
+
       </div>
 
       <button
-        @click="closeAd"
-        class="ad-btn"
         type="button"
+        class="ad-btn"
+        @click="closeAd"
       >
         فهمت
       </button>
 
     </div>
+
   </div>
 </template>
 
@@ -318,171 +383,348 @@ import {
 
 import { db } from "../firebase";
 import router from "../router";
+
 import logo from "../assets/palm-gold.png";
 
+/*
+ * صور التصميم
+ *
+ * ضع هذه الملفات داخل:
+ * src/assets/
+ *
+ * login-bg.jpg
+ * logo-bg.jpg
+ * xrp-bg.jpg
+ */
+import loginBg from "../assets/login-bg.jpg";
+import logoBg from "../assets/logo-bg.jpg";
+import xrpBg from "../assets/xrp-bg.jpg";
+
 export default {
+
   data() {
     return {
+
+      /* ==================== الصور ==================== */
+
       logo,
+      loginBg,
+      logoBg,
+      xrpBg,
+
+      /* ==================== تسجيل الدخول ==================== */
 
       loginType: "email",
 
       email: "",
+
       countryCode: "",
+
       phoneNumber: "",
+
       fullPhoneNumber: "",
 
       password: "",
+
       showPassword: false,
 
       loading: false,
 
+      /* ==================== الإعلان ==================== */
+
       showAd: false,
+
       adTimer: null,
 
+      /* ==================== الأخطاء ==================== */
+
       phoneError: "",
+
       errorMessage: ""
+
     };
   },
 
   mounted() {
-    document.addEventListener("keydown", this.handleEscKey);
+
+    document.addEventListener(
+      "keydown",
+      this.handleEscKey
+    );
+
   },
 
   beforeUnmount() {
-    document.removeEventListener("keydown", this.handleEscKey);
+
+    document.removeEventListener(
+      "keydown",
+      this.handleEscKey
+    );
 
     if (this.adTimer) {
+
       clearTimeout(this.adTimer);
+
     }
+
   },
 
   methods: {
+
+    /* ==================== كلمة المرور ==================== */
+
     togglePassword() {
-      this.showPassword = !this.showPassword;
+
+      this.showPassword =
+        !this.showPassword;
+
     },
+
+    /* ==================== مسح الأخطاء ==================== */
 
     clearError() {
+
       this.errorMessage = "";
+
       this.phoneError = "";
+
     },
+
+    /* ==================== التحقق من البريد ==================== */
 
     validateEmail(email) {
-      const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      const re =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
       return re.test(email);
+
     },
 
+    /* ==================== التحقق من الهاتف ==================== */
+
     validatePhoneNumber() {
+
       if (!this.countryCode) {
-        this.phoneError = "الرجاء اختيار رمز الدولة";
+
+        this.phoneError =
+          "الرجاء اختيار رمز الدولة";
+
         return false;
+
       }
 
       if (!this.phoneNumber) {
-        this.phoneError = "الرجاء إدخال رقم الهاتف";
+
+        this.phoneError =
+          "الرجاء إدخال رقم الهاتف";
+
         return false;
+
       }
 
-      const cleanPhone = this.phoneNumber.replace(/[^0-9]/g, "");
+      const cleanPhone =
+        this.phoneNumber.replace(
+          /[^0-9]/g,
+          ""
+        );
 
-      if (cleanPhone.length < 7 || cleanPhone.length > 15) {
-        this.phoneError = "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
+      if (
+        cleanPhone.length < 7 ||
+        cleanPhone.length > 15
+      ) {
+
+        this.phoneError =
+          "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
+
         return false;
+
       }
 
-      this.fullPhoneNumber = this.countryCode + cleanPhone;
+      this.fullPhoneNumber =
+        this.countryCode +
+        cleanPhone;
+
       this.phoneError = "";
 
       return true;
+
     },
+
+    /* ==================== تحويل الهاتف إلى Email ==================== */
 
     generatePhoneEmail(phoneNumber) {
-      const cleanPhone = phoneNumber.replace(/\+/g, "");
+
+      const cleanPhone =
+        phoneNumber.replace(
+          /\+/g,
+          ""
+        );
+
       return `${cleanPhone}@phone.app`;
+
     },
 
+    /* ==================== رسائل Firebase ==================== */
+
     getErrorMessage(error) {
-      if (error.code === "auth/user-disabled") {
+
+      if (
+        error.code ===
+        "auth/user-disabled"
+      ) {
+
         return "تم حظر حسابك، تواصل مع الدعم";
+
       }
 
       if (
-        error.code === "auth/wrong-password" ||
-        error.code === "auth/user-not-found" ||
-        error.code === "auth/invalid-credential" ||
-        error.code === "auth/invalid-email"
+        error.code ===
+          "auth/wrong-password" ||
+
+        error.code ===
+          "auth/user-not-found" ||
+
+        error.code ===
+          "auth/invalid-credential" ||
+
+        error.code ===
+          "auth/invalid-email"
       ) {
-        if (this.loginType === "phone") {
+
+        if (
+          this.loginType ===
+          "phone"
+        ) {
+
           return "رقم الهاتف أو كلمة المرور غير صحيحة.";
+
         }
 
         return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+
       }
 
-      if (error.code === "auth/too-many-requests") {
+      if (
+        error.code ===
+        "auth/too-many-requests"
+      ) {
+
         return "تم تعليق الحساب مؤقتاً لكثرة المحاولات. يرجى المحاولة لاحقاً.";
+
       }
 
-      if (error.code === "auth/network-request-failed") {
+      if (
+        error.code ===
+        "auth/network-request-failed"
+      ) {
+
         return "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.";
+
       }
 
-      if (error.code === "auth/operation-not-allowed") {
+      if (
+        error.code ===
+        "auth/operation-not-allowed"
+      ) {
+
         return "طريقة تسجيل الدخول هذه غير مفعلة حالياً.";
+
       }
 
       return "حدث خطأ. يرجى المحاولة لاحقاً.";
+
     },
+
+    /* ==================== زر ESC ==================== */
 
     handleEscKey(event) {
-      if (event.key === "Escape" && this.showAd) {
+
+      if (
+        event.key === "Escape" &&
+        this.showAd
+      ) {
+
         this.closeAd();
+
       }
+
     },
 
+    /* ==================== تسجيل الدخول ==================== */
+
     async loginUser() {
+
       this.errorMessage = "";
+
       this.phoneError = "";
 
-      let loginEmail = this.email.trim();
+      let loginEmail =
+        this.email.trim();
 
-      /*
-       * تسجيل الدخول برقم الهاتف
-       */
-      if (this.loginType === "phone") {
-        if (!this.validatePhoneNumber()) {
+      /* ---------- الهاتف ---------- */
+
+      if (
+        this.loginType === "phone"
+      ) {
+
+        if (
+          !this.validatePhoneNumber()
+        ) {
+
           return;
+
         }
 
-        loginEmail = this.generatePhoneEmail(
-          this.fullPhoneNumber
-        );
+        loginEmail =
+          this.generatePhoneEmail(
+            this.fullPhoneNumber
+          );
+
       }
 
-      /*
-       * التحقق من البريد الإلكتروني
-       */
+      /* ---------- البريد ---------- */
+
       else {
-        if (!this.validateEmail(loginEmail)) {
+
+        if (
+          !this.validateEmail(
+            loginEmail
+          )
+        ) {
+
           this.errorMessage =
             "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+
           return;
+
         }
+
       }
 
-      /*
-       * التحقق من كلمة المرور
-       */
-      if (!this.password || this.password.length < 6) {
-        if (this.loginType === "phone") {
+      /* ---------- كلمة المرور ---------- */
+
+      if (
+        !this.password ||
+        this.password.length < 6
+      ) {
+
+        if (
+          this.loginType === "phone"
+        ) {
+
           this.errorMessage =
             "رقم الهاتف أو كلمة المرور غير صحيحة.";
+
         } else {
+
           this.errorMessage =
             "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+
         }
 
         return;
+
       }
 
       this.loading = true;
@@ -490,9 +732,9 @@ export default {
       const auth = getAuth();
 
       try {
-        /*
-         * تسجيل الدخول عبر Firebase
-         */
+
+        /* تسجيل الدخول عبر Firebase */
+
         const userCredential =
           await signInWithEmailAndPassword(
             auth,
@@ -500,90 +742,154 @@ export default {
             this.password
           );
 
-        const user = userCredential.user;
+        const user =
+          userCredential.user;
 
-        /*
-         * التأكد من حالة الحساب
-         */
+        /* تحديث بيانات المستخدم */
+
         await user.reload();
 
-        const updatedUser = auth.currentUser;
+        const updatedUser =
+          auth.currentUser;
 
-        if (updatedUser && updatedUser.disabled === true) {
+        /* التحقق من حظر الحساب */
+
+        if (
+          updatedUser &&
+          updatedUser.disabled === true
+        ) {
+
           await signOut(auth);
 
           this.errorMessage =
             "تم حظر حسابك، تواصل مع الدعم.";
 
           return;
+
         }
 
-        /*
-         * حسابات الإدارة
-         */
+        /* ==================== حسابات الإدارة ==================== */
+
         const admins = [
           "azad.333388@gmail.com",
           "admin2@gmail.com",
           "owner@gmail.com"
         ];
 
-        if (admins.includes(user.email)) {
-          await router.push("/admin");
+        if (
+          admins.includes(
+            user.email
+          )
+        ) {
+
+          await router.push(
+            "/admin"
+          );
+
         } else {
-          await router.push("/home");
+
+          await router.push(
+            "/home"
+          );
+
         }
 
       } catch (error) {
-        console.error("Login Error:", error);
+
+        console.error(
+          "Login Error:",
+          error
+        );
 
         this.errorMessage =
-          this.getErrorMessage(error);
+          this.getErrorMessage(
+            error
+          );
 
       } finally {
+
         this.loading = false;
+
       }
+
     },
 
+    /* ==================== إغلاق الإعلان ==================== */
+
     closeAd() {
+
       this.showAd = false;
+
     }
+
   }
+
 };
 </script>
 
 <style scoped>
 
 /* =========================================================
-   التصميم العام - أبيض وأسود
+   المتغيرات العامة
    ========================================================= */
 
 * {
   box-sizing: border-box;
 }
 
+/* =========================================================
+   الخلفية الرئيسية
+   ========================================================= */
+
 .container {
+
+  position: relative;
+
   min-height: 100vh;
+
   width: 100%;
+
   display: flex;
+
   justify-content: center;
+
   align-items: center;
 
-  padding: 24px;
-
-  background:
-    radial-gradient(
-      circle at top right,
-      rgba(0, 0, 0, 0.05),
-      transparent 35%
-    ),
-    linear-gradient(
-      135deg,
-      #ffffff 0%,
-      #f5f5f5 50%,
-      #eeeeee 100%
-    );
+  padding: 25px;
 
   direction: rtl;
+
+  background-color: #f2f2f2;
+
+  background-size: cover;
+
+  background-position: center;
+
+  background-repeat: no-repeat;
+
+  overflow: hidden;
+
+}
+
+/* طبقة فوق صورة الخلفية */
+
+.background-overlay {
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,0.88),
+      rgba(245,245,245,0.76)
+    );
+
+  backdrop-filter: blur(3px);
+
+  z-index: 1;
+
 }
 
 /* =========================================================
@@ -591,90 +897,252 @@ export default {
    ========================================================= */
 
 .card {
+
   position: relative;
 
+  z-index: 2;
+
   width: 100%;
+
   max-width: 410px;
 
-  padding: 36px 32px 28px;
+  padding: 28px 30px 25px;
 
-  background: rgba(255, 255, 255, 0.97);
+  background:
+    rgba(255,255,255,0.97);
 
-  border: 1px solid #e4e4e4;
+  border:
+
+    1px solid
+
+    rgba(0,0,0,0.10);
+
   border-radius: 26px;
 
   box-shadow:
-    0 25px 70px rgba(0, 0, 0, 0.10),
-    0 8px 25px rgba(0, 0, 0, 0.05);
+
+    0 30px 80px
+
+    rgba(0,0,0,0.16),
+
+    0 8px 25px
+
+    rgba(0,0,0,0.06);
 
   overflow: hidden;
+
 }
 
-/* خط أسود أعلى البطاقة */
+/* خط أعلى البطاقة */
 
 .card::before {
+
   content: "";
 
   position: absolute;
+
   top: 0;
+
   left: 0;
 
   width: 100%;
+
   height: 4px;
 
-  background: #000000;
+  background: #000;
+
+}
+
+/* =========================================================
+   منطقة الشعار
+   ========================================================= */
+
+.brand-header {
+
+  position: relative;
+
+  padding: 22px 15px 19px;
+
+  margin-bottom: 20px;
+
+  border-radius: 20px;
+
+  background-size: cover;
+
+  background-position: center;
+
+  overflow: hidden;
+
+  text-align: center;
+
+}
+
+/* طبقة صورة الشعار */
+
+.brand-overlay {
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    rgba(255,255,255,0.72);
+
+  backdrop-filter: blur(2px);
+
+  z-index: 1;
+
+}
+
+/* =========================================================
+   الصورة خلف الشعار
+   ========================================================= */
+
+.logo-background {
+
+  position: relative;
+
+  z-index: 2;
+
+  width: 125px;
+
+  height: 125px;
+
+  margin: 0 auto 10px;
+
+  border-radius: 50%;
+
+  background-size: cover;
+
+  background-position: center;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  overflow: hidden;
+
+  border:
+
+    1px solid
+
+    rgba(0,0,0,0.15);
+
+  box-shadow:
+
+    0 15px 40px
+
+    rgba(0,0,0,0.15);
+
+}
+
+/* طبقة شفافة فوق صورة خلف الشعار */
+
+.logo-background-overlay {
+
+  position: absolute;
+
+  inset: 0;
+
+  background:
+    rgba(255,255,255,0.42);
+
+  backdrop-filter: blur(1px);
+
 }
 
 /* =========================================================
    الشعار
    ========================================================= */
 
-.brand-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
 .logo-wrapper {
+
+  position: relative;
+
+  z-index: 3;
+
   display: flex;
+
   justify-content: center;
+
   align-items: center;
 
-  margin-bottom: 8px;
 }
 
 .luxury-logo {
-  width: 105px;
-  height: 105px;
+
+  width: 88px;
+
+  height: 88px;
 
   object-fit: contain;
 
   filter: grayscale(100%);
+
+  drop-shadow:
+    0 5px 15px
+    rgba(0,0,0,0.20);
+
 }
 
-/* اسم XRP */
+/* =========================================================
+   XRP
+   ========================================================= */
 
 .xrp-name {
-  color: #000000;
 
-  font-size: 28px;
-  line-height: 1;
+  position: relative;
+
+  z-index: 2;
+
+  color: #000;
+
+  font-size: 29px;
 
   font-weight: 900;
 
-  letter-spacing: 5px;
+  letter-spacing: 7px;
 
-  margin-top: 2px;
+  line-height: 1;
+
+  margin-top: 4px;
+
 }
 
 .brand-line {
-  width: 45px;
+
+  position: relative;
+
+  z-index: 2;
+
+  width: 48px;
+
   height: 3px;
 
-  background: #000000;
-
-  margin: 12px auto 0;
+  background: #000;
 
   border-radius: 10px;
+
+  margin: 12px auto 8px;
+
+}
+
+.brand-subtitle {
+
+  position: relative;
+
+  z-index: 2;
+
+  color: #777;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: 3px;
+
 }
 
 /* =========================================================
@@ -682,157 +1150,181 @@ export default {
    ========================================================= */
 
 .title {
-  color: #111111;
+
+  color: #111;
 
   text-align: center;
 
   font-size: 24px;
 
-  margin: 0 0 7px;
-
   font-weight: 800;
+
+  margin: 0 0 6px;
+
 }
 
 .subtitle {
-  color: #888888;
+
+  color: #888;
 
   text-align: center;
 
   font-size: 13px;
 
-  margin: 0 0 24px;
+  margin: 0 0 22px;
+
 }
 
 /* =========================================================
-   رسالة الخطأ
+   الخطأ
    ========================================================= */
 
 .error-message-box {
+
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 8px;
 
-  background: #f7f7f7;
+  background: #f6f6f6;
 
-  border: 1px solid #dddddd;
+  border: 1px solid #dedede;
 
-  border-right: 3px solid #000000;
+  border-right: 3px solid #000;
 
   border-radius: 12px;
 
-  padding: 12px 14px;
+  padding: 12px;
 
   margin-bottom: 18px;
 
-  color: #222222;
+  color: #222;
 
   font-size: 13px;
 
+  font-weight: 600;
+
   text-align: center;
 
-  font-weight: 600;
 }
 
 .error-message-box i {
-  color: #000000;
+
+  color: #000;
+
 }
 
 /* =========================================================
-   اختيار طريقة الدخول
+   اختيار الدخول
    ========================================================= */
 
 .login-type-selector {
+
   display: flex;
 
   gap: 5px;
 
-  margin-bottom: 22px;
-
   padding: 5px;
 
-  background: #f1f1f1;
+  margin-bottom: 21px;
 
-  border: 1px solid #e5e5e5;
+  background: #f0f0f0;
+
+  border: 1px solid #e4e4e4;
 
   border-radius: 13px;
+
 }
 
 .type-btn {
+
   flex: 1;
 
   min-height: 43px;
-
-  padding: 9px 7px;
 
   border: none;
 
   background: transparent;
 
-  color: #777777;
-
-  cursor: pointer;
+  color: #777;
 
   border-radius: 9px;
+
+  cursor: pointer;
 
   font-size: 12px;
 
   font-weight: 700;
 
-  transition:
-    background 0.25s ease,
-    color 0.25s ease,
-    transform 0.2s ease;
-
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 7px;
+
+  transition: all .25s ease;
+
 }
 
 .type-btn:hover {
-  color: #000000;
+
+  color: #000;
+
 }
 
 .type-btn.active {
-  background: #000000;
-  color: #ffffff;
+
+  background: #000;
+
+  color: #fff;
 
   box-shadow:
-    0 5px 15px rgba(0, 0, 0, 0.15);
+
+    0 6px 16px
+
+    rgba(0,0,0,0.15);
+
 }
 
 .type-btn:active {
-  transform: scale(0.98);
+
+  transform: scale(.98);
+
 }
 
 /* =========================================================
-   العناوين
+   Labels
    ========================================================= */
 
 .label {
+
   display: flex;
 
   align-items: center;
 
   gap: 7px;
 
-  color: #222222;
+  color: #222;
 
   margin-bottom: 8px;
 
   font-size: 13px;
 
   font-weight: 700;
+
 }
 
 .label i {
+
+  color: #000;
+
   font-size: 12px;
-  color: #000000;
+
 }
 
 /* =========================================================
@@ -840,13 +1332,17 @@ export default {
    ========================================================= */
 
 .field-wrapper {
+
   position: relative;
+
   width: 100%;
+
 }
 
 .input,
 .country-select,
 .phone-input {
+
   width: 100%;
 
   height: 48px;
@@ -855,66 +1351,79 @@ export default {
 
   margin-bottom: 16px;
 
-  border-radius: 12px;
+  border: 1px solid #ddd;
 
-  border: 1px solid #dddddd;
+  border-radius: 12px;
 
   background: #fafafa;
 
-  color: #111111;
+  color: #111;
 
   font-size: 14px;
 
   font-weight: 500;
 
-  transition:
-    border 0.25s ease,
-    box-shadow 0.25s ease,
-    background 0.25s ease;
+  transition: all .25s ease;
 
-  box-sizing: border-box;
 }
 
 .input::placeholder,
 .phone-input::placeholder {
-  color: #aaaaaa;
+
+  color: #aaa;
+
 }
 
 .input-with-icon {
+
   padding-right: 42px;
+
 }
 
 .input:focus,
 .country-select:focus,
 .phone-input:focus {
+
   outline: none;
 
-  border-color: #000000;
+  border-color: #000;
 
-  background: #ffffff;
+  background: #fff;
 
   box-shadow:
-    0 0 0 3px rgba(0, 0, 0, 0.06);
+
+    0 0 0 3px
+
+    rgba(0,0,0,0.06);
+
 }
 
 .input-error {
-  border-color: #000000 !important;
+
+  border-color: #000 !important;
 
   box-shadow:
-    0 0 0 2px rgba(0, 0, 0, 0.08);
+
+    0 0 0 2px
+
+    rgba(0,0,0,0.08);
+
 }
 
 .field-icon {
+
   position: absolute;
 
   right: 14px;
+
   top: 15px;
 
-  color: #777777;
+  color: #777;
 
   font-size: 14px;
 
   z-index: 2;
+
 }
 
 /* =========================================================
@@ -922,16 +1431,19 @@ export default {
    ========================================================= */
 
 .phone-input-container {
+
   display: flex;
 
   gap: 8px;
 
+  direction: ltr;
+
   margin-bottom: 14px;
 
-  direction: ltr;
 }
 
 .country-select {
+
   width: 125px;
 
   flex-shrink: 0;
@@ -943,9 +1455,11 @@ export default {
   font-size: 12px;
 
   cursor: pointer;
+
 }
 
 .phone-input {
+
   flex: 1;
 
   margin-bottom: 0;
@@ -953,32 +1467,37 @@ export default {
   direction: ltr;
 
   text-align: left;
+
 }
 
 .phone-input:disabled {
-  background: #eeeeee;
 
-  color: #999999;
+  background: #eee;
+
+  color: #999;
 
   cursor: not-allowed;
+
 }
 
 .validation-error {
+
   display: block;
 
-  color: #222222;
+  color: #222;
 
   font-size: 11px;
 
-  margin-top: -6px;
-
-  margin-bottom: 14px;
+  margin: -5px 0 14px;
 
   font-weight: 600;
+
 }
 
 .validation-error i {
+
   margin-left: 4px;
+
 }
 
 /* =========================================================
@@ -986,30 +1505,36 @@ export default {
    ========================================================= */
 
 .input-box {
+
   position: relative;
 
   width: 100%;
+
 }
 
 .password-input {
-  padding-left: 78px;
+
+  padding-left: 80px;
+
 }
 
 .toggle {
+
   position: absolute;
 
   left: 10px;
+
   top: 9px;
 
   height: 30px;
 
-  padding: 0 8px;
+  padding: 0 7px;
 
   border: none;
 
   background: transparent;
 
-  color: #555555;
+  color: #555;
 
   cursor: pointer;
 
@@ -1024,30 +1549,32 @@ export default {
   gap: 5px;
 
   z-index: 3;
+
 }
 
 .toggle:hover {
-  color: #000000;
+
+  color: #000;
+
 }
 
 /* =========================================================
-   زر تسجيل الدخول
+   زر الدخول
    ========================================================= */
 
 .btn {
+
   width: 100%;
 
   height: 50px;
 
-  padding: 0 15px;
-
   border: none;
 
-  background: #000000;
-
-  color: #ffffff;
-
   border-radius: 12px;
+
+  background: #000;
+
+  color: #fff;
 
   font-size: 15px;
 
@@ -1055,35 +1582,44 @@ export default {
 
   cursor: pointer;
 
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.25s ease,
-    background 0.25s ease;
-
   margin-top: 5px;
+
+  transition: all .25s ease;
+
 }
 
 .btn:hover:not(:disabled) {
-  background: #1a1a1a;
+
+  background: #191919;
 
   transform: translateY(-2px);
 
   box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.18);
+
+    0 10px 25px
+
+    rgba(0,0,0,0.18);
+
 }
 
 .btn:active:not(:disabled) {
+
   transform: translateY(0);
+
 }
 
 .btn:disabled {
-  opacity: 0.65;
+
+  opacity: .65;
 
   cursor: not-allowed;
+
 }
 
 .btn i {
+
   margin-left: 7px;
+
 }
 
 /* =========================================================
@@ -1091,51 +1627,66 @@ export default {
    ========================================================= */
 
 .loading-content {
+
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 10px;
+
 }
 
 .loader {
+
   width: 18px;
+
   height: 18px;
 
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid
 
-  border-top-color: #ffffff;
+    rgba(255,255,255,.35);
+
+  border-top-color: #fff;
 
   border-radius: 50%;
 
-  display: inline-block;
+  animation:
 
-  animation: spin 0.8s linear infinite;
+    spin .8s linear infinite;
+
 }
 
 @keyframes spin {
+
   to {
+
     transform: rotate(360deg);
+
   }
+
 }
 
 /* =========================================================
-   إنشاء الحساب
+   إنشاء حساب
    ========================================================= */
 
 .link {
+
   text-align: center;
+
+  color: #888;
+
+  font-size: 13px;
 
   margin: 20px 0 0;
 
-  color: #888888;
-
-  font-size: 13px;
 }
 
 .link a {
-  color: #000000;
+
+  color: #000;
 
   text-decoration: none;
 
@@ -1143,11 +1694,12 @@ export default {
 
   margin-right: 4px;
 
-  transition: opacity 0.2s ease;
 }
 
 .link a:hover {
-  opacity: 0.55;
+
+  opacity: .55;
+
 }
 
 /* =========================================================
@@ -1155,31 +1707,35 @@ export default {
    ========================================================= */
 
 .bottom-brand {
+
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
   gap: 10px;
 
-  margin-top: 24px;
+  margin-top: 23px;
 
-  color: #aaaaaa;
+  color: #aaa;
 
   font-size: 10px;
 
   font-weight: 800;
 
   letter-spacing: 3px;
+
 }
 
-.bottom-dot {
-  width: 4px;
-  height: 4px;
+.bottom-line {
 
-  background: #000000;
+  width: 25px;
 
-  border-radius: 50%;
+  height: 1px;
+
+  background: #ccc;
+
 }
 
 /* =========================================================
@@ -1187,44 +1743,53 @@ export default {
    ========================================================= */
 
 .ad-overlay {
+
   position: fixed;
 
   inset: 0;
 
-  width: 100%;
-  height: 100%;
-
-  background: rgba(0, 0, 0, 0.72);
-
-  backdrop-filter: blur(6px);
+  z-index: 1000;
 
   display: flex;
 
-  justify-content: center;
   align-items: center;
+
+  justify-content: center;
 
   padding: 20px;
 
-  z-index: 1000;
+  background:
+
+    rgba(0,0,0,.72);
+
+  backdrop-filter: blur(6px);
+
 }
 
 .ad-box {
-  background: #ffffff;
 
   width: 100%;
+
   max-width: 420px;
+
+  background: #fff;
 
   border-radius: 22px;
 
-  border: 1px solid #dddddd;
-
   overflow: hidden;
 
+  border: 1px solid #ddd;
+
   box-shadow:
-    0 25px 70px rgba(0, 0, 0, 0.3);
+
+    0 30px 80px
+
+    rgba(0,0,0,.30);
+
 }
 
 .ad-header {
+
   display: flex;
 
   align-items: center;
@@ -1233,39 +1798,47 @@ export default {
 
   padding: 18px 20px;
 
-  background: #000000;
+  background: #000;
 
-  color: #ffffff;
+  color: #fff;
+
 }
 
 .ad-icon {
+
   width: 36px;
+
   height: 36px;
 
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
-  background: #ffffff;
+  background: #fff;
 
-  color: #000000;
+  color: #000;
 
   border-radius: 50%;
+
 }
 
 .ad-header h2 {
+
   margin: 0;
 
   font-size: 18px;
 
   font-weight: 800;
+
 }
 
 .ad-content {
+
   padding: 20px;
 
-  color: #333333;
+  color: #333;
 
   font-size: 13px;
 
@@ -1275,37 +1848,40 @@ export default {
 
   overflow-y: auto;
 
-  direction: rtl;
 }
 
 .ad-content p {
+
   margin: 0;
+
 }
 
 .ad-btn {
+
   width: 100%;
 
   height: 50px;
 
-  background: #ffffff;
+  background: #fff;
+
+  color: #000;
 
   border: none;
 
-  border-top: 1px solid #eeeeee;
-
-  color: #000000;
+  border-top: 1px solid #eee;
 
   cursor: pointer;
 
-  font-weight: 800;
-
   font-size: 14px;
 
-  transition: background 0.2s ease;
+  font-weight: 800;
+
 }
 
 .ad-btn:hover {
+
   background: #f3f3f3;
+
 }
 
 /* =========================================================
@@ -1313,68 +1889,100 @@ export default {
    ========================================================= */
 
 @media (max-width: 480px) {
+
   .container {
+
     padding: 15px;
+
   }
 
   .card {
-    padding: 30px 20px 24px;
+
+    padding: 25px 19px 23px;
 
     border-radius: 22px;
+
+  }
+
+  .brand-header {
+
+    padding: 18px 10px;
+
+  }
+
+  .logo-background {
+
+    width: 112px;
+
+    height: 112px;
+
   }
 
   .luxury-logo {
-    width: 92px;
-    height: 92px;
+
+    width: 80px;
+
+    height: 80px;
+
   }
 
   .xrp-name {
-    font-size: 25px;
+
+    font-size: 26px;
+
   }
 
   .title {
-    font-size: 22px;
-  }
 
-  .phone-input-container {
-    gap: 6px;
+    font-size: 22px;
+
   }
 
   .country-select {
+
     width: 112px;
 
     font-size: 11px;
+
   }
 
   .type-btn {
+
     font-size: 11px;
+
   }
 
-  .type-btn i {
-    font-size: 11px;
-  }
 }
 
 /* =========================================================
-   شاشات صغيرة جدًا
+   الهواتف الصغيرة جدًا
    ========================================================= */
 
 @media (max-width: 350px) {
+
   .card {
-    padding: 26px 15px 22px;
+
+    padding: 22px 14px;
+
   }
 
   .country-select {
-    width: 100px;
+
+    width: 98px;
+
   }
 
   .type-btn span {
+
     font-size: 10px;
+
   }
 
   .password-input {
-    padding-left: 70px;
-  }
-}
 
+    padding-left: 70px;
+
+  }
+
+}
 </style>
