@@ -2,61 +2,54 @@
   <div class="login-page" dir="rtl">
 
     <!-- =========================
-         HERO / الخلفية الكبيرة
-    ========================== -->
-    <section class="hero-section">
-
-      <!-- صورة الخلفية الكبيرة -->
-      <div class="hero-background"></div>
-
-      <!-- طبقة إضاءة -->
+         القسم العلوي / الخلفية
+         ========================= -->
+    <section
+      class="hero-section"
+      :style="{ backgroundImage: `url(${logoBg})` }"
+    >
       <div class="hero-overlay"></div>
 
-      <!-- محتوى الشعار -->
+      <!-- اللغة -->
+      <button class="language-btn" type="button">
+        <i class="fas fa-globe"></i>
+        العربية
+      </button>
+
+      <!-- الشعار -->
       <div class="hero-content">
 
         <div class="logo-ring">
-
-          <div class="logo-glow"></div>
-
-          <div class="logo-circle">
+          <div class="logo-white-box">
             <img
               :src="logo"
+              class="main-logo"
               alt="XRP"
-              class="xrp-logo"
             />
           </div>
-
         </div>
 
         <div class="xrp-title">
           XRP
         </div>
 
-        <div class="xrp-subtitle">
+        <div class="future-title">
           THE FUTURE OF FINANCE
         </div>
 
       </div>
-
     </section>
 
 
     <!-- =========================
          بطاقة تسجيل الدخول
-    ========================== -->
-    <section class="login-section">
+         ========================= -->
+    <main class="login-area">
 
       <div class="login-card">
 
-        <!-- علامة XRP خفيفة داخل البطاقة -->
-        <div class="card-watermark">
-          XRP
-        </div>
-
-
-        <!-- العنوان -->
-        <div class="login-header">
+        <!-- عنوان -->
+        <div class="heading-section">
 
           <h1>
             تسجيل الدخول
@@ -81,7 +74,7 @@
 
         <!-- =========================
              اختيار طريقة الدخول
-        ========================== -->
+             ========================= -->
         <div class="login-type-selector">
 
           <button
@@ -91,12 +84,10 @@
             @click="loginType = 'email'; clearError()"
           >
             <span>
+              <i class="fas fa-envelope"></i>
               البريد الإلكتروني
             </span>
-
-            <i class="fas fa-envelope"></i>
           </button>
-
 
           <button
             type="button"
@@ -105,10 +96,9 @@
             @click="loginType = 'phone'; clearError()"
           >
             <span>
+              <i class="fas fa-phone"></i>
               رقم الهاتف
             </span>
-
-            <i class="fas fa-phone"></i>
           </button>
 
         </div>
@@ -116,7 +106,7 @@
 
         <!-- =========================
              البريد الإلكتروني
-        ========================== -->
+             ========================= -->
         <template v-if="loginType === 'email'">
 
           <label class="field-label">
@@ -124,13 +114,17 @@
             <i class="fas fa-envelope"></i>
           </label>
 
-          <div class="input-wrapper">
+          <div class="field-wrapper">
 
             <input
-              v-model="email"
               type="email"
-              class="main-input"
+              v-model="email"
               placeholder="أدخل البريد الإلكتروني"
+              class="input-field"
+              :class="{
+                'input-error':
+                  errorMessage && loginType === 'email'
+              }"
               autocomplete="email"
               @keyup.enter="loginUser"
               @focus="clearError"
@@ -144,8 +138,8 @@
 
 
         <!-- =========================
-             الهاتف
-        ========================== -->
+             رقم الهاتف
+             ========================= -->
         <template v-if="loginType === 'phone'">
 
           <label class="field-label">
@@ -153,7 +147,7 @@
             <i class="fas fa-phone"></i>
           </label>
 
-          <div class="phone-row">
+          <div class="phone-container">
 
             <select
               v-model="countryCode"
@@ -162,7 +156,7 @@
             >
 
               <option value="">
-                رمز الدولة
+                الرمز
               </option>
 
               <option value="+964">🇮🇶 العراق (+964)</option>
@@ -180,6 +174,10 @@
               <option value="+216">🇹🇳 تونس (+216)</option>
               <option value="+213">🇩🇿 الجزائر (+213)</option>
               <option value="+212">🇲🇦 المغرب (+212)</option>
+              <option value="+222">🇲🇷 موريتانيا (+222)</option>
+              <option value="+249">🇸🇩 السودان (+249)</option>
+              <option value="+967">🇾🇪 اليمن (+967)</option>
+              <option value="+970">🇵🇸 فلسطين (+970)</option>
               <option value="+90">🇹🇷 تركيا (+90)</option>
               <option value="+44">🇬🇧 بريطانيا (+44)</option>
               <option value="+1">🇺🇸 أمريكا (+1)</option>
@@ -191,6 +189,7 @@
               <option value="+46">🇸🇪 السويد (+46)</option>
               <option value="+47">🇳🇴 النرويج (+47)</option>
               <option value="+45">🇩🇰 الدنمارك (+45)</option>
+              <option value="+358">🇫🇮 فنلندا (+358)</option>
               <option value="+41">🇨🇭 سويسرا (+41)</option>
               <option value="+43">🇦🇹 النمسا (+43)</option>
               <option value="+32">🇧🇪 بلجيكا (+32)</option>
@@ -203,6 +202,7 @@
               <option value="+351">🇵🇹 البرتغال (+351)</option>
               <option value="+7">🇷🇺 روسيا (+7)</option>
               <option value="+380">🇺🇦 أوكرانيا (+380)</option>
+              <option value="+375">🇧🇾 بيلاروسيا (+375)</option>
               <option value="+995">🇬🇪 جورجيا (+995)</option>
               <option value="+994">🇦🇿 أذربيجان (+994)</option>
               <option value="+374">🇦🇲 أرمينيا (+374)</option>
@@ -227,12 +227,15 @@
 
             </select>
 
-
             <input
-              v-model="phoneNumber"
               type="tel"
-              class="phone-main-input"
+              v-model="phoneNumber"
               placeholder="رقم الهاتف"
+              class="phone-input"
+              :class="{
+                'input-error':
+                  errorMessage && loginType === 'phone'
+              }"
               :disabled="!countryCode"
               inputmode="numeric"
               autocomplete="tel"
@@ -243,37 +246,33 @@
 
           </div>
 
-
-          <div
+          <span
             v-if="phoneError"
             class="validation-error"
           >
             <i class="fas fa-circle-exclamation"></i>
             {{ phoneError }}
-          </div>
+          </span>
 
         </template>
 
 
         <!-- =========================
              كلمة المرور
-        ========================== -->
-        <label class="field-label password-label">
-
+             ========================= -->
+        <label class="field-label">
           كلمة المرور
-
           <i class="fas fa-lock"></i>
-
         </label>
 
-
-        <div class="input-wrapper password-wrapper">
+        <div class="field-wrapper password-wrapper">
 
           <input
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
-            class="main-input password-input"
             placeholder="أدخل كلمة المرور"
+            class="input-field password-field"
+            :class="{ 'input-error': errorMessage }"
             autocomplete="current-password"
             @keyup.enter="loginUser"
             @focus="clearError"
@@ -281,13 +280,11 @@
 
           <i class="fas fa-lock input-icon"></i>
 
-
           <button
             type="button"
             class="password-toggle"
             @click="togglePassword"
           >
-
             <i
               :class="
                 showPassword
@@ -295,62 +292,52 @@
                   : 'fas fa-eye'
               "
             ></i>
-
           </button>
 
         </div>
 
 
         <!-- =========================
-             زر تسجيل الدخول
-        ========================== -->
+             تسجيل الدخول
+             ========================= -->
         <button
           type="button"
           class="login-button"
-          :disabled="loading"
           @click="loginUser"
+          :disabled="loading"
         >
 
           <span v-if="!loading">
-
             تسجيل الدخول
-
             <i class="fas fa-arrow-left"></i>
-
           </span>
-
 
           <span
             v-else
             class="loading-content"
           >
-
             <span class="loader"></span>
-
             جارٍ تسجيل الدخول...
-
           </span>
 
         </button>
 
 
-        <!-- =========================
-             إنشاء حساب
-        ========================== -->
-        <p class="register-text">
+        <!-- إنشاء حساب -->
+        <div class="register-link">
 
-          ليس لديك حساب؟
+          <span>
+            ليس لديك حساب؟
+          </span>
 
           <router-link to="/register">
             إنشاء حساب
           </router-link>
 
-        </p>
+        </div>
 
 
-        <!-- =========================
-             العلامة السفلية
-        ========================== -->
+        <!-- العلامة السفلية -->
         <div class="bottom-brand">
 
           <span></span>
@@ -365,15 +352,16 @@
 
       </div>
 
-    </section>
+    </main>
 
 
     <!-- =========================
-         إعلان
-    ========================== -->
+         الإعلان
+         ========================= -->
     <div
-      v-if="showAd"
+      id="companyAd"
       class="ad-overlay"
+      v-if="showAd"
       @click.self="closeAd"
     >
 
@@ -389,36 +377,37 @@
 
         </div>
 
-
         <div class="ad-content">
 
           <p>
-            🎉 مرحباً بالجميع!
-
+            مرحباً بالجميع!
             <br><br>
 
-            الحد الأدنى لمبلغ إعادة الشحن:
-            12 USDT.
+            تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021
+            ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة.
+            <br><br>
 
+            👍 الحد الأدنى لإعادة الشحن: 12 USDT
             <br>
-
-            الحد الأدنى للسحب:
-            3 USDT.
-
+            الحد الأدنى للسحب: 3 USDT
             <br><br>
 
-            يمكنك استخدام المنصة وإدارة حسابك
-            من خلال لوحة المستخدم.
+            💰 تدعم المنصة إعادة شحن العملة المشفرة.
+            <br><br>
 
+            🌈 وقت إعادة تعيين المهمة هو الساعة 12 ظهراً
+            في سنغافورة.
+            <br><br>
+
+            🕯 يمكنك سحب النقد مرة واحدة يومياً.
           </p>
 
         </div>
 
-
         <button
           type="button"
-          class="ad-btn"
           @click="closeAd"
+          class="ad-btn"
         >
           أنا أعرف
         </button>
@@ -432,38 +421,27 @@
 
 
 <script>
-
 import {
   getAuth,
   signInWithEmailAndPassword,
   signOut
 } from "firebase/auth";
 
-import logo from "../assets/xrp-logo.png";
+import logo from "../assets/palm-gold.png";
+import logoBg from "../assets/logo-bg.jpg";
 
 import router from "../router";
 
-
 export default {
 
-  name: "Login",
-
-
   data() {
-
     return {
 
-      /* =========================
-         الصور
-      ========================== */
-
+      /* الصور */
       logo,
+      logoBg,
 
-
-      /* =========================
-         تسجيل الدخول
-      ========================== */
-
+      /* تسجيل الدخول */
       loginType: "email",
 
       email: "",
@@ -480,26 +458,16 @@ export default {
 
       loading: false,
 
-
-      /* =========================
-         الإعلان
-      ========================== */
-
+      /* الإعلان */
       showAd: false,
 
       adTimer: null,
 
-
-      /* =========================
-         الأخطاء
-      ========================== */
-
+      /* الأخطاء */
       phoneError: "",
 
       errorMessage: ""
-
     };
-
   },
 
 
@@ -520,24 +488,14 @@ export default {
       this.handleEscKey
     );
 
-
     if (this.adTimer) {
-
-      clearTimeout(
-        this.adTimer
-      );
-
+      clearTimeout(this.adTimer);
     }
 
   },
 
 
   methods: {
-
-
-    /* =========================
-       إظهار / إخفاء كلمة المرور
-    ========================== */
 
     togglePassword() {
 
@@ -546,10 +504,6 @@ export default {
 
     },
 
-
-    /* =========================
-       مسح الأخطاء
-    ========================== */
 
     clearError() {
 
@@ -560,10 +514,6 @@ export default {
     },
 
 
-    /* =========================
-       التحقق من البريد
-    ========================== */
-
     validateEmail(email) {
 
       const re =
@@ -573,10 +523,6 @@ export default {
 
     },
 
-
-    /* =========================
-       التحقق من الهاتف
-    ========================== */
 
     validatePhoneNumber() {
 
@@ -632,10 +578,6 @@ export default {
     },
 
 
-    /* =========================
-       تحويل الهاتف إلى Email
-    ========================== */
-
     generatePhoneEmail(phoneNumber) {
 
       const cleanPhone =
@@ -648,10 +590,6 @@ export default {
 
     },
 
-
-    /* =========================
-       رسائل الأخطاء
-    ========================== */
 
     getErrorMessage(error) {
 
@@ -718,10 +656,6 @@ export default {
     },
 
 
-    /* =========================
-       زر ESC للإعلان
-    ========================== */
-
     handleEscKey(event) {
 
       if (
@@ -736,23 +670,18 @@ export default {
     },
 
 
-    /* =========================
-       تسجيل الدخول
-    ========================== */
-
     async loginUser() {
 
       this.errorMessage = "";
-
 
       let loginEmail =
         this.email.trim();
 
 
       /* تسجيل الدخول بالهاتف */
-
       if (
-        this.loginType === "phone"
+        this.loginType ===
+        "phone"
       ) {
 
         if (
@@ -763,7 +692,6 @@ export default {
 
         }
 
-
         loginEmail =
           this.generatePhoneEmail(
             this.fullPhoneNumber
@@ -773,7 +701,6 @@ export default {
 
 
       /* تسجيل الدخول بالبريد */
-
       else {
 
         if (
@@ -793,14 +720,14 @@ export default {
 
 
       /* كلمة المرور */
-
       if (
         !this.password ||
         this.password.length < 6
       ) {
 
         if (
-          this.loginType === "phone"
+          this.loginType ===
+          "phone"
         ) {
 
           this.errorMessage =
@@ -820,9 +747,7 @@ export default {
 
       this.loading = true;
 
-
-      const auth =
-        getAuth();
+      const auth = getAuth();
 
 
       try {
@@ -875,16 +800,10 @@ export default {
         }
 
 
-        /* حسابات الإدارة */
-
         const admins = [
-
           "azad.333388@gmail.com",
-
           "admin2@gmail.com",
-
           "owner@gmail.com"
-
         ];
 
 
@@ -906,21 +825,25 @@ export default {
 
         }
 
+      }
 
-      } catch (error) {
+
+      catch (error) {
 
         console.error(
           "Login Error:",
           error
         );
 
-
         this.errorMessage =
           this.getErrorMessage(
             error
           );
 
-      } finally {
+      }
+
+
+      finally {
 
         this.loading = false;
 
@@ -928,10 +851,6 @@ export default {
 
     },
 
-
-    /* =========================
-       إغلاق الإعلان
-    ========================== */
 
     closeAd() {
 
@@ -942,48 +861,32 @@ export default {
   }
 
 };
-
 </script>
 
 
 <style scoped>
 
 /* =====================================================
-   الخطوط
-===================================================== */
-
-* {
-  box-sizing: border-box;
-}
-
-
-/* =====================================================
-   الصفحة الرئيسية
-===================================================== */
+   الصفحة
+   ===================================================== */
 
 .login-page {
 
   min-height: 100vh;
 
-  width: 100%;
-
-  background: #f5f5f5;
+  background: #f4f4f4;
 
   color: #111;
 
   overflow-x: hidden;
 
-  font-family:
-    Arial,
-    "Tahoma",
-    sans-serif;
-
 }
 
 
 /* =====================================================
-   HERO
-===================================================== */
+   الخلفية العلوية
+   الصورة هنا كبيرة ولكن قصيرة
+   ===================================================== */
 
 .hero-section {
 
@@ -991,43 +894,26 @@ export default {
 
   width: 100%;
 
-  height: 560px;
-
-  overflow: hidden;
-
-  background: #031019;
-
-}
-
-
-/* الصورة الكبيرة */
-
-.hero-background {
-
-  position: absolute;
-
-  inset: 0;
-
-  width: 100%;
-
-  height: 100%;
-
-  background-image:
-    url("../assets/xrp-background.jpg");
+  height: 390px;
 
   background-size: cover;
 
-  background-position:
-    center center;
+  background-position: center center;
 
   background-repeat: no-repeat;
 
-  transform: scale(1.02);
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  overflow: hidden;
 
 }
 
 
-/* طبقة داكنة */
+/* طبقة سوداء خفيفة */
 
 .hero-overlay {
 
@@ -1038,17 +924,64 @@ export default {
   background:
     linear-gradient(
       to bottom,
-      rgba(0,0,0,0.05) 0%,
-      rgba(0,0,0,0.08) 45%,
-      rgba(0,0,0,0.55) 100%
+      rgba(0,0,0,0.05),
+      rgba(0,0,0,0.20) 50%,
+      rgba(0,0,0,0.82) 100%
     );
+
+  z-index: 1;
+
+}
+
+
+/* =====================================================
+   زر اللغة
+   ===================================================== */
+
+.language-btn {
+
+  position: absolute;
+
+  top: 22px;
+
+  right: 22px;
+
+  z-index: 5;
+
+  height: 48px;
+
+  padding: 0 20px;
+
+  border: 1px solid rgba(255,255,255,0.18);
+
+  border-radius: 30px;
+
+  background: rgba(0,0,0,0.35);
+
+  backdrop-filter: blur(12px);
+
+  -webkit-backdrop-filter: blur(12px);
+
+  color: #fff;
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  cursor: pointer;
 
 }
 
 
 /* =====================================================
    محتوى الشعار
-===================================================== */
+   ===================================================== */
 
 .hero-content {
 
@@ -1056,132 +989,26 @@ export default {
 
   z-index: 3;
 
-  height: 100%;
+  text-align: center;
 
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding-top: 15px;
+  margin-top: 5px;
 
 }
 
 
-/* =====================================================
-   دائرة الشعار
-===================================================== */
+/* دائرة الشعار */
 
 .logo-ring {
 
-  position: relative;
+  width: 170px;
 
-  width: 215px;
+  height: 170px;
 
-  height: 215px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-}
-
-
-/* الحلقة الخارجية */
-
-.logo-ring::before {
-
-  content: "";
-
-  position: absolute;
-
-  inset: 3px;
+  margin: 0 auto 18px;
 
   border-radius: 50%;
 
-  border:
-
-    2px solid
-    rgba(255,255,255,0.7);
-
-  box-shadow:
-
-    0 0 15px
-    rgba(255,255,255,0.25),
-
-    inset 0 0 15px
-    rgba(255,255,255,0.15);
-
-}
-
-
-/* الحلقة الثانية */
-
-.logo-ring::after {
-
-  content: "";
-
-  position: absolute;
-
-  inset: 19px;
-
-  border-radius: 50%;
-
-  border:
-
-    1px solid
-    rgba(255,255,255,0.45);
-
-}
-
-
-/* توهج */
-
-.logo-glow {
-
-  position: absolute;
-
-  width: 175px;
-
-  height: 175px;
-
-  border-radius: 50%;
-
-  background:
-    rgba(0,180,255,0.12);
-
-  filter: blur(18px);
-
-}
-
-
-/* =====================================================
-   خلفية الشعار الأبيض
-===================================================== */
-
-.logo-circle {
-
-  position: relative;
-
-  z-index: 3;
-
-  width: 142px;
-
-  height: 142px;
-
-  border-radius: 34px;
-
-  background:
-    linear-gradient(
-      145deg,
-      #ffffff,
-      #eeeeee
-    );
+  border: 2px solid rgba(255,255,255,0.55);
 
   display: flex;
 
@@ -1190,246 +1017,192 @@ export default {
   justify-content: center;
 
   box-shadow:
+    0 0 0 12px rgba(255,255,255,0.04),
+    0 0 45px rgba(0,0,0,0.35);
 
-    0 15px 45px
-    rgba(0,0,0,0.35),
+}
 
-    0 0 25px
-    rgba(255,255,255,0.25);
+
+/* المربع الأبيض */
+
+.logo-white-box {
+
+  width: 125px;
+
+  height: 125px;
+
+  border-radius: 28px;
+
+  background: #fff;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.35);
 
 }
 
 
 /* الشعار */
 
-.xrp-logo {
+.main-logo {
 
-  width: 110px;
+  width: 105px;
 
-  height: 110px;
+  height: 105px;
 
   object-fit: contain;
-
-  display: block;
 
 }
 
 
-/* =====================================================
-   XRP
-===================================================== */
+/* XRP */
 
 .xrp-title {
 
-  margin-top: 17px;
-
   color: #fff;
 
-  font-size: 54px;
+  font-size: 42px;
 
   font-weight: 900;
 
-  letter-spacing: 15px;
+  letter-spacing: 12px;
 
   line-height: 1;
 
   text-shadow:
-    0 4px 15px
-    rgba(0,0,0,0.45);
-
-  padding-left: 15px;
+    0 4px 15px rgba(0,0,0,0.5);
 
 }
 
 
-/* =====================================================
-   FUTURE OF FINANCE
-===================================================== */
+/* Future */
 
-.xrp-subtitle {
+.future-title {
 
-  margin-top: 16px;
+  color: rgba(255,255,255,0.85);
 
-  color:
-    rgba(255,255,255,0.9);
-
-  font-size: 13px;
-
-  font-weight: 500;
+  font-size: 11px;
 
   letter-spacing: 6px;
 
-  text-align: center;
+  margin-top: 16px;
+
+  font-weight: 500;
 
 }
 
 
 /* =====================================================
-   قسم البطاقة
-===================================================== */
+   منطقة تسجيل الدخول
+   البطاقة تتداخل مع الخلفية
+   ===================================================== */
 
-.login-section {
+.login-area {
 
   position: relative;
 
   z-index: 10;
 
-  width: 100%;
+  max-width: 850px;
 
-  margin-top: -70px;
+  margin: -55px auto 0;
 
-  padding:
-    0 20px
-    50px;
+  padding: 0 25px 40px;
 
 }
 
 
 /* =====================================================
-   البطاقة البيضاء
-===================================================== */
+   بطاقة تسجيل الدخول
+   ===================================================== */
 
 .login-card {
 
-  position: relative;
-
   width: 100%;
 
-  max-width: 820px;
+  box-sizing: border-box;
 
-  margin: 0 auto;
+  background: rgba(255,255,255,0.98);
 
-  padding:
-    48px
-    50px
-    40px;
+  border-radius: 38px;
 
-  background:
-    rgba(255,255,255,0.98);
-
-  border-radius:
-    42px;
-
-  border:
-    1px solid
-    rgba(0,0,0,0.06);
+  padding: 45px 55px 35px;
 
   box-shadow:
+    0 25px 70px rgba(0,0,0,0.15);
 
-    0 -10px 50px
-    rgba(0,0,0,0.12),
-
-    0 30px 80px
-    rgba(0,0,0,0.12);
-
-  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.9);
 
 }
 
 
 /* =====================================================
-   علامة XRP الشفافة
-===================================================== */
+   العنوان
+   ===================================================== */
 
-.card-watermark {
-
-  position: absolute;
-
-  top: 35px;
-
-  right: 35px;
-
-  color:
-    rgba(0,0,0,0.035);
-
-  font-size: 80px;
-
-  font-weight: 900;
-
-  letter-spacing: 8px;
-
-  pointer-events: none;
-
-}
-
-
-/* =====================================================
-   عنوان تسجيل الدخول
-===================================================== */
-
-.login-header {
-
-  position: relative;
-
-  z-index: 2;
+.heading-section {
 
   text-align: center;
 
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 
 }
 
 
-.login-header h1 {
+.heading-section h1 {
 
   margin: 0;
 
-  color: #080808;
+  color: #111;
 
-  font-size: 39px;
+  font-size: 34px;
 
   font-weight: 900;
 
-  line-height: 1.3;
+  letter-spacing: -1px;
 
 }
 
 
-.login-header p {
+.heading-section p {
 
-  margin:
-    9px
-    0
-    0;
+  margin: 12px 0 0;
 
-  color: #999;
+  color: #888;
 
-  font-size: 16px;
+  font-size: 15px;
 
 }
 
 
 /* =====================================================
    الخطأ
-===================================================== */
+   ===================================================== */
 
 .error-message-box {
 
-  position: relative;
+  background: #f5f5f5;
 
-  z-index: 5;
+  border: 1px solid #ddd;
+
+  border-right: 4px solid #111;
+
+  border-radius: 13px;
+
+  padding: 13px;
 
   margin-bottom: 20px;
 
-  padding: 13px 16px;
-
-  background: #f4f4f4;
-
-  border:
-    1px solid
-    #dedede;
-
-  border-right:
-    4px solid
-    #000;
-
-  border-radius: 12px;
-
   color: #222;
 
-  font-size: 13px;
-
   text-align: center;
+
+  font-size: 13px;
 
   font-weight: 700;
 
@@ -1438,14 +1211,14 @@ export default {
 
 .error-message-box i {
 
-  margin-left: 7px;
+  margin-left: 5px;
 
 }
 
 
 /* =====================================================
-   اختيار البريد / الهاتف
-===================================================== */
+   اختيار طريقة الدخول
+   ===================================================== */
 
 .login-type-selector {
 
@@ -1453,19 +1226,19 @@ export default {
 
   width: 100%;
 
-  height: 62px;
+  height: 58px;
 
-  padding: 5px;
+  padding: 4px;
 
-  margin-bottom: 28px;
+  box-sizing: border-box;
 
-  background: #f5f5f5;
+  border-radius: 30px;
 
-  border:
-    1px solid
-    #e5e5e5;
+  background: #f2f2f2;
 
-  border-radius: 35px;
+  border: 1px solid #e3e3e3;
+
+  margin-bottom: 25px;
 
 }
 
@@ -1474,17 +1247,26 @@ export default {
 
   flex: 1;
 
-  height: 100%;
-
   border: none;
 
-  border-radius: 30px;
+  border-radius: 27px;
 
   background: transparent;
 
-  color: #999;
+  color: #888;
+
+  font-size: 14px;
+
+  font-weight: 800;
 
   cursor: pointer;
+
+  transition: .25s ease;
+
+}
+
+
+.type-btn span {
 
   display: flex;
 
@@ -1492,142 +1274,108 @@ export default {
 
   justify-content: center;
 
-  gap: 10px;
-
-  font-size: 16px;
-
-  font-weight: 800;
-
-  transition:
-    all .25s ease;
-
-}
-
-
-.type-btn i {
-
-  font-size: 18px;
+  gap: 8px;
 
 }
 
 
 .type-btn.active {
 
+  background: #050505;
+
   color: #fff;
 
-  background:
-    linear-gradient(
-      135deg,
-      #111,
-      #000
-    );
-
   box-shadow:
-
-    0 6px 20px
-    rgba(0,0,0,0.2);
+    0 6px 18px rgba(0,0,0,0.18);
 
 }
 
 
 /* =====================================================
-   عناوين الحقول
-===================================================== */
+   العناوين
+   ===================================================== */
 
 .field-label {
 
   display: block;
 
-  margin:
-    0
-    0
-    10px;
-
   color: #111;
 
-  font-size: 16px;
+  font-size: 14px;
 
   font-weight: 800;
+
+  margin-bottom: 9px;
 
 }
 
 
 .field-label i {
 
-  margin-right: 6px;
+  margin-right: 5px;
 
-  color: #555;
-
-}
-
-
-.password-label {
-
-  margin-top: 24px;
+  color: #444;
 
 }
 
 
 /* =====================================================
    الحقول
-===================================================== */
+   ===================================================== */
 
-.input-wrapper {
+.field-wrapper {
 
   position: relative;
 
   width: 100%;
 
+  margin-bottom: 20px;
+
 }
 
 
-.main-input {
+.input-field {
 
   width: 100%;
 
-  height: 62px;
+  height: 58px;
 
-  padding:
-    0
-    55px
-    0
-    55px;
+  box-sizing: border-box;
 
-  border:
-    1.5px solid
-    #dedede;
+  border-radius: 30px;
 
-  border-radius: 31px;
+  border: 1px solid #ddd;
 
-  background:
-    #fff;
+  background: #fff;
 
   color: #111;
 
-  font-size: 16px;
+  font-size: 15px;
+
+  padding:
+    10px 52px
+    10px 20px;
 
   outline: none;
 
-  transition:
-    all .25s ease;
+  transition: .25s ease;
 
 }
 
 
-.main-input::placeholder {
+.input-field::placeholder {
 
   color: #aaa;
 
 }
 
 
-.main-input:focus {
+.input-field:focus {
 
   border-color: #111;
 
   box-shadow:
-    0 0 0 4px
-    rgba(0,0,0,0.05);
+    0 0 0 4px rgba(0,0,0,0.05);
 
 }
 
@@ -1636,54 +1384,56 @@ export default {
 
   position: absolute;
 
-  right: 22px;
+  right: 21px;
 
-  top: 50%;
-
-  transform:
-    translateY(-50%);
+  top: 21px;
 
   color: #555;
 
-  font-size: 18px;
+  font-size: 16px;
 
   pointer-events: none;
 
 }
 
 
+.input-error {
+
+  border-color: #222 !important;
+
+}
+
+
 /* =====================================================
    الهاتف
-===================================================== */
+   ===================================================== */
 
-.phone-row {
+.phone-container {
 
   display: flex;
 
   gap: 10px;
 
-  width: 100%;
+  margin-bottom: 20px;
 
 }
 
 
 .country-select {
 
-  width: 180px;
+  width: 150px;
 
-  height: 62px;
+  height: 58px;
 
-  padding: 0 15px;
+  border-radius: 30px;
 
-  border:
-    1.5px solid
-    #dedede;
-
-  border-radius: 31px;
+  border: 1px solid #ddd;
 
   background: #fff;
 
-  color: #555;
+  color: #333;
+
+  padding: 0 14px;
 
   font-size: 13px;
 
@@ -1692,34 +1442,25 @@ export default {
 }
 
 
-.country-select:focus {
-
-  border-color: #111;
-
-}
-
-
-.phone-main-input {
+.phone-input {
 
   flex: 1;
 
-  min-width: 0;
+  height: 58px;
 
-  height: 62px;
+  box-sizing: border-box;
 
-  padding: 0 22px;
+  border-radius: 30px;
 
-  border:
-    1.5px solid
-    #dedede;
-
-  border-radius: 31px;
+  border: 1px solid #ddd;
 
   background: #fff;
 
   color: #111;
 
-  font-size: 16px;
+  padding: 0 20px;
+
+  font-size: 15px;
 
   direction: ltr;
 
@@ -1730,33 +1471,55 @@ export default {
 }
 
 
-.phone-main-input:focus {
+.phone-input:focus,
+.country-select:focus {
 
   border-color: #111;
 
   box-shadow:
-    0 0 0 4px
-    rgba(0,0,0,0.05);
+    0 0 0 4px rgba(0,0,0,0.05);
 
 }
 
 
-.phone-main-input:disabled {
+.phone-input:disabled {
 
-  background: #f4f4f4;
+  background: #f2f2f2;
 
   cursor: not-allowed;
 
 }
 
 
+.validation-error {
+
+  display: block;
+
+  color: #222;
+
+  font-size: 12px;
+
+  margin-top: -12px;
+
+  margin-bottom: 15px;
+
+}
+
+
 /* =====================================================
    كلمة المرور
-===================================================== */
+   ===================================================== */
 
-.password-input {
+.password-wrapper {
 
-  padding-left: 65px;
+  margin-bottom: 23px;
+
+}
+
+
+.password-field {
+
+  padding-left: 55px;
 
 }
 
@@ -1765,80 +1528,42 @@ export default {
 
   position: absolute;
 
-  left: 15px;
+  left: 13px;
 
-  top: 50%;
+  top: 11px;
 
-  transform:
-    translateY(-50%);
+  width: 36px;
 
-  width: 38px;
-
-  height: 38px;
-
-  border: none;
+  height: 36px;
 
   border-radius: 50%;
 
-  background: #f2f2f2;
+  border: none;
 
-  color: #555;
+  background: #f1f1f1;
+
+  color: #444;
 
   cursor: pointer;
 
   display: flex;
 
-  align-items: center;
-
   justify-content: center;
 
-}
-
-
-.password-toggle:hover {
-
-  background: #e8e8e8;
-
-  color: #000;
-
-}
-
-
-/* =====================================================
-   خطأ الهاتف
-===================================================== */
-
-.validation-error {
-
-  display: block;
-
-  margin-top: 8px;
-
-  color: #222;
-
-  font-size: 12px;
-
-}
-
-
-.validation-error i {
-
-  margin-left: 5px;
+  align-items: center;
 
 }
 
 
 /* =====================================================
    زر تسجيل الدخول
-===================================================== */
+   ===================================================== */
 
 .login-button {
 
   width: 100%;
 
-  height: 64px;
-
-  margin-top: 30px;
+  height: 61px;
 
   border: none;
 
@@ -1847,46 +1572,52 @@ export default {
   background:
     linear-gradient(
       135deg,
-      #151515,
-      #000
+      #000 0%,
+      #161616 100%
     );
 
   color: #fff;
 
-  font-size: 18px;
+  font-size: 17px;
 
   font-weight: 900;
 
   cursor: pointer;
 
+  transition: .25s ease;
+
   box-shadow:
+    0 10px 28px rgba(0,0,0,0.18);
 
-    0 12px 30px
-    rgba(0,0,0,0.22);
+}
 
-  transition:
-    all .25s ease;
+
+.login-button span {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 12px;
 
 }
 
 
 .login-button:hover:not(:disabled) {
 
-  transform:
-    translateY(-2px);
+  transform: translateY(-2px);
 
   box-shadow:
-
-    0 17px 35px
-    rgba(0,0,0,0.28);
+    0 15px 35px rgba(0,0,0,0.25);
 
 }
 
 
 .login-button:active:not(:disabled) {
 
-  transform:
-    translateY(0);
+  transform: translateY(0);
 
 }
 
@@ -1900,16 +1631,9 @@ export default {
 }
 
 
-.login-button i {
-
-  margin-right: 8px;
-
-}
-
-
 /* =====================================================
-   Loading
-===================================================== */
+   التحميل
+   ===================================================== */
 
 .loading-content {
 
@@ -1926,18 +1650,16 @@ export default {
 
 .loader {
 
-  width: 20px;
+  width: 18px;
 
-  height: 20px;
-
-  border:
-    2px solid
-    rgba(255,255,255,0.4);
-
-  border-top-color:
-    #fff;
+  height: 18px;
 
   border-radius: 50%;
+
+  border:
+    2px solid rgba(255,255,255,.35);
+
+  border-top-color: #fff;
 
   animation:
     spin .8s linear infinite;
@@ -1949,8 +1671,7 @@ export default {
 
   to {
 
-    transform:
-      rotate(360deg);
+    transform: rotate(360deg);
 
   }
 
@@ -1958,28 +1679,25 @@ export default {
 
 
 /* =====================================================
-   إنشاء الحساب
-===================================================== */
+   إنشاء حساب
+   ===================================================== */
 
-.register-text {
-
-  margin:
-    25px
-    0
-    0;
+.register-link {
 
   text-align: center;
 
-  color: #999;
+  margin-top: 24px;
 
-  font-size: 15px;
+  font-size: 14px;
+
+  color: #999;
 
 }
 
 
-.register-text a {
+.register-link a {
 
-  color: #000;
+  color: #111;
 
   font-weight: 900;
 
@@ -1990,7 +1708,7 @@ export default {
 }
 
 
-.register-text a:hover {
+.register-link a:hover {
 
   text-decoration: underline;
 
@@ -1998,8 +1716,8 @@ export default {
 
 
 /* =====================================================
-   XRP أسفل البطاقة
-===================================================== */
+   العلامة السفلية
+   ===================================================== */
 
 .bottom-brand {
 
@@ -2009,7 +1727,7 @@ export default {
 
   justify-content: center;
 
-  gap: 14px;
+  gap: 15px;
 
   margin-top: 28px;
 
@@ -2018,32 +1736,29 @@ export default {
 
 .bottom-brand span {
 
-  width: 100px;
+  width: 90px;
 
   height: 1px;
 
-  background:
-    #ddd;
+  background: #ddd;
 
 }
 
 
 .bottom-brand strong {
 
+  font-size: 16px;
+
+  letter-spacing: 6px;
+
   color: #111;
-
-  font-size: 18px;
-
-  letter-spacing: 7px;
-
-  padding-left: 7px;
 
 }
 
 
 /* =====================================================
    الإعلان
-===================================================== */
+   ===================================================== */
 
 .ad-overlay {
 
@@ -2051,7 +1766,10 @@ export default {
 
   inset: 0;
 
-  z-index: 9999;
+  z-index: 1000;
+
+  background:
+    rgba(0,0,0,.72);
 
   display: flex;
 
@@ -2061,9 +1779,6 @@ export default {
 
   padding: 20px;
 
-  background:
-    rgba(0,0,0,0.75);
-
 }
 
 
@@ -2071,7 +1786,7 @@ export default {
 
   width: 100%;
 
-  max-width: 430px;
+  max-width: 420px;
 
   background: #fff;
 
@@ -2080,13 +1795,18 @@ export default {
   overflow: hidden;
 
   box-shadow:
-    0 30px 80px
-    rgba(0,0,0,0.4);
+    0 30px 80px rgba(0,0,0,.35);
 
 }
 
 
 .ad-header {
+
+  background: #000;
+
+  color: #fff;
+
+  padding: 18px;
 
   display: flex;
 
@@ -2095,12 +1815,6 @@ export default {
   justify-content: center;
 
   gap: 10px;
-
-  padding: 18px;
-
-  background: #000;
-
-  color: #fff;
 
 }
 
@@ -2118,15 +1832,15 @@ export default {
 
   padding: 22px;
 
-  max-height: 350px;
-
-  overflow-y: auto;
-
   color: #222;
 
   font-size: 13px;
 
   line-height: 1.9;
+
+  max-height: 350px;
+
+  overflow-y: auto;
 
 }
 
@@ -2146,9 +1860,7 @@ export default {
 
   border: none;
 
-  border-top:
-    1px solid
-    #ddd;
+  border-top: 1px solid #eee;
 
   background: #fff;
 
@@ -2163,142 +1875,98 @@ export default {
 }
 
 
-/* =====================================================
-   Tablet
-===================================================== */
+.ad-btn:hover {
 
-@media (max-width: 768px) {
-
-  .hero-section {
-
-    height: 540px;
-
-  }
-
-
-  .login-section {
-
-    margin-top: -65px;
-
-    padding:
-      0
-      15px
-      40px;
-
-  }
-
-
-  .login-card {
-
-    padding:
-      40px
-      30px
-      35px;
-
-    border-radius:
-      34px;
-
-  }
-
-
-  .login-header h1 {
-
-    font-size: 34px;
-
-  }
+  background: #f5f5f5;
 
 }
 
 
 /* =====================================================
-   Mobile
-===================================================== */
+   الموبايل
+   ===================================================== */
 
-@media (max-width: 480px) {
+@media (max-width: 700px) {
 
   .hero-section {
 
-    height: 525px;
+    height: 360px;
+
+    background-position: center center;
 
   }
 
 
-  .hero-background {
+  .language-btn {
 
-    background-position:
-      center center;
+    top: 18px;
 
-  }
+    right: 15px;
 
+    height: 45px;
 
-  .hero-content {
-
-    justify-content: center;
-
-    padding-top: 5px;
+    padding: 0 17px;
 
   }
 
 
   .logo-ring {
 
-    width: 185px;
+    width: 150px;
 
-    height: 185px;
+    height: 150px;
 
-  }
-
-
-  .logo-circle {
-
-    width: 125px;
-
-    height: 125px;
-
-    border-radius: 30px;
+    margin-bottom: 15px;
 
   }
 
 
-  .xrp-logo {
+  .logo-white-box {
 
-    width: 96px;
+    width: 112px;
 
-    height: 96px;
+    height: 112px;
+
+    border-radius: 25px;
+
+  }
+
+
+  .main-logo {
+
+    width: 94px;
+
+    height: 94px;
 
   }
 
 
   .xrp-title {
 
-    font-size: 45px;
+    font-size: 37px;
 
-    letter-spacing: 12px;
-
-    padding-left: 12px;
+    letter-spacing: 10px;
 
   }
 
 
-  .xrp-subtitle {
-
-    margin-top: 13px;
+  .future-title {
 
     font-size: 9px;
 
     letter-spacing: 4px;
 
+    margin-top: 13px;
+
   }
 
 
-  .login-section {
+  .login-area {
 
-    margin-top: -55px;
+    margin-top: -45px;
 
     padding:
-      0
-      10px
-      30px;
+      0 14px 30px;
 
   }
 
@@ -2306,42 +1974,21 @@ export default {
   .login-card {
 
     padding:
-      38px
-      20px
-      30px;
+      38px 22px 30px;
 
-    border-radius:
-      30px;
+    border-radius: 32px;
 
   }
 
 
-  .card-watermark {
+  .heading-section h1 {
 
-    top: 25px;
-
-    right: 20px;
-
-    font-size: 55px;
+    font-size: 29px;
 
   }
 
 
-  .login-header {
-
-    margin-bottom: 25px;
-
-  }
-
-
-  .login-header h1 {
-
-    font-size: 30px;
-
-  }
-
-
-  .login-header p {
+  .heading-section p {
 
     font-size: 13px;
 
@@ -2350,9 +1997,7 @@ export default {
 
   .login-type-selector {
 
-    height: 57px;
-
-    margin-bottom: 23px;
+    height: 54px;
 
   }
 
@@ -2361,119 +2006,44 @@ export default {
 
     font-size: 12px;
 
-    gap: 6px;
-
   }
 
 
-  .type-btn i {
+  .input-field,
+  .phone-input,
+  .country-select {
 
-    font-size: 14px;
-
-  }
-
-
-  .field-label {
-
-    font-size: 14px;
-
-  }
-
-
-  .main-input {
-
-    height: 57px;
-
-    border-radius: 29px;
-
-    font-size: 14px;
-
-    padding-right: 50px;
+    height: 55px;
 
   }
 
 
   .input-icon {
 
-    right: 19px;
-
-    font-size: 16px;
+    top: 19px;
 
   }
 
 
-  .phone-row {
+  .password-toggle {
 
-    gap: 7px;
-
-  }
-
-
-  .country-select {
-
-    width: 125px;
-
-    height: 57px;
-
-    border-radius: 29px;
-
-    font-size: 11px;
-
-    padding: 0 8px;
-
-  }
-
-
-  .phone-main-input {
-
-    height: 57px;
-
-    border-radius: 29px;
-
-    font-size: 13px;
-
-    padding: 0 15px;
-
-  }
-
-
-  .password-input {
-
-    padding-left: 60px;
+    top: 9px;
 
   }
 
 
   .login-button {
 
-    height: 59px;
-
-    border-radius: 30px;
+    height: 58px;
 
     font-size: 16px;
-
-    margin-top: 25px;
-
-  }
-
-
-  .register-text {
-
-    font-size: 13px;
 
   }
 
 
   .bottom-brand span {
 
-    width: 65px;
-
-  }
-
-
-  .bottom-brand strong {
-
-    font-size: 15px;
+    width: 55px;
 
   }
 
@@ -2481,37 +2051,37 @@ export default {
 
 
 /* =====================================================
-   شاشات صغيرة جداً
-===================================================== */
+   الشاشات الصغيرة جداً
+   ===================================================== */
 
-@media (max-width: 360px) {
+@media (max-width: 400px) {
 
   .hero-section {
 
-    height: 500px;
+    height: 330px;
 
   }
 
 
   .logo-ring {
 
-    width: 165px;
+    width: 135px;
 
-    height: 165px;
-
-  }
-
-
-  .logo-circle {
-
-    width: 112px;
-
-    height: 112px;
+    height: 135px;
 
   }
 
 
-  .xrp-logo {
+  .logo-white-box {
+
+    width: 102px;
+
+    height: 102px;
+
+  }
+
+
+  .main-logo {
 
     width: 85px;
 
@@ -2522,16 +2092,12 @@ export default {
 
   .xrp-title {
 
-    font-size: 39px;
-
-    letter-spacing: 9px;
-
-    padding-left: 9px;
+    font-size: 32px;
 
   }
 
 
-  .xrp-subtitle {
+  .future-title {
 
     font-size: 8px;
 
@@ -2540,12 +2106,33 @@ export default {
   }
 
 
+  .login-area {
+
+    margin-top: -38px;
+
+  }
+
+
   .login-card {
 
     padding:
-      32px
-      16px
-      25px;
+      32px 18px 27px;
+
+    border-radius: 28px;
+
+  }
+
+
+  .heading-section h1 {
+
+    font-size: 27px;
+
+  }
+
+
+  .phone-container {
+
+    gap: 6px;
 
   }
 
@@ -2553,6 +2140,10 @@ export default {
   .country-select {
 
     width: 105px;
+
+    font-size: 11px;
+
+    padding: 0 8px;
 
   }
 
