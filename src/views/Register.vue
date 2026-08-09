@@ -1,5 +1,5 @@
 <template>
-  <div class="register-page" dir="rtl">
+  <div class="register-page" :dir="currentDirection">
 
     <!-- =========================
          القسم العلوي / الخلفية
@@ -11,10 +11,26 @@
       <div class="hero-overlay"></div>
 
       <!-- اللغة -->
-      <button class="language-btn" type="button">
-        <i class="fas fa-globe"></i>
-        العربية
-      </button>
+      <div class="language-dropdown">
+        <button class="language-btn" type="button" @click="toggleDropdown">
+          <i class="fas fa-globe"></i>
+          {{ currentLanguageName }}
+          <i class="fas fa-chevron-down" :class="{ 'rotated': isDropdownOpen }"></i>
+        </button>
+        
+        <div v-if="isDropdownOpen" class="dropdown-menu">
+          <button 
+            v-for="lang in languages" 
+            :key="lang.code"
+            class="dropdown-item"
+            :class="{ 'active': currentLanguage === lang.code }"
+            @click="setLanguage(lang.code)"
+          >
+            <span class="lang-flag">{{ lang.flag }}</span>
+            {{ lang.name }}
+          </button>
+        </div>
+      </div>
 
       <!-- الشعار -->
       <div class="hero-content">
@@ -34,7 +50,7 @@
         </div>
 
         <div class="future-title">
-          THE FUTURE OF FINANCE
+          {{ translations[currentLanguage].futureTitle }}
         </div>
 
       </div>
@@ -52,11 +68,11 @@
         <div class="heading-section">
 
           <h1>
-            إنشاء حساب
+            {{ translations[currentLanguage].title }}
           </h1>
 
           <p>
-            مرحباً بك، قم بإنشاء حساب جديد
+            {{ translations[currentLanguage].subtitle }}
           </p>
 
         </div>
@@ -85,7 +101,7 @@
           >
             <span>
               <i class="fas fa-envelope"></i>
-              البريد الإلكتروني
+              {{ translations[currentLanguage].email }}
             </span>
           </button>
 
@@ -97,7 +113,7 @@
           >
             <span>
               <i class="fas fa-phone"></i>
-              رقم الهاتف
+              {{ translations[currentLanguage].phone }}
             </span>
           </button>
 
@@ -110,7 +126,7 @@
         <template v-if="registerType === 'email'">
 
           <label class="field-label">
-            البريد الإلكتروني
+            {{ translations[currentLanguage].emailLabel }}
             <i class="fas fa-envelope"></i>
           </label>
 
@@ -119,7 +135,7 @@
             <input
               type="email"
               v-model="email"
-              placeholder="أدخل البريد الإلكتروني"
+              :placeholder="translations[currentLanguage].emailPlaceholder"
               class="input-field"
               :class="{
                 'input-error':
@@ -142,7 +158,7 @@
         <template v-if="registerType === 'phone'">
 
           <label class="field-label">
-            رقم الهاتف
+            {{ translations[currentLanguage].phoneLabel }}
             <i class="fas fa-phone"></i>
           </label>
 
@@ -155,7 +171,7 @@
             >
 
               <option value="">
-                الرمز
+                {{ translations[currentLanguage].code }}
               </option>
 
               <option value="+964">🇮🇶 العراق (+964)</option>
@@ -229,7 +245,7 @@
             <input
               type="tel"
               v-model="phoneNumber"
-              placeholder="رقم الهاتف"
+              :placeholder="translations[currentLanguage].phonePlaceholder"
               class="phone-input"
               :class="{
                 'input-error':
@@ -259,7 +275,7 @@
              كلمة المرور
              ========================= -->
         <label class="field-label">
-          كلمة المرور
+          {{ translations[currentLanguage].passwordLabel }}
           <i class="fas fa-lock"></i>
         </label>
 
@@ -268,7 +284,7 @@
           <input
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
-            placeholder="أدخل كلمة المرور"
+            :placeholder="translations[currentLanguage].passwordPlaceholder"
             class="input-field password-field"
             :class="{ 'input-error': passwordError }"
             autocomplete="new-password"
@@ -298,7 +314,7 @@
              تأكيد كلمة المرور
              ========================= -->
         <label class="field-label">
-          تأكيد كلمة المرور
+          {{ translations[currentLanguage].confirmPasswordLabel }}
           <i class="fas fa-check-circle"></i>
         </label>
 
@@ -307,7 +323,7 @@
           <input
             :type="showConfirmPassword ? 'text' : 'password'"
             v-model="confirmPassword"
-            placeholder="تأكيد كلمة المرور"
+            :placeholder="translations[currentLanguage].confirmPasswordPlaceholder"
             class="input-field password-field"
             :class="{ 'input-error': passwordError }"
             autocomplete="new-password"
@@ -345,10 +361,10 @@
              كود الإحالة (اختياري)
              ========================= -->
         <label class="field-label">
-          كود الإحالة
+          {{ translations[currentLanguage].inviteLabel }}
           <i class="fas fa-gift"></i>
           <span style="color: #888; font-weight: 400; font-size: 12px;">
-            (اختياري)
+            ({{ translations[currentLanguage].optional }})
           </span>
         </label>
 
@@ -357,7 +373,7 @@
           <input
             type="text"
             v-model="inviteCode"
-            placeholder="أدخل كود الإحالة"
+            :placeholder="translations[currentLanguage].invitePlaceholder"
             class="input-field"
             autocomplete="off"
           />
@@ -378,7 +394,7 @@
         >
 
           <span v-if="!loading">
-            إنشاء حساب
+            {{ translations[currentLanguage].registerButton }}
             <i class="fas fa-arrow-left"></i>
           </span>
 
@@ -387,7 +403,7 @@
             class="loading-content"
           >
             <span class="loader"></span>
-            جارٍ إنشاء الحساب...
+            {{ translations[currentLanguage].loading }}
           </span>
 
         </button>
@@ -397,11 +413,11 @@
         <div class="login-link">
 
           <span>
-            لديك حساب؟
+            {{ translations[currentLanguage].haveAccount }}
           </span>
 
           <router-link to="/login">
-            تسجيل الدخول
+            {{ translations[currentLanguage].loginLink }}
           </router-link>
 
         </div>
@@ -458,6 +474,87 @@ export default {
       logo,
       logoBg,
 
+      /* اللغة */
+      currentLanguage: 'ar',
+      isDropdownOpen: false,
+      languages: [
+        { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+        { code: 'en', name: 'English', flag: '🇬🇧' },
+        { code: 'ru', name: 'Русский', flag: '🇷🇺' }
+      ],
+
+      translations: {
+        ar: {
+          futureTitle: 'مستقبل التمويل',
+          title: 'إنشاء حساب',
+          subtitle: 'مرحباً بك، قم بإنشاء حساب جديد',
+          email: 'البريد الإلكتروني',
+          phone: 'رقم الهاتف',
+          emailLabel: 'البريد الإلكتروني',
+          emailPlaceholder: 'أدخل البريد الإلكتروني',
+          phoneLabel: 'رقم الهاتف',
+          phonePlaceholder: 'رقم الهاتف',
+          code: 'الرمز',
+          passwordLabel: 'كلمة المرور',
+          passwordPlaceholder: 'أدخل كلمة المرور',
+          confirmPasswordLabel: 'تأكيد كلمة المرور',
+          confirmPasswordPlaceholder: 'تأكيد كلمة المرور',
+          inviteLabel: 'كود الإحالة',
+          invitePlaceholder: 'أدخل كود الإحالة',
+          optional: 'اختياري',
+          registerButton: 'إنشاء حساب',
+          loading: 'جارٍ إنشاء الحساب...',
+          haveAccount: 'لديك حساب؟',
+          loginLink: 'تسجيل الدخول'
+        },
+        en: {
+          futureTitle: 'THE FUTURE OF FINANCE',
+          title: 'Create Account',
+          subtitle: 'Welcome, create a new account',
+          email: 'Email',
+          phone: 'Phone',
+          emailLabel: 'Email',
+          emailPlaceholder: 'Enter email',
+          phoneLabel: 'Phone Number',
+          phonePlaceholder: 'Phone Number',
+          code: 'Code',
+          passwordLabel: 'Password',
+          passwordPlaceholder: 'Enter password',
+          confirmPasswordLabel: 'Confirm Password',
+          confirmPasswordPlaceholder: 'Confirm password',
+          inviteLabel: 'Referral Code',
+          invitePlaceholder: 'Enter referral code',
+          optional: 'Optional',
+          registerButton: 'Create Account',
+          loading: 'Creating account...',
+          haveAccount: 'Have an account?',
+          loginLink: 'Login'
+        },
+        ru: {
+          futureTitle: 'БУДУЩЕЕ ФИНАНСОВ',
+          title: 'Создать аккаунт',
+          subtitle: 'Добро пожаловать, создайте новый аккаунт',
+          email: 'Электронная почта',
+          phone: 'Телефон',
+          emailLabel: 'Электронная почта',
+          emailPlaceholder: 'Введите электронную почту',
+          phoneLabel: 'Номер телефона',
+          phonePlaceholder: 'Номер телефона',
+          code: 'Код',
+          passwordLabel: 'Пароль',
+          passwordPlaceholder: 'Введите пароль',
+          confirmPasswordLabel: 'Подтвердите пароль',
+          confirmPasswordPlaceholder: 'Подтвердите пароль',
+          inviteLabel: 'Реферальный код',
+          invitePlaceholder: 'Введите реферальный код',
+          optional: 'Необязательно',
+          registerButton: 'Создать аккаунт',
+          loading: 'Создание аккаунта...',
+          haveAccount: 'Уже есть аккаунт?',
+          loginLink: 'Войти'
+        }
+      },
+
       /* إنشاء الحساب */
       registerType: "email",
 
@@ -490,14 +587,43 @@ export default {
     };
   },
 
+  computed: {
+    currentLanguageName() {
+      const lang = this.languages.find(l => l.code === this.currentLanguage);
+      return lang ? lang.name : 'العربية';
+    },
+    currentDirection() {
+      return this.currentLanguage === 'ar' ? 'rtl' : 'ltr';
+    }
+  },
+
   created() {
     const ref = this.$route.query.ref;
     if (ref) {
       this.inviteCode = String(ref).trim();
     }
+
+    // استرجاع اللغة المحفوظة
+    const savedLang = localStorage.getItem('preferredLanguage');
+    if (savedLang && this.languages.some(l => l.code === savedLang)) {
+      this.currentLanguage = savedLang;
+    }
   },
 
   methods: {
+    toggleDropdown() {
+      this.isDropdownOpen = !this.isDropdownOpen;
+    },
+
+    setLanguage(langCode) {
+      this.currentLanguage = langCode;
+      this.isDropdownOpen = false;
+      localStorage.setItem('preferredLanguage', langCode);
+      
+      // تغيير اتجاه الصفحة
+      document.documentElement.dir = langCode === 'ar' ? 'rtl' : 'ltr';
+    },
+
     togglePassword() {
       this.showPassword = !this.showPassword;
     },
@@ -528,19 +654,31 @@ export default {
       }
 
       if (!this.countryCode || this.countryCode.trim() === "") {
-        this.phoneError = "الرجاء اختيار رمز الدولة";
+        this.phoneError = this.currentLanguage === 'ar' 
+          ? "الرجاء اختيار رمز الدولة"
+          : this.currentLanguage === 'en'
+          ? "Please select country code"
+          : "Пожалуйста, выберите код страны";
         return false;
       }
 
       if (!this.phoneNumber || this.phoneNumber.trim() === "") {
-        this.phoneError = "الرجاء إدخال رقم الهاتف";
+        this.phoneError = this.currentLanguage === 'ar'
+          ? "الرجاء إدخال رقم الهاتف"
+          : this.currentLanguage === 'en'
+          ? "Please enter phone number"
+          : "Пожалуйста, введите номер телефона";
         return false;
       }
 
       const cleanPhone = this.phoneNumber.replace(/[^0-9]/g, "");
 
       if (cleanPhone.length < 7 || cleanPhone.length > 15) {
-        this.phoneError = "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
+        this.phoneError = this.currentLanguage === 'ar'
+          ? "رقم الهاتف يجب أن يكون بين 7 و 15 رقم"
+          : this.currentLanguage === 'en'
+          ? "Phone number must be between 7 and 15 digits"
+          : "Номер телефона должен содержать от 7 до 15 цифр";
         return false;
       }
 
@@ -576,7 +714,11 @@ export default {
       /* إنشاء حساب بالهاتف */
       if (this.registerType === "phone") {
         if (!this.validatePhoneNumber()) {
-          this.errorMessage = this.phoneError || "رقم الهاتف غير صحيح";
+          this.errorMessage = this.phoneError || (this.currentLanguage === 'ar'
+            ? "رقم الهاتف غير صحيح"
+            : this.currentLanguage === 'en'
+            ? "Invalid phone number"
+            : "Неверный номер телефона");
           return;
         }
         registerEmail = this.generatePhoneEmail(this.fullPhoneNumber);
@@ -585,19 +727,31 @@ export default {
       /* إنشاء حساب بالبريد */
       else {
         if (!this.validateEmail(registerEmail)) {
-          this.errorMessage = "الرجاء إدخال بريد إلكتروني صحيح";
+          this.errorMessage = this.currentLanguage === 'ar'
+            ? "الرجاء إدخال بريد إلكتروني صحيح"
+            : this.currentLanguage === 'en'
+            ? "Please enter a valid email"
+            : "Пожалуйста, введите действительный адрес электронной почты";
           return;
         }
       }
 
       /* التحقق من كلمة المرور */
       if (!this.validatePassword(this.password)) {
-        this.passwordError = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+        this.passwordError = this.currentLanguage === 'ar'
+          ? "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+          : this.currentLanguage === 'en'
+          ? "Password must be at least 6 characters"
+          : "Пароль должен содержать не менее 6 символов";
         return;
       }
 
       if (this.password !== this.confirmPassword) {
-        this.passwordError = "كلمات المرور غير متطابقة";
+        this.passwordError = this.currentLanguage === 'ar'
+          ? "كلمات المرور غير متطابقة"
+          : this.currentLanguage === 'en'
+          ? "Passwords do not match"
+          : "Пароли не совпадают";
         return;
       }
 
@@ -609,7 +763,11 @@ export default {
         if (this.registerType === "phone") {
           const exists = await this.checkPhoneExists(this.fullPhoneNumber);
           if (exists) {
-            this.errorMessage = "رقم الهاتف مسجل مسبقاً";
+            this.errorMessage = this.currentLanguage === 'ar'
+              ? "رقم الهاتف مسجل مسبقاً"
+              : this.currentLanguage === 'en'
+              ? "Phone number already registered"
+              : "Номер телефона уже зарегистрирован";
             this.loading = false;
             return;
           }
@@ -670,19 +828,35 @@ export default {
         console.error("Registration error:", error);
 
         if (error.code === "auth/email-already-in-use") {
-          if (this.registerType === "email") {
-            this.errorMessage = "البريد الإلكتروني مسجل مسبقاً";
-          } else {
-            this.errorMessage = "رقم الهاتف مسجل مسبقاً";
-          }
+          this.errorMessage = this.currentLanguage === 'ar'
+            ? this.registerType === 'email' ? "البريد الإلكتروني مسجل مسبقاً" : "رقم الهاتف مسجل مسبقاً"
+            : this.currentLanguage === 'en'
+            ? this.registerType === 'email' ? "Email already registered" : "Phone number already registered"
+            : this.registerType === 'email' ? "Электронная почта уже зарегистрирована" : "Номер телефона уже зарегистрирован";
         } else if (error.code === "auth/invalid-email") {
-          this.errorMessage = "البريد الإلكتروني غير صحيح";
+          this.errorMessage = this.currentLanguage === 'ar'
+            ? "البريد الإلكتروني غير صحيح"
+            : this.currentLanguage === 'en'
+            ? "Invalid email"
+            : "Неверный адрес электронной почты";
         } else if (error.code === "auth/weak-password") {
-          this.passwordError = "كلمة المرور ضعيفة، يجب أن تكون 6 أحرف على الأقل";
+          this.passwordError = this.currentLanguage === 'ar'
+            ? "كلمة المرور ضعيفة، يجب أن تكون 6 أحرف على الأقل"
+            : this.currentLanguage === 'en'
+            ? "Weak password, must be at least 6 characters"
+            : "Слабый пароль, должен содержать не менее 6 символов";
         } else if (error.code === "auth/network-request-failed") {
-          this.errorMessage = "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.";
+          this.errorMessage = this.currentLanguage === 'ar'
+            ? "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت."
+            : this.currentLanguage === 'en'
+            ? "Network error. Please check your internet connection."
+            : "Ошибка сети. Пожалуйста, проверьте подключение к интернету.";
         } else {
-          this.errorMessage = "حدث خطأ أثناء إنشاء الحساب، يرجى المحاولة لاحقاً";
+          this.errorMessage = this.currentLanguage === 'ar'
+            ? "حدث خطأ أثناء إنشاء الحساب، يرجى المحاولة لاحقاً"
+            : this.currentLanguage === 'en'
+            ? "An error occurred while creating the account, please try again later"
+            : "Произошла ошибка при создании аккаунта, пожалуйста, попробуйте позже";
         }
       }
 
@@ -765,18 +939,17 @@ export default {
 
 
 /* =====================================================
-   زر اللغة
+   زر اللغة - القائمة المنسدلة
    ===================================================== */
 
-.language-btn {
-
+.language-dropdown {
   position: absolute;
-
   top: 22px;
-
   right: 22px;
-
   z-index: 5;
+}
+
+.language-btn {
 
   height: 48px;
 
@@ -806,6 +979,76 @@ export default {
 
   cursor: pointer;
 
+  transition: all 0.3s ease;
+}
+
+.language-btn:hover {
+  background: rgba(0,0,0,0.5);
+}
+
+.language-btn .fa-chevron-down {
+  transition: transform 0.3s ease;
+  font-size: 12px;
+}
+
+.language-btn .fa-chevron-down.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 55px;
+  right: 0;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 15px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+.dropdown-item.active {
+  background: rgba(212, 175, 55, 0.2);
+  color: #D4AF37;
+}
+
+.lang-flag {
+  font-size: 18px;
 }
 
 
@@ -1600,16 +1843,22 @@ export default {
   }
 
 
-  .language-btn {
-
+  .language-dropdown {
     top: 18px;
-
     right: 15px;
+  }
+
+  .language-btn {
 
     height: 45px;
 
     padding: 0 17px;
+    font-size: 13px;
+  }
 
+  .dropdown-menu {
+    min-width: 150px;
+    right: 0;
   }
 
 
