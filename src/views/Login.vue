@@ -1,24 +1,16 @@
 <template>
-  <div
-    class="container"
-    :style="{ backgroundImage: `url(${loginBg})` }"
-  >
-    <div class="background-overlay"></div>
-
+  <div class="container">
     <div class="card">
 
-      <!-- ==================== الشعار ==================== -->
-      <div
-        class="brand-header"
-        :style="{ backgroundImage: `url(${xrpBg})` }"
-      >
-        <div class="brand-overlay"></div>
+      <!-- الشعار والعنوان -->
+      <div class="brand-header">
 
+        <!-- صورة واحدة فقط خلف الشعار -->
         <div
           class="logo-background"
           :style="{ backgroundImage: `url(${logoBg})` }"
         >
-          <div class="logo-background-overlay"></div>
+          <div class="logo-overlay"></div>
 
           <div class="logo-wrapper">
             <img
@@ -29,32 +21,28 @@
           </div>
         </div>
 
+        <!-- اسم XRP أسفل الشعار -->
         <div class="xrp-name">XRP</div>
 
         <div class="brand-line"></div>
-
-        <div class="brand-subtitle">
-          DIGITAL ASSET
-        </div>
       </div>
 
-      <!-- ==================== العنوان ==================== -->
       <h2 class="title">تسجيل الدخول</h2>
 
       <p class="subtitle">
-        مرحبًا بك، قم بتسجيل الدخول إلى حسابك
+        مرحباً بك، قم بتسجيل الدخول إلى حسابك
       </p>
 
-      <!-- ==================== رسالة الخطأ ==================== -->
+      <!-- رسالة الخطأ العامة -->
       <div
         v-if="errorMessage"
         class="error-message-box"
       >
         <i class="fas fa-circle-exclamation"></i>
-        <span>{{ errorMessage }}</span>
+        {{ errorMessage }}
       </div>
 
-      <!-- ==================== نوع الدخول ==================== -->
+      <!-- اختيار نوع الدخول -->
       <div class="login-type-selector">
 
         <button
@@ -64,7 +52,7 @@
           @click="loginType = 'email'; clearError()"
         >
           <i class="fas fa-envelope"></i>
-          <span>البريد الإلكتروني</span>
+          البريد الإلكتروني
         </button>
 
         <button
@@ -74,12 +62,12 @@
           @click="loginType = 'phone'; clearError()"
         >
           <i class="fas fa-phone"></i>
-          <span>رقم الهاتف</span>
+          رقم الهاتف
         </button>
 
       </div>
 
-      <!-- ==================== البريد الإلكتروني ==================== -->
+      <!-- تسجيل الدخول بالبريد الإلكتروني -->
       <template v-if="loginType === 'email'">
 
         <label class="label">
@@ -94,7 +82,7 @@
           <input
             type="email"
             v-model="email"
-            placeholder="أدخل البريد الإلكتروني"
+            placeholder="البريد الإلكتروني"
             class="input input-with-icon"
             :class="{
               'input-error':
@@ -109,7 +97,7 @@
 
       </template>
 
-      <!-- ==================== رقم الهاتف ==================== -->
+      <!-- تسجيل الدخول برقم الهاتف -->
       <template v-if="loginType === 'phone'">
 
         <label class="label">
@@ -124,7 +112,8 @@
             class="country-select"
             @change="clearError"
           >
-            <option value="">رمز الدولة</option>
+
+            <option value="">اختر الرمز</option>
 
             <option value="+964">🇮🇶 العراق (+964)</option>
             <option value="+966">🇸🇦 السعودية (+966)</option>
@@ -191,6 +180,7 @@
             <option value="+63">🇵🇭 الفلبين (+63)</option>
             <option value="+82">🇰🇷 كوريا الجنوبية (+82)</option>
             <option value="+81">🇯🇵 اليابان (+81)</option>
+
           </select>
 
           <input
@@ -222,7 +212,7 @@
 
       </template>
 
-      <!-- ==================== كلمة المرور ==================== -->
+      <!-- كلمة المرور -->
       <label class="label">
         <i class="fas fa-lock"></i>
         كلمة المرور
@@ -235,7 +225,7 @@
         <input
           :type="showPassword ? 'text' : 'password'"
           v-model="password"
-          placeholder="أدخل كلمة المرور"
+          placeholder="كلمة المرور"
           class="input input-with-icon password-input"
           :class="{ 'input-error': errorMessage }"
           autocomplete="current-password"
@@ -256,14 +246,12 @@
             "
           ></i>
 
-          <span>
-            {{ showPassword ? "إخفاء" : "إظهار" }}
-          </span>
+          {{ showPassword ? "إخفاء" : "إظهار" }}
         </button>
 
       </div>
 
-      <!-- ==================== تسجيل الدخول ==================== -->
+      <!-- زر تسجيل الدخول -->
       <button
         type="button"
         class="btn"
@@ -286,76 +274,76 @@
 
       </button>
 
-      <!-- ==================== إنشاء حساب ==================== -->
+      <!-- إنشاء حساب -->
       <p class="link">
         ليس لديك حساب؟
 
         <router-link to="/register">
-          إنشاء حساب جديد
+          إنشاء حساب
         </router-link>
       </p>
 
-      <!-- ==================== العلامة السفلية ==================== -->
+      <!-- العلامة السفلية -->
       <div class="bottom-brand">
-
-        <span class="bottom-line"></span>
-
-        <span>XRP</span>
-
-        <span class="bottom-line"></span>
-
+        <span></span>
+        <strong>XRP</strong>
+        <span></span>
       </div>
 
     </div>
   </div>
 
-  <!-- ==================== الإعلان ==================== -->
+  <!-- Popup إعلان -->
   <div
-    v-if="showAd"
     id="companyAd"
     class="ad-overlay"
+    v-if="showAd"
     @click.self="closeAd"
   >
 
     <div class="ad-box">
 
       <div class="ad-header">
-
-        <div class="ad-icon">
-          <i class="fas fa-bullhorn"></i>
-        </div>
-
+        <i class="fas fa-bullhorn"></i>
         <h2>إعلان</h2>
-
       </div>
 
       <div class="ad-content">
 
         <p>
-          🎉 مرحبا بالجميع!
+          🎉🎉🎉🎉 مرحبا بالجميع!
 
           <br><br>
 
           تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021
           ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة.
+          نحن شركة استثمار في التجارة الإلكترونية مع فريق تقني قوي وقوة مالية قوية.
 
           <br><br>
 
-          يتعاون Palm Treasure مع شركات التجارة الإلكترونية
+          يتعاون Palm Treasure مع عشرات شركات التجارة الإلكترونية
+          مثل Amazon و eBay و Tiktok و Aliexpress و Alibaba و Shopee،
           لمساعدة التجار على زيادة مبيعات المنتجات الخاصة بهم.
 
           <br><br>
 
-          👍 الحد الأدنى لمبلغ إعادة الشحن: 12 USDT
+          👍1: الحد الأدنى لمبلغ إعادة الشحن: 12 USDT،
+          الحد الأدنى للسحب النقدي: 3 USDT
 
           <br>
 
-          💰 الحد الأدنى للسحب النقدي: 3 USDT
+          💰2: تستثمر المنصة على مستوى العالم،
+          لذا فإن الاستثمار يدعم فقط إعادة شحن العملة المشفرة.
 
           <br>
 
-          🌈 يمكنك إكمال المهام اليومية وفقًا للشروط
-          الموضحة داخل المنصة.
+          🌈3: وقت إعادة تعيين المهمة هو الساعة 12 ظهراً في سنغافورة.
+          يمكنك الحصول على الربح من خلال استكمال أوامر التاجر كل يوم.
+
+          <br>
+
+          🕯4: يمكنك سحب النقد مرة واحدة فقط في اليوم،
+          والحد الأدنى لمبلغ السحب هو 3 USDT.
 
         </p>
 
@@ -363,10 +351,10 @@
 
       <button
         type="button"
-        class="ad-btn"
         @click="closeAd"
+        class="ad-btn"
       >
-        فهمت
+        أنا أعرف
       </button>
 
     </div>
@@ -381,39 +369,24 @@ import {
   signOut
 } from "firebase/auth";
 
-import { db } from "../firebase";
-import router from "../router";
-
 import logo from "../assets/palm-gold.png";
-
-/*
- * صور التصميم
- *
- * ضع هذه الملفات داخل:
- * src/assets/
- *
- * login-bg.jpg
- * logo-bg.jpg
- * xrp-bg.jpg
- */
-import loginBg from "../assets/login-bg.jpg";
 import logoBg from "../assets/logo-bg.jpg";
-import xrpBg from "../assets/xrp-bg.jpg";
+
+import router from "../router";
 
 export default {
 
   data() {
+
     return {
 
-      /* ==================== الصور ==================== */
-
+      /* الشعار */
       logo,
-      loginBg,
+
+      /* الصورة الوحيدة خلف الشعار */
       logoBg,
-      xrpBg,
 
-      /* ==================== تسجيل الدخول ==================== */
-
+      /* تسجيل الدخول */
       loginType: "email",
 
       email: "",
@@ -430,19 +403,18 @@ export default {
 
       loading: false,
 
-      /* ==================== الإعلان ==================== */
-
+      /* الإعلان */
       showAd: false,
 
       adTimer: null,
 
-      /* ==================== الأخطاء ==================== */
-
+      /* الأخطاء */
       phoneError: "",
 
       errorMessage: ""
 
     };
+
   },
 
   mounted() {
@@ -471,8 +443,6 @@ export default {
 
   methods: {
 
-    /* ==================== كلمة المرور ==================== */
-
     togglePassword() {
 
       this.showPassword =
@@ -480,17 +450,12 @@ export default {
 
     },
 
-    /* ==================== مسح الأخطاء ==================== */
-
     clearError() {
 
       this.errorMessage = "";
-
       this.phoneError = "";
 
     },
-
-    /* ==================== التحقق من البريد ==================== */
 
     validateEmail(email) {
 
@@ -500,8 +465,6 @@ export default {
       return re.test(email);
 
     },
-
-    /* ==================== التحقق من الهاتف ==================== */
 
     validatePhoneNumber() {
 
@@ -551,8 +514,6 @@ export default {
 
     },
 
-    /* ==================== تحويل الهاتف إلى Email ==================== */
-
     generatePhoneEmail(phoneNumber) {
 
       const cleanPhone =
@@ -564,8 +525,6 @@ export default {
       return `${cleanPhone}@phone.app`;
 
     },
-
-    /* ==================== رسائل Firebase ==================== */
 
     getErrorMessage(error) {
 
@@ -623,20 +582,9 @@ export default {
 
       }
 
-      if (
-        error.code ===
-        "auth/operation-not-allowed"
-      ) {
-
-        return "طريقة تسجيل الدخول هذه غير مفعلة حالياً.";
-
-      }
-
       return "حدث خطأ. يرجى المحاولة لاحقاً.";
 
     },
-
-    /* ==================== زر ESC ==================== */
 
     handleEscKey(event) {
 
@@ -651,18 +599,14 @@ export default {
 
     },
 
-    /* ==================== تسجيل الدخول ==================== */
-
     async loginUser() {
 
       this.errorMessage = "";
 
-      this.phoneError = "";
-
       let loginEmail =
         this.email.trim();
 
-      /* ---------- الهاتف ---------- */
+      /* تسجيل الدخول بالهاتف */
 
       if (
         this.loginType === "phone"
@@ -683,7 +627,7 @@ export default {
 
       }
 
-      /* ---------- البريد ---------- */
+      /* تسجيل الدخول بالبريد */
 
       else {
 
@@ -702,7 +646,7 @@ export default {
 
       }
 
-      /* ---------- كلمة المرور ---------- */
+      /* التحقق من كلمة المرور */
 
       if (
         !this.password ||
@@ -733,8 +677,6 @@ export default {
 
       try {
 
-        /* تسجيل الدخول عبر Firebase */
-
         const userCredential =
           await signInWithEmailAndPassword(
             auth,
@@ -745,14 +687,21 @@ export default {
         const user =
           userCredential.user;
 
-        /* تحديث بيانات المستخدم */
+        if (user.disabled === true) {
+
+          await signOut(auth);
+
+          this.errorMessage =
+            "تم حظر حسابك، تواصل مع الدعم";
+
+          return;
+
+        }
 
         await user.reload();
 
         const updatedUser =
           auth.currentUser;
-
-        /* التحقق من حظر الحساب */
 
         if (
           updatedUser &&
@@ -762,13 +711,11 @@ export default {
           await signOut(auth);
 
           this.errorMessage =
-            "تم حظر حسابك، تواصل مع الدعم.";
+            "تم حظر حسابك، تواصل مع الدعم";
 
           return;
 
         }
-
-        /* ==================== حسابات الإدارة ==================== */
 
         const admins = [
           "azad.333388@gmail.com",
@@ -814,8 +761,6 @@ export default {
 
     },
 
-    /* ==================== إغلاق الإعلان ==================== */
-
     closeAd() {
 
       this.showAd = false;
@@ -829,25 +774,13 @@ export default {
 
 <style scoped>
 
-/* =========================================================
-   المتغيرات العامة
-   ========================================================= */
-
-* {
-  box-sizing: border-box;
-}
-
-/* =========================================================
-   الخلفية الرئيسية
-   ========================================================= */
+/* =====================================================
+   التصميم العام - أبيض وأسود
+   ===================================================== */
 
 .container {
 
-  position: relative;
-
   min-height: 100vh;
-
-  width: 100%;
 
   display: flex;
 
@@ -855,85 +788,48 @@ export default {
 
   align-items: center;
 
-  padding: 25px;
-
-  direction: rtl;
-
-  background-color: #f2f2f2;
-
-  background-size: cover;
-
-  background-position: center;
-
-  background-repeat: no-repeat;
-
-  overflow: hidden;
-
-}
-
-/* طبقة فوق صورة الخلفية */
-
-.background-overlay {
-
-  position: absolute;
-
-  inset: 0;
-
   background:
     linear-gradient(
       135deg,
-      rgba(255,255,255,0.88),
-      rgba(245,245,245,0.76)
+      #ffffff 0%,
+      #f5f5f5 50%,
+      #eeeeee 100%
     );
 
-  backdrop-filter: blur(3px);
+  padding: 20px;
 
-  z-index: 1;
+  direction: rtl;
 
 }
 
-/* =========================================================
+/* =====================================================
    البطاقة
-   ========================================================= */
+   ===================================================== */
 
 .card {
 
   position: relative;
 
-  z-index: 2;
-
   width: 100%;
 
-  max-width: 410px;
+  max-width: 390px;
 
-  padding: 28px 30px 25px;
+  padding: 30px 25px;
 
-  background:
-    rgba(255,255,255,0.97);
+  background: rgba(255,255,255,0.98);
 
-  border:
+  border-radius: 24px;
 
-    1px solid
-
-    rgba(0,0,0,0.10);
-
-  border-radius: 26px;
+  border: 1px solid #e5e5e5;
 
   box-shadow:
-
-    0 30px 80px
-
-    rgba(0,0,0,0.16),
-
-    0 8px 25px
-
-    rgba(0,0,0,0.06);
+    0 25px 70px rgba(0,0,0,0.13);
 
   overflow: hidden;
 
 }
 
-/* خط أعلى البطاقة */
+/* خط أسود أعلى البطاقة */
 
 .card::before {
 
@@ -943,7 +839,7 @@ export default {
 
   top: 0;
 
-  left: 0;
+  right: 0;
 
   width: 100%;
 
@@ -953,68 +849,37 @@ export default {
 
 }
 
-/* =========================================================
-   منطقة الشعار
-   ========================================================= */
+/* =====================================================
+   الشعار
+   ===================================================== */
 
 .brand-header {
 
-  position: relative;
-
-  padding: 22px 15px 19px;
-
-  margin-bottom: 20px;
-
-  border-radius: 20px;
-
-  background-size: cover;
-
-  background-position: center;
-
-  overflow: hidden;
-
   text-align: center;
 
-}
-
-/* طبقة صورة الشعار */
-
-.brand-overlay {
-
-  position: absolute;
-
-  inset: 0;
-
-  background:
-    rgba(255,255,255,0.72);
-
-  backdrop-filter: blur(2px);
-
-  z-index: 1;
+  margin-bottom: 24px;
 
 }
 
-/* =========================================================
-   الصورة خلف الشعار
-   ========================================================= */
+/* الصورة الوحيدة خلف الشعار */
 
 .logo-background {
 
   position: relative;
 
-  z-index: 2;
+  width: 135px;
 
-  width: 125px;
+  height: 135px;
 
-  height: 125px;
-
-  margin: 0 auto 10px;
+  margin: 0 auto 12px;
 
   border-radius: 50%;
 
   background-size: cover;
 
   background-position: center;
+
+  background-repeat: no-repeat;
 
   display: flex;
 
@@ -1024,44 +889,34 @@ export default {
 
   overflow: hidden;
 
-  border:
-
-    1px solid
-
-    rgba(0,0,0,0.15);
+  border: 1px solid #d8d8d8;
 
   box-shadow:
-
-    0 15px 40px
-
-    rgba(0,0,0,0.15);
+    0 15px 35px rgba(0,0,0,0.14);
 
 }
 
-/* طبقة شفافة فوق صورة خلف الشعار */
+/* طبقة شفافة فوق الصورة */
 
-.logo-background-overlay {
+.logo-overlay {
 
   position: absolute;
 
   inset: 0;
 
-  background:
-    rgba(255,255,255,0.42);
+  background: rgba(255,255,255,0.45);
 
-  backdrop-filter: blur(1px);
+  z-index: 1;
 
 }
 
-/* =========================================================
-   الشعار
-   ========================================================= */
+/* الشعار */
 
 .logo-wrapper {
 
   position: relative;
 
-  z-index: 3;
+  z-index: 2;
 
   display: flex;
 
@@ -1073,33 +928,23 @@ export default {
 
 .luxury-logo {
 
-  width: 88px;
+  width: 95px;
 
-  height: 88px;
+  height: 95px;
 
   object-fit: contain;
 
   filter: grayscale(100%);
 
-  drop-shadow:
-    0 5px 15px
-    rgba(0,0,0,0.20);
-
 }
 
-/* =========================================================
-   XRP
-   ========================================================= */
+/* XRP */
 
 .xrp-name {
 
-  position: relative;
-
-  z-index: 2;
-
   color: #000;
 
-  font-size: 29px;
+  font-size: 28px;
 
   font-weight: 900;
 
@@ -1107,17 +952,11 @@ export default {
 
   line-height: 1;
 
-  margin-top: 4px;
-
 }
 
 .brand-line {
 
-  position: relative;
-
-  z-index: 2;
-
-  width: 48px;
+  width: 45px;
 
   height: 3px;
 
@@ -1125,29 +964,13 @@ export default {
 
   border-radius: 10px;
 
-  margin: 12px auto 8px;
+  margin: 12px auto 0;
 
 }
 
-.brand-subtitle {
-
-  position: relative;
-
-  z-index: 2;
-
-  color: #777;
-
-  font-size: 8px;
-
-  font-weight: 800;
-
-  letter-spacing: 3px;
-
-}
-
-/* =========================================================
+/* =====================================================
    العنوان
-   ========================================================= */
+   ===================================================== */
 
 .title {
 
@@ -1155,11 +978,11 @@ export default {
 
   text-align: center;
 
-  font-size: 24px;
+  font-size: 22px;
+
+  margin-bottom: 6px;
 
   font-weight: 800;
-
-  margin: 0 0 6px;
 
 }
 
@@ -1171,31 +994,25 @@ export default {
 
   font-size: 13px;
 
-  margin: 0 0 22px;
+  margin-top: 0;
+
+  margin-bottom: 23px;
 
 }
 
-/* =========================================================
+/* =====================================================
    الخطأ
-   ========================================================= */
+   ===================================================== */
 
 .error-message-box {
 
-  display: flex;
+  background: #f5f5f5;
 
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 8px;
-
-  background: #f6f6f6;
-
-  border: 1px solid #dedede;
+  border: 1px solid #ddd;
 
   border-right: 3px solid #000;
 
-  border-radius: 12px;
+  border-radius: 10px;
 
   padding: 12px;
 
@@ -1205,37 +1022,37 @@ export default {
 
   font-size: 13px;
 
-  font-weight: 600;
-
   text-align: center;
+
+  font-weight: 600;
 
 }
 
 .error-message-box i {
 
-  color: #000;
+  margin-left: 5px;
 
 }
 
-/* =========================================================
-   اختيار الدخول
-   ========================================================= */
+/* =====================================================
+   اختيار طريقة الدخول
+   ===================================================== */
 
 .login-type-selector {
 
   display: flex;
 
-  gap: 5px;
+  gap: 6px;
+
+  margin-bottom: 20px;
+
+  background: #f1f1f1;
 
   padding: 5px;
 
-  margin-bottom: 21px;
-
-  background: #f0f0f0;
+  border-radius: 12px;
 
   border: 1px solid #e4e4e4;
-
-  border-radius: 13px;
 
 }
 
@@ -1243,7 +1060,7 @@ export default {
 
   flex: 1;
 
-  min-height: 43px;
+  padding: 11px 8px;
 
   border: none;
 
@@ -1251,13 +1068,15 @@ export default {
 
   color: #777;
 
-  border-radius: 9px;
-
   cursor: pointer;
+
+  border-radius: 8px;
 
   font-size: 12px;
 
   font-weight: 700;
+
+  transition: all .25s ease;
 
   display: flex;
 
@@ -1266,14 +1085,6 @@ export default {
   justify-content: center;
 
   gap: 7px;
-
-  transition: all .25s ease;
-
-}
-
-.type-btn:hover {
-
-  color: #000;
 
 }
 
@@ -1284,30 +1095,17 @@ export default {
   color: #fff;
 
   box-shadow:
-
-    0 6px 16px
-
-    rgba(0,0,0,0.15);
+    0 5px 15px rgba(0,0,0,0.14);
 
 }
 
-.type-btn:active {
-
-  transform: scale(.98);
-
-}
-
-/* =========================================================
-   Labels
-   ========================================================= */
+/* =====================================================
+   العناوين
+   ===================================================== */
 
 .label {
 
-  display: flex;
-
-  align-items: center;
-
-  gap: 7px;
+  display: block;
 
   color: #222;
 
@@ -1321,15 +1119,13 @@ export default {
 
 .label i {
 
-  color: #000;
-
-  font-size: 12px;
+  margin-left: 5px;
 
 }
 
-/* =========================================================
+/* =====================================================
    الحقول
-   ========================================================= */
+   ===================================================== */
 
 .field-wrapper {
 
@@ -1345,15 +1141,15 @@ export default {
 
   width: 100%;
 
-  height: 48px;
+  height: 47px;
 
-  padding: 0 14px;
+  padding: 10px 12px;
 
-  margin-bottom: 16px;
+  margin-bottom: 15px;
+
+  border-radius: 11px;
 
   border: 1px solid #ddd;
-
-  border-radius: 12px;
 
   background: #fafafa;
 
@@ -1361,22 +1157,31 @@ export default {
 
   font-size: 14px;
 
-  font-weight: 500;
-
   transition: all .25s ease;
 
-}
-
-.input::placeholder,
-.phone-input::placeholder {
-
-  color: #aaa;
+  box-sizing: border-box;
 
 }
 
 .input-with-icon {
 
-  padding-right: 42px;
+  padding-right: 38px;
+
+}
+
+.field-icon {
+
+  position: absolute;
+
+  right: 13px;
+
+  top: 15px;
+
+  color: #888;
+
+  z-index: 2;
+
+  font-size: 13px;
 
 }
 
@@ -1391,10 +1196,7 @@ export default {
   background: #fff;
 
   box-shadow:
-
-    0 0 0 3px
-
-    rgba(0,0,0,0.06);
+    0 0 0 3px rgba(0,0,0,0.06);
 
 }
 
@@ -1402,33 +1204,11 @@ export default {
 
   border-color: #000 !important;
 
-  box-shadow:
-
-    0 0 0 2px
-
-    rgba(0,0,0,0.08);
-
 }
 
-.field-icon {
-
-  position: absolute;
-
-  right: 14px;
-
-  top: 15px;
-
-  color: #777;
-
-  font-size: 14px;
-
-  z-index: 2;
-
-}
-
-/* =========================================================
+/* =====================================================
    الهاتف
-   ========================================================= */
+   ===================================================== */
 
 .phone-input-container {
 
@@ -1436,25 +1216,19 @@ export default {
 
   gap: 8px;
 
-  direction: ltr;
-
-  margin-bottom: 14px;
+  margin-bottom: 15px;
 
 }
 
 .country-select {
 
-  width: 125px;
-
-  flex-shrink: 0;
+  width: 120px;
 
   margin-bottom: 0;
 
-  padding: 0 8px;
+  cursor: pointer;
 
   font-size: 12px;
-
-  cursor: pointer;
 
 }
 
@@ -1472,9 +1246,7 @@ export default {
 
 .phone-input:disabled {
 
-  background: #eee;
-
-  color: #999;
+  background: #eeeeee;
 
   cursor: not-allowed;
 
@@ -1482,27 +1254,21 @@ export default {
 
 .validation-error {
 
-  display: block;
-
   color: #222;
 
-  font-size: 11px;
+  font-size: 12px;
 
-  margin: -5px 0 14px;
+  margin-top: -8px;
 
-  font-weight: 600;
+  margin-bottom: 12px;
 
-}
-
-.validation-error i {
-
-  margin-left: 4px;
+  display: block;
 
 }
 
-/* =========================================================
+/* =====================================================
    كلمة المرور
-   ========================================================= */
+   ===================================================== */
 
 .input-box {
 
@@ -1514,7 +1280,7 @@ export default {
 
 .password-input {
 
-  padding-left: 80px;
+  padding-left: 78px;
 
 }
 
@@ -1526,9 +1292,9 @@ export default {
 
   top: 9px;
 
-  height: 30px;
+  height: 29px;
 
-  padding: 0 7px;
+  padding: 0 6px;
 
   border: none;
 
@@ -1542,14 +1308,6 @@ export default {
 
   font-weight: 700;
 
-  display: flex;
-
-  align-items: center;
-
-  gap: 5px;
-
-  z-index: 3;
-
 }
 
 .toggle:hover {
@@ -1558,23 +1316,23 @@ export default {
 
 }
 
-/* =========================================================
-   زر الدخول
-   ========================================================= */
+/* =====================================================
+   زر تسجيل الدخول
+   ===================================================== */
 
 .btn {
 
   width: 100%;
 
-  height: 50px;
+  height: 49px;
 
   border: none;
-
-  border-radius: 12px;
 
   background: #000;
 
   color: #fff;
+
+  border-radius: 11px;
 
   font-size: 15px;
 
@@ -1582,49 +1340,34 @@ export default {
 
   cursor: pointer;
 
-  margin-top: 5px;
-
   transition: all .25s ease;
+
+  margin-top: 8px;
 
 }
 
 .btn:hover:not(:disabled) {
 
-  background: #191919;
+  background: #1b1b1b;
 
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 
   box-shadow:
-
-    0 10px 25px
-
-    rgba(0,0,0,0.18);
-
-}
-
-.btn:active:not(:disabled) {
-
-  transform: translateY(0);
+    0 8px 20px rgba(0,0,0,0.18);
 
 }
 
 .btn:disabled {
 
-  opacity: .65;
+  opacity: .6;
 
   cursor: not-allowed;
 
 }
 
-.btn i {
-
-  margin-left: 7px;
-
-}
-
-/* =========================================================
+/* =====================================================
    Loader
-   ========================================================= */
+   ===================================================== */
 
 .loading-content {
 
@@ -1634,7 +1377,7 @@ export default {
 
   justify-content: center;
 
-  gap: 10px;
+  gap: 9px;
 
 }
 
@@ -1644,17 +1387,15 @@ export default {
 
   height: 18px;
 
-  border: 2px solid
-
-    rgba(255,255,255,.35);
+  border: 2px solid #555;
 
   border-top-color: #fff;
 
   border-radius: 50%;
 
-  animation:
+  display: inline-block;
 
-    spin .8s linear infinite;
+  animation: spin .8s linear infinite;
 
 }
 
@@ -1668,19 +1409,19 @@ export default {
 
 }
 
-/* =========================================================
+/* =====================================================
    إنشاء حساب
-   ========================================================= */
+   ===================================================== */
 
 .link {
 
   text-align: center;
 
+  margin-top: 20px;
+
   color: #888;
 
   font-size: 13px;
-
-  margin: 20px 0 0;
 
 }
 
@@ -1692,19 +1433,17 @@ export default {
 
   font-weight: 800;
 
-  margin-right: 4px;
-
 }
 
 .link a:hover {
 
-  opacity: .55;
+  text-decoration: underline;
 
 }
 
-/* =========================================================
-   العلامة السفلية
-   ========================================================= */
+/* =====================================================
+   XRP أسفل الصفحة
+   ===================================================== */
 
 .bottom-brand {
 
@@ -1716,75 +1455,74 @@ export default {
 
   gap: 10px;
 
-  margin-top: 23px;
+  margin-top: 22px;
 
-  color: #aaa;
+  color: #999;
 
   font-size: 10px;
 
-  font-weight: 800;
-
-  letter-spacing: 3px;
+  letter-spacing: 4px;
 
 }
 
-.bottom-line {
+.bottom-brand span {
+
+  display: block;
 
   width: 25px;
 
   height: 1px;
 
-  background: #ccc;
+  background: #ddd;
 
 }
 
-/* =========================================================
+/* =====================================================
    الإعلان
-   ========================================================= */
+   ===================================================== */
 
 .ad-overlay {
 
   position: fixed;
 
-  inset: 0;
+  top: 0;
 
-  z-index: 1000;
+  left: 0;
+
+  width: 100%;
+
+  height: 100%;
+
+  background: rgba(0,0,0,0.75);
 
   display: flex;
 
-  align-items: center;
-
   justify-content: center;
 
+  align-items: center;
+
+  z-index: 1000;
+
   padding: 20px;
-
-  background:
-
-    rgba(0,0,0,.72);
-
-  backdrop-filter: blur(6px);
 
 }
 
 .ad-box {
 
-  width: 100%;
-
-  max-width: 420px;
-
   background: #fff;
 
-  border-radius: 22px;
+  width: 90%;
 
-  overflow: hidden;
+  max-width: 400px;
+
+  border-radius: 20px;
 
   border: 1px solid #ddd;
 
+  overflow: hidden;
+
   box-shadow:
-
-    0 30px 80px
-
-    rgba(0,0,0,.30);
+    0 25px 70px rgba(0,0,0,0.3);
 
 }
 
@@ -1794,33 +1532,15 @@ export default {
 
   align-items: center;
 
-  gap: 12px;
+  justify-content: center;
 
-  padding: 18px 20px;
+  gap: 10px;
 
   background: #000;
 
   color: #fff;
 
-}
-
-.ad-icon {
-
-  width: 36px;
-
-  height: 36px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  background: #fff;
-
-  color: #000;
-
-  border-radius: 50%;
+  padding: 16px;
 
 }
 
@@ -1830,21 +1550,19 @@ export default {
 
   font-size: 18px;
 
-  font-weight: 800;
-
 }
 
 .ad-content {
 
   padding: 20px;
 
-  color: #333;
+  color: #222;
 
   font-size: 13px;
 
   line-height: 1.8;
 
-  max-height: 330px;
+  max-height: 300px;
 
   overflow-y: auto;
 
@@ -1860,19 +1578,17 @@ export default {
 
   width: 100%;
 
-  height: 50px;
+  padding: 14px;
 
   background: #fff;
 
-  color: #000;
-
   border: none;
 
-  border-top: 1px solid #eee;
+  border-top: 1px solid #ddd;
+
+  color: #000;
 
   cursor: pointer;
-
-  font-size: 14px;
 
   font-weight: 800;
 
@@ -1884,9 +1600,9 @@ export default {
 
 }
 
-/* =========================================================
-   الهاتف
-   ========================================================= */
+/* =====================================================
+   الموبايل
+   ===================================================== */
 
 @media (max-width: 480px) {
 
@@ -1898,91 +1614,40 @@ export default {
 
   .card {
 
-    padding: 25px 19px 23px;
+    padding: 25px 20px;
 
-    border-radius: 22px;
-
-  }
-
-  .brand-header {
-
-    padding: 18px 10px;
+    border-radius: 21px;
 
   }
 
   .logo-background {
 
-    width: 112px;
+    width: 120px;
 
-    height: 112px;
+    height: 120px;
 
   }
 
   .luxury-logo {
 
-    width: 80px;
+    width: 85px;
 
-    height: 80px;
+    height: 85px;
 
   }
 
   .xrp-name {
 
-    font-size: 26px;
-
-  }
-
-  .title {
-
-    font-size: 22px;
+    font-size: 25px;
 
   }
 
   .country-select {
 
-    width: 112px;
-
-    font-size: 11px;
-
-  }
-
-  .type-btn {
-
-    font-size: 11px;
+    width: 110px;
 
   }
 
 }
 
-/* =========================================================
-   الهواتف الصغيرة جدًا
-   ========================================================= */
-
-@media (max-width: 350px) {
-
-  .card {
-
-    padding: 22px 14px;
-
-  }
-
-  .country-select {
-
-    width: 98px;
-
-  }
-
-  .type-btn span {
-
-    font-size: 10px;
-
-  }
-
-  .password-input {
-
-    padding-left: 70px;
-
-  }
-
-}
 </style>
