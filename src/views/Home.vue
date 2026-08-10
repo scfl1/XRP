@@ -188,7 +188,7 @@
     <transition name="slide">
       <aside v-if="sidebarOpen" class="sidebar">
         <div class="sidebar-header">
-          <span>🌴 Palm Treasure</span>
+          <span>⚡ XRP</span>
           <button @click="toggleSidebar"><i class="fas fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
@@ -210,7 +210,7 @@
       <div v-if="showCompany" class="modal-overlay" @click.self="closeCompanyModal">
         <div class="modal-content" @click.stop>
           <div class="modal-header">
-            <h3>🌴 Palm Treasure</h3>
+            <h3>⚡ XRP</h3>
             <button class="close-btn" @click="closeCompanyModal">
               <i class="fas fa-times"></i>
             </button>
@@ -226,7 +226,7 @@
             <div class="vip-section">
               <h4>📊 {{ t('vipPlans') }}</h4>
               <div class="vip-list">
-                <div v-for="vip in vipPlans.slice(0, 4)" :key="vip.level" class="vip-item">
+                <div v-for="vip in vipPlans" :key="vip.level" class="vip-item">
                   <div class="vip-level">{{ vip.level }}</div>
                   <div class="vip-info">
                     <span>{{ vip.recharge }} USDT</span>
@@ -300,16 +300,10 @@ export default {
       },
 
       vipPlans: [
-        { level: 'VIP 1', recharge: '0', daily: '0.15' },
-        { level: 'VIP 2', recharge: '10', daily: '0.35' },
-        { level: 'VIP 3', recharge: '50', daily: '1.60' },
-        { level: 'VIP 4', recharge: '100', daily: '3.25' },
-        { level: 'VIP 5', recharge: '300', daily: '10' },
-        { level: 'VIP 6', recharge: '900', daily: '33' },
-        { level: 'VIP 7', recharge: '1350', daily: '51' },
-        { level: 'VIP 8', recharge: '1800', daily: '70' },
-        { level: 'VIP 9', recharge: '3600', daily: '150' },
-        { level: 'VIP 10', recharge: '7200', daily: '330' }
+        { level: 'VIP 1', recharge: '20', daily: '5.00' },
+        { level: 'VIP 2', recharge: '40', daily: '10.00' },
+        { level: 'VIP 3', recharge: '50', daily: '12.50' },
+        { level: 'VIP 4', recharge: '70', daily: '17.50' }
       ],
 
       menuItems: [
@@ -500,8 +494,6 @@ export default {
         if (docSnap.exists()) {
           const data = docSnap.data();
           this.username = data.username || data.email || "User";
-          
-          // Single balance - use the main balance field
           this.totalBalance = Number(data.balance || data.vipBalance || 0);
         }
       } catch (error) {
