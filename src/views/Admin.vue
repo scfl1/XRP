@@ -1404,63 +1404,92 @@ export default {
       if (!allowed) return alert("غير مصرح لك");
       if (!confirm(`تأكيد الموافقة على ${req.amount} USDT؟`)) return;
       this.processingId = req.id;
+      
       try {
-        if (req.userId) {
-          await this.createTransactionForUser(
-            req.userId,
-            req.userEmail || req.email,
-            req.userPhone,
-            "withdraw",
-            req.amount,
-            "approved",
-            "",
-            message || "تمت الموافقة على طلب السحب",
-            req.network,
-            req.wallet || req.walletAddress,
-            req.vipLevel,
-            req.withdrawDay
-          );
-        }
-
-        await addDoc(collection(db, "withdraw_logs"), {
-          userId: req.userId || null,
-          userPhone: req.userPhone || null,
-          email: req.userEmail || req.email || null,
-          amount: req.amount || 0,
-          type: "approved",
-          adminMessage: message || "",
-          network: req.network,
-          wallet: req.wallet || req.walletAddress,
-          vipLevel: req.vipLevel,
-          withdrawDay: req.withdrawDay,
-          createdAt: serverTimestamp(),
-        });
-        
-        if (req.userId) {
-          const notificationMessage = message 
-            ? `تم تحويل ${req.amount} USDT. ${message}`
-            : `تم تحويل ${req.amount} USDT.`;
-            
-          await addDoc(
-            collection(db, "users", req.userId, "notifications"),
-            {
-              title: "تمت الموافقة على السحب",
-              message: notificationMessage,
-              read: false,
-              createdAt: serverTimestamp(),
-            }
-          );
-        }
-        
+        // العملية الرئيسية: حذف طلب السحب
         const r = doc(db, "withdraw_requests", req.id);
         const ex = await getDoc(r);
-        if (ex.exists()) await deleteDoc(r);
+        if (ex.exists()) {
+          await deleteDoc(r);
+          console.log("✅ تم حذف طلب السحب بنجاح");
+        } else {
+          console.warn("⚠️ طلب السحب غير موجود، قد يكون تم معالجته مسبقاً");
+        }
         
-        alert("✔ تمت الموافقة");
+        // العمليات الفرعية - كل منها في try-catch منفصل
+        // حتى لا تؤثر فشل عملية على نجاح العملية الرئيسية
+        
+        // 1. إنشاء سجل في withdraw_logs
+        try {
+          await addDoc(collection(db, "withdraw_logs"), {
+            userId: req.userId || null,
+            userPhone: req.userPhone || null,
+            email: req.userEmail || req.email || null,
+            amount: req.amount || 0,
+            type: "approved",
+            adminMessage: message || "",
+            network: req.network,
+            wallet: req.wallet || req.walletAddress,
+            vipLevel: req.vipLevel,
+            withdrawDay: req.withdrawDay,
+            createdAt: serverTimestamp(),
+          });
+          console.log("✅ تم إنشاء سجل في withdraw_logs");
+        } catch (e) {
+          console.warn("⚠️ فشل إنشاء سجل في withdraw_logs:", e);
+        }
+        
+        // 2. إنشاء معاملة
+        if (req.userId) {
+          try {
+            await this.createTransactionForUser(
+              req.userId,
+              req.userEmail || req.email,
+              req.userPhone,
+              "withdraw",
+              req.amount,
+              "approved",
+              "",
+              message || "تمت الموافقة على طلب السحب",
+              req.network,
+              req.wallet || req.walletAddress,
+              req.vipLevel,
+              req.withdrawDay
+            );
+            console.log("✅ تم إنشاء المعاملة");
+          } catch (e) {
+            console.warn("⚠️ فشل إنشاء المعاملة:", e);
+          }
+        }
+        
+        // 3. إرسال إشعار للمستخدم
+        if (req.userId) {
+          try {
+            const notificationMessage = message 
+              ? `تم تحويل ${req.amount} USDT. ${message}`
+              : `تم تحويل ${req.amount} USDT.`;
+              
+            await addDoc(
+              collection(db, "users", req.userId, "notifications"),
+              {
+                title: "تمت الموافقة على السحب",
+                message: notificationMessage,
+                read: false,
+                createdAt: serverTimestamp(),
+              }
+            );
+            console.log("✅ تم إرسال الإشعار");
+          } catch (e) {
+            console.warn("⚠️ فشل إرسال الإشعار:", e);
+          }
+        }
+        
+        alert("✔ تمت الموافقة بنجاح");
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
+        
       } catch (e) {
-        console.error("خطأ في الموافقة:", e);
+        console.error("❌ خطأ في الموافقة:", e);
         alert("خطأ في الموافقة");
       } finally {
         this.processingId = null;
@@ -1475,67 +1504,21 @@ export default {
       if (!allowed) return alert("غير مصرح لك");
       if (!confirm(`تأكيد الموافقة على تعبئة ${r.amount} USDT للمستخدم ${r.userEmail || r.email || r.userId || ''}?`)) return;
       this.processingId = r.id;
+      
       try {
+        // العملية الرئيسية: تحديث حالة الدفع
         const pRef = doc(db, "payments", r.id);
         await updateDoc(pRef, { 
           status: "approved", 
           processedAt: serverTimestamp(),
           adminMessage: message || ""
         });
-
+        console.log("✅ تم تحديث حالة الدفع إلى approved");
+        
+        // العمليات الفرعية - كل منها في try-catch منفصل
+        
+        // 1. تحديث رصيد المستخدم
         if (r.userId) {
-          let userPhone = r.userPhone || r.phoneNumber;
-          if (!userPhone) {
-            try {
-              const userSnap = await getDoc(doc(db, "users", r.userId));
-              if (userSnap.exists()) {
-                userPhone = userSnap.data().phoneNumber || null;
-              }
-            } catch (err) {
-              console.warn("Failed to get user phone:", err);
-            }
-          }
-
-          await this.createTransactionForUser(
-            r.userId,
-            r.userEmail || r.email,
-            userPhone,
-            "recharge",
-            r.amount,
-            "approved",
-            "",
-            message || "تمت الموافقة على طلب التعبئة",
-            r.network,
-            "",
-            "",
-            ""
-          );
-        }
-
-        await addDoc(collection(db, "recharge_logs"), {
-          userId: r.userId || null,
-          userPhone: r.userPhone || r.phoneNumber || null,
-          email: r.userEmail || r.email || null,
-          amount: r.amount || 0,
-          type: "approved",
-          adminMessage: message || "",
-          network: r.network,
-          txid: r.txid,
-          createdAt: serverTimestamp(),
-        });
-
-        if (r.userId) {
-          const notificationMessage = message 
-            ? `تمت إضافة ${r.amount} USDT إلى رصيدك. ${message}`
-            : `تمت إضافة ${r.amount} USDT إلى رصيدك. شكراً لك.`;
-            
-          await addDoc(collection(db, "users", r.userId, "notifications"), {
-            title: "تمت الموافقة على طلب التعبئة",
-            message: notificationMessage,
-            read: false,
-            createdAt: serverTimestamp(),
-          });
-
           try {
             const userRef = doc(db, "users", r.userId);
             await runTransaction(db, async (transaction) => {
@@ -1548,22 +1531,117 @@ export default {
                 });
               }
             });
-
-            await this.calculateAndAddReferralEarnings(r.userId, r.amount, r.id);
-
+            console.log("✅ تم تحديث رصيد المستخدم");
           } catch (err) {
-            console.warn("failed to update user balance after recharge approval:", err);
+            console.warn("⚠️ فشل تحديث رصيد المستخدم:", err);
           }
         }
-
+        
+        // 2. حساب أرباح الإحالة
+        if (r.userId) {
+          try {
+            await this.calculateAndAddReferralEarnings(r.userId, r.amount, r.id);
+            console.log("✅ تم حساب أرباح الإحالة");
+          } catch (err) {
+            console.warn("⚠️ فشل حساب أرباح الإحالة:", err);
+          }
+        }
+        
+        // 3. إنشاء سجل في recharge_logs
+        try {
+          let userPhone = r.userPhone || r.phoneNumber;
+          if (!userPhone && r.userId) {
+            try {
+              const userSnap = await getDoc(doc(db, "users", r.userId));
+              if (userSnap.exists()) {
+                userPhone = userSnap.data().phoneNumber || null;
+              }
+            } catch (err) {
+              console.warn("⚠️ فشل جلب رقم الهاتف:", err);
+            }
+          }
+          
+          await addDoc(collection(db, "recharge_logs"), {
+            userId: r.userId || null,
+            userPhone: userPhone || null,
+            email: r.userEmail || r.email || null,
+            amount: r.amount || 0,
+            type: "approved",
+            adminMessage: message || "",
+            network: r.network,
+            txid: r.txid,
+            createdAt: serverTimestamp(),
+          });
+          console.log("✅ تم إنشاء سجل في recharge_logs");
+        } catch (e) {
+          console.warn("⚠️ فشل إنشاء سجل في recharge_logs:", e);
+        }
+        
+        // 4. إنشاء معاملة
+        if (r.userId) {
+          try {
+            let userPhone = r.userPhone || r.phoneNumber;
+            if (!userPhone) {
+              try {
+                const userSnap = await getDoc(doc(db, "users", r.userId));
+                if (userSnap.exists()) {
+                  userPhone = userSnap.data().phoneNumber || null;
+                }
+              } catch (err) {}
+            }
+            
+            await this.createTransactionForUser(
+              r.userId,
+              r.userEmail || r.email,
+              userPhone,
+              "recharge",
+              r.amount,
+              "approved",
+              "",
+              message || "تمت الموافقة على طلب التعبئة",
+              r.network,
+              "",
+              "",
+              ""
+            );
+            console.log("✅ تم إنشاء المعاملة");
+          } catch (e) {
+            console.warn("⚠️ فشل إنشاء المعاملة:", e);
+          }
+        }
+        
+        // 5. إرسال إشعار للمستخدم
+        if (r.userId) {
+          try {
+            const notificationMessage = message 
+              ? `تمت إضافة ${r.amount} USDT إلى رصيدك. ${message}`
+              : `تمت إضافة ${r.amount} USDT إلى رصيدك. شكراً لك.`;
+              
+            await addDoc(collection(db, "users", r.userId, "notifications"), {
+              title: "تمت الموافقة على طلب التعبئة",
+              message: notificationMessage,
+              read: false,
+              createdAt: serverTimestamp(),
+            });
+            console.log("✅ تم إرسال الإشعار");
+          } catch (e) {
+            console.warn("⚠️ فشل إرسال الإشعار:", e);
+          }
+        }
+        
         alert("✔ تمت الموافقة على طلب التعبئة وتمت إضافة المبلغ إلى الرصيد");
+        
       } catch (e) {
-        console.error("approveRecharge error:", e);
+        console.error("❌ approveRecharge error:", e);
         alert("خطأ أثناء الموافقة على الطلب");
       } finally {
         this.processingId = null;
         this.closeModal();
         this.closeApproveModal();
+        // تحديث البيانات
+        await this.reloadRechargeRequests();
+        await this.loadRechargeLogs();
+        await this.loadUsers();
       }
     },
 
@@ -1579,24 +1657,21 @@ export default {
       if (!allowed) return alert("غير مصرح");
       if (!confirm(`تأكيد رفض سحب ${req.amount}؟`)) return;
       this.processingId = req.id;
+      
       try {
-        if (req.userId) {
-          await this.createTransactionForUser(
-            req.userId,
-            req.userEmail || req.email,
-            req.userPhone,
-            "withdraw",
-            req.amount,
-            "rejected",
-            reason,
-            "تم رفض طلب السحب",
-            req.network,
-            req.wallet || req.walletAddress,
-            req.vipLevel,
-            req.withdrawDay
-          );
+        // العملية الرئيسية: حذف طلب السحب
+        const r = doc(db, "withdraw_requests", req.id);
+        const ex = await getDoc(r);
+        if (ex.exists()) {
+          await deleteDoc(r);
+          console.log("✅ تم حذف طلب السحب بنجاح");
+        } else {
+          console.warn("⚠️ طلب السحب غير موجود، قد يكون تم معالجته مسبقاً");
         }
-
+        
+        // العمليات الفرعية - كل منها في try-catch منفصل
+        
+        // 1. إرجاع الرصيد للمستخدم
         if (req.userId && req.amount) {
           try {
             await runTransaction(db, async (transaction) => {
@@ -1612,45 +1687,77 @@ export default {
             });
             console.log(`✅ تم إرجاع ${req.amount} USDT للمستخدم ${req.userId}`);
           } catch (err) {
-            console.error("❌ خطأ في إرجاع الرصيد:", err);
+            console.warn("⚠️ فشل إرجاع الرصيد:", err);
           }
         }
-
-        await addDoc(collection(db, "withdraw_logs"), {
-          userId: req.userId || null,
-          userPhone: req.userPhone || null,
-          email: req.userEmail || req.email || null,
-          amount: req.amount || 0,
-          type: "rejected",
-          reason: reason,
-          network: req.network,
-          wallet: req.wallet || req.walletAddress,
-          vipLevel: req.vipLevel,
-          withdrawDay: req.withdrawDay,
-          createdAt: serverTimestamp(),
-        });
-
-        if (req.userId) {
-          await addDoc(
-            collection(db, "users", req.userId, "notifications"),
-            {
-              title: "تم رفض طلب السحب",
-              message: `تم رفض سحب ${req.amount} USDT. السبب: ${reason}. تم إرجاع المبلغ إلى رصيدك.`,
-              read: false,
-              createdAt: serverTimestamp(),
-            }
-          );
+        
+        // 2. إنشاء سجل في withdraw_logs
+        try {
+          await addDoc(collection(db, "withdraw_logs"), {
+            userId: req.userId || null,
+            userPhone: req.userPhone || null,
+            email: req.userEmail || req.email || null,
+            amount: req.amount || 0,
+            type: "rejected",
+            reason: reason,
+            network: req.network,
+            wallet: req.wallet || req.walletAddress,
+            vipLevel: req.vipLevel,
+            withdrawDay: req.withdrawDay,
+            createdAt: serverTimestamp(),
+          });
+          console.log("✅ تم إنشاء سجل في withdraw_logs");
+        } catch (e) {
+          console.warn("⚠️ فشل إنشاء سجل في withdraw_logs:", e);
         }
-
-        const r = doc(db, "withdraw_requests", req.id);
-        const ex = await getDoc(r);
-        if (ex.exists()) await deleteDoc(r);
+        
+        // 3. إنشاء معاملة
+        if (req.userId) {
+          try {
+            await this.createTransactionForUser(
+              req.userId,
+              req.userEmail || req.email,
+              req.userPhone,
+              "withdraw",
+              req.amount,
+              "rejected",
+              reason,
+              "تم رفض طلب السحب",
+              req.network,
+              req.wallet || req.walletAddress,
+              req.vipLevel,
+              req.withdrawDay
+            );
+            console.log("✅ تم إنشاء المعاملة");
+          } catch (e) {
+            console.warn("⚠️ فشل إنشاء المعاملة:", e);
+          }
+        }
+        
+        // 4. إرسال إشعار للمستخدم
+        if (req.userId) {
+          try {
+            await addDoc(
+              collection(db, "users", req.userId, "notifications"),
+              {
+                title: "تم رفض طلب السحب",
+                message: `تم رفض سحب ${req.amount} USDT. السبب: ${reason}. تم إرجاع المبلغ إلى رصيدك.`,
+                read: false,
+                createdAt: serverTimestamp(),
+              }
+            );
+            console.log("✅ تم إرسال الإشعار");
+          } catch (e) {
+            console.warn("⚠️ فشل إرسال الإشعار:", e);
+          }
+        }
         
         alert("❌ تم الرفض وإرجاع الرصيد");
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
+        
       } catch (e) {
-        console.error("خطأ في رفض الطلب:", e);
+        console.error("❌ خطأ في رفض الطلب:", e);
         alert("خطأ في رفض الطلب");
       } finally {
         this.processingId = null;
@@ -2052,68 +2159,92 @@ export default {
       if (!allowed) return alert("غير مصرح لك");
       if (!confirm(`تأكيد رفض طلب التعبئة ${r.amount} USDT للمستخدم ${r.userEmail || r.email || r.userId || ''}?`)) return;
       this.processingId = r.id;
+      
       try {
+        // العملية الرئيسية: تحديث حالة الدفع
         const pRef = doc(db, "payments", r.id);
         await updateDoc(pRef, { status: "rejected", processedAt: serverTimestamp() });
-
-        if (r.userId) {
-          let userPhone = r.userPhone || r.phoneNumber;
-          if (!userPhone) {
-            try {
-              const userSnap = await getDoc(doc(db, "users", r.userId));
-              if (userSnap.exists()) {
-                userPhone = userSnap.data().phoneNumber || null;
-              }
-            } catch (err) {
-              console.warn("Failed to get user phone:", err);
-            }
-          }
-
-          await this.createTransactionForUser(
-            r.userId,
-            r.userEmail || r.email,
-            userPhone,
-            "recharge",
-            r.amount,
-            "rejected",
-            reason,
-            "تم رفض طلب التعبئة",
-            r.network,
-            "",
-            "",
-            ""
-          );
-        }
-
-        await addDoc(collection(db, "recharge_logs"), {
-          userId: r.userId || null,
-          userPhone: r.userPhone || r.phoneNumber || null,
-          email: r.userEmail || r.email || null,
-          amount: r.amount || 0,
-          type: "rejected",
-          reason: reason,
-          network: r.network,
-          txid: r.txid,
-          createdAt: serverTimestamp(),
-        });
-
-        if (r.userId) {
-          await addDoc(collection(db, "users", r.userId, "notifications"), {
-            title: "تم رفض طلب التعبئة",
-            message: `تم رفض طلب تعبئة ${r.amount} USDT. السبب: ${reason}`,
-            read: false,
+        console.log("✅ تم تحديث حالة الدفع إلى rejected");
+        
+        // العمليات الفرعية - كل منها في try-catch منفصل
+        
+        // 1. إنشاء سجل في recharge_logs
+        try {
+          await addDoc(collection(db, "recharge_logs"), {
+            userId: r.userId || null,
+            userPhone: r.userPhone || r.phoneNumber || null,
+            email: r.userEmail || r.email || null,
+            amount: r.amount || 0,
+            type: "rejected",
+            reason: reason,
+            network: r.network,
+            txid: r.txid,
             createdAt: serverTimestamp(),
           });
+          console.log("✅ تم إنشاء سجل في recharge_logs");
+        } catch (e) {
+          console.warn("⚠️ فشل إنشاء سجل في recharge_logs:", e);
         }
-
+        
+        // 2. إنشاء معاملة
+        if (r.userId) {
+          try {
+            let userPhone = r.userPhone || r.phoneNumber;
+            if (!userPhone) {
+              try {
+                const userSnap = await getDoc(doc(db, "users", r.userId));
+                if (userSnap.exists()) {
+                  userPhone = userSnap.data().phoneNumber || null;
+                }
+              } catch (err) {}
+            }
+            
+            await this.createTransactionForUser(
+              r.userId,
+              r.userEmail || r.email,
+              userPhone,
+              "recharge",
+              r.amount,
+              "rejected",
+              reason,
+              "تم رفض طلب التعبئة",
+              r.network,
+              "",
+              "",
+              ""
+            );
+            console.log("✅ تم إنشاء المعاملة");
+          } catch (e) {
+            console.warn("⚠️ فشل إنشاء المعاملة:", e);
+          }
+        }
+        
+        // 3. إرسال إشعار للمستخدم
+        if (r.userId) {
+          try {
+            await addDoc(collection(db, "users", r.userId, "notifications"), {
+              title: "تم رفض طلب التعبئة",
+              message: `تم رفض طلب تعبئة ${r.amount} USDT. السبب: ${reason}`,
+              read: false,
+              createdAt: serverTimestamp(),
+            });
+            console.log("✅ تم إرسال الإشعار");
+          } catch (e) {
+            console.warn("⚠️ فشل إرسال الإشعار:", e);
+          }
+        }
+        
         alert("❌ تم رفض طلب التعبئة");
+        
       } catch (e) {
-        console.error("rejectRecharge error:", e);
+        console.error("❌ rejectRecharge error:", e);
         alert("حدث خطأ أثناء رفض الطلب");
       } finally {
         this.processingId = null;
         this.closeModal();
         this.closeRejectModal();
+        await this.reloadRechargeRequests();
+        await this.loadRechargeLogs();
       }
     },
     
