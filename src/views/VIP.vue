@@ -1,13 +1,7 @@
 <template>
   <div class="vip-page">
     <div class="container">
-      <h1 class="page-title">
-        <span class="title-glow">👑</span>
-        مستويات VIP
-        <span class="title-glow">👑</span>
-      </h1>
-
-      <p class="vip-subtitle">اختر مستواك المناسب واستمتع بالمميزات الحصرية</p>
+      <!-- تم حذف العنوان والنص الفرعي كما هو مطلوب -->
 
       <!-- إشعار الأرباح -->
       <transition name="slide-down">
@@ -52,26 +46,24 @@
             </div>
           </div>
 
-          <div class="remaining-timer">
-            <i class="fas fa-hourglass-half"></i>
-            الوقت المتبقي حتى التوزيع القادم: <span class="timer-val">{{ remainingText }}</span>
+          <!-- عداد الوقت المتبقي - تصميم جديد ومحدث -->
+          <div class="timer-card">
+            <div class="timer-icon">
+              <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="timer-content">
+              <div class="timer-label">الوقت المتبقي حتى التوزيع القادم</div>
+              <div class="timer-value">{{ remainingText }}</div>
+            </div>
           </div>
 
-          <div class="last-reward-info" v-if="userVip.lastRewardAt">
-            <i class="fas fa-history"></i>
-            آخر توزيع: {{ formatDate(userVip.lastRewardAt) }}
+          <!-- تاريخ VIP فقط بدون الساعة -->
+          <div class="vip-date-info" v-if="userVip.vipStart">
+            <i class="fas fa-calendar-check"></i>
+            تاريخ الاشتراك: {{ formatDateOnly(userVip.vipStart) }}
           </div>
 
-          <div class="details-btn-wrapper">
-            <button class="btn-details-white" @click="showDetailsModal = true">
-              <i class="fas fa-info-circle"></i>
-              تفاصيل
-            </button>
-            <button class="btn-upgrade-auto" @click="autoUpgrade" v-if="canUpgrade">
-              <i class="fas fa-arrow-up"></i>
-              ترقية تلقائية
-            </button>
-          </div>
+          <!-- تم حذف زر "تفاصيل" و"ترقية تلقائية" -->
         </div>
 
         <!-- فلترة الخطط -->
@@ -83,7 +75,7 @@
             أساسي (1-7)
           </button>
           <button @click="filterLevel = 'premium'" :class="{ active: filterLevel === 'premium' }" class="filter-btn elite-filter">
-            <i class="fas fa-crown"></i>
+            <i class="fas fa-star"></i>
             النخبة (8+)
           </button>
         </div>
@@ -101,18 +93,18 @@
           >
             <!-- شريط النخبة للمستويات 8+ -->
             <div class="elite-ribbon" v-if="plan.level >= 8">
-              <i class="fas fa-crown"></i>
+              <i class="fas fa-star"></i>
               نخبة VIP
               <i class="fas fa-star"></i>
             </div>
             
             <div class="item-header-row" :class="{ 'elite-header': plan.level >= 8 }">
               <div class="item-medal-right">
-                <span v-if="plan.level === 1">🥉</span>
-                <span v-else-if="plan.level === 2">🥈</span>
-                <span v-else-if="plan.level === 3">🥇</span>
-                <span v-else-if="plan.level >= 8" class="elite-medal">👑</span>
-                <span v-else>💎</span>
+                <!-- أيقونات موحدة وحديثة -->
+                <span v-if="plan.level >= 8" class="elite-medal">⭐</span>
+                <span v-else-if="plan.level >= 4" class="medal-icon">💠</span>
+                <span v-else-if="plan.level >= 2" class="medal-icon">🔷</span>
+                <span v-else class="medal-icon">🔹</span>
               </div>
               <div class="item-title-left" :class="{ 'elite-title': plan.level >= 8 }">
                 VIP {{ plan.level }}
@@ -174,7 +166,7 @@
 
             <!-- علامة مميزة للخطط النشطة -->
             <div class="active-ribbon" v-if="userVip && userVip.level === plan.level && plan.level >= 8">
-              👑 نخبة نشط 👑
+              ⭐ نخبة نشط ⭐
             </div>
             <div class="active-ribbon basic" v-else-if="userVip && userVip.level === plan.level">
               نشط الآن
@@ -185,7 +177,7 @@
         <!-- شارة النخبة في الأسفل -->
         <div class="elite-footer">
           <div class="elite-info-box">
-            <i class="fas fa-crown"></i>
+            <i class="fas fa-star"></i>
             <div class="elite-info-content">
               <h4>🌟 برنامج النخبة VIP 🌟</h4>
               <p>المستويات من VIP 8 فما فوق تتمتع بمميزات حصرية: أولوية الدعم الفني، عمولات إضافية، ومكافآت خاصة</p>
@@ -219,7 +211,7 @@
               </div>
 
               <div class="section elite-section">
-                <h4>👑 مميزات النخبة (VIP 8+):</h4>
+                <h4>⭐ مميزات النخبة (VIP 8+):</h4>
                 <ul>
                   <li>دعم فني على مدار الساعة</li>
                   <li>عمولات إضافية من فريقك</li>
@@ -433,6 +425,17 @@ export default {
       if (!timestamp) return '---';
       const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
       return date.toLocaleString('ar-SA');
+    },
+
+    // دالة لعرض التاريخ فقط بدون الساعة
+    formatDateOnly(timestamp) {
+      if (!timestamp) return '---';
+      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+      return date.toLocaleDateString('ar-EG', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
     },
 
     showProfitNotification(amount, cyclesCount) {
@@ -747,28 +750,7 @@ export default {
 
 .container { max-width: 500px; margin: 0 auto; }
 
-.page-title {
-  text-align: center;
-  font-size: 26px;
-  font-weight: 900;
-  color: #1a1a2e;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.title-glow {
-  font-size: 28px;
-}
-
-.vip-subtitle {
-  text-align: center;
-  color: #6b7280;
-  font-size: 14px;
-  margin-bottom: 20px;
-}
+/* تم حذف .page-title و .vip-subtitle */
 
 /* إشعار الأرباح */
 .profit-notification {
@@ -869,65 +851,80 @@ export default {
 .earn-value { font-size: 16px; color: #1a1a2e; font-weight: 700; }
 .earn-value small { font-size: 10px; color: #6b7280; }
 
-.remaining-timer { 
-  color: #1a1a2e; 
-  font-size: 15px; 
-  font-weight: 600; 
-  margin-bottom: 10px; 
+/* عداد الوقت الجديد */
+.timer-card {
+  background: linear-gradient(135deg, #1a1a2e, #2a2a4e);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.15);
 }
 
-.last-reward-info {
+.timer-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.timer-icon i {
+  font-size: 24px;
+  color: #ffffff;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.timer-content {
+  flex: 1;
+  text-align: right;
+}
+
+.timer-label {
   font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 4px;
+}
+
+.timer-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: 'Montserrat', monospace;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+/* تاريخ VIP فقط */
+.vip-date-info {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-}
-
-.last-reward-info i { color: #1a1a2e; }
-
-.details-btn-wrapper { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
-.btn-details-white {
-  background: #1a1a2e; 
-  color: #ffffff; 
-  border: none; 
-  padding: 8px 18px;
-  border-radius: 8px; 
-  font-weight: 700; 
   font-size: 13px;
-  display: flex; 
-  align-items: center; 
-  gap: 6px; 
-  cursor: pointer;
-  transition: all 0.3s ease;
+  color: #6b7280;
+  background: #f8f9fa;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
-.btn-details-white:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.2);
+.vip-date-info i {
+  color: #1a1a2e;
+  font-size: 14px;
 }
 
-.btn-upgrade-auto {
-  background: #1a1a2e;
-  color: #ffffff;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-upgrade-auto:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.2);
-}
+/* تم حذف .details-btn-wrapper و .btn-details-white و .btn-upgrade-auto */
 
 /* فلترة الخطط */
 .filter-buttons {
@@ -1030,9 +1027,17 @@ export default {
   background: #f0f2f5;
 }
 .item-medal-right { font-size: 22px; }
+
+/* أيقونات موحدة وحديثة */
+.medal-icon {
+  font-size: 24px;
+}
+
 .elite-medal {
   font-size: 26px;
+  color: #1a1a2e;
 }
+
 .item-title-left { 
   font-size: 17px; 
   font-weight: 800; 
@@ -1046,6 +1051,7 @@ export default {
 }
 .star-icon {
   font-size: 14px;
+  color: #1a1a2e;
 }
 
 .item-body { padding: 12px 15px; }
@@ -1384,11 +1390,6 @@ export default {
     font-size: 11px;
   }
   
-  .details-btn-wrapper {
-    flex-direction: column;
-    gap: 8px;
-  }
-  
   .elite-ribbon {
     font-size: 9px;
     padding: 3px 25px;
@@ -1412,8 +1413,12 @@ export default {
     font-size: 16px;
   }
   
-  .page-title {
+  .timer-value {
     font-size: 22px;
+  }
+  
+  .timer-card {
+    padding: 14px 16px;
   }
   
   .earnings-grid {
@@ -1436,6 +1441,10 @@ export default {
   
   .full-width-stat {
     grid-column: span 1;
+  }
+  
+  .timer-value {
+    font-size: 20px;
   }
 }
 </style>
