@@ -37,59 +37,59 @@
         </div>
       </div>
 
-      <!-- معلومات الحساب -->
-      <div class="info-card">
-        <h3 class="card-title"><i class="fas fa-user-circle"></i> معلومات الحساب</h3>
+      <!-- معلومات الحساب - خلفية سوداء -->
+      <div class="info-card dark-card">
+        <h3 class="card-title dark-title"><i class="fas fa-user-circle"></i> معلومات الحساب</h3>
         
-        <div class="info-row">
+        <div class="info-row dark-row">
           <div class="info-left">
-            <i class="fas fa-id-badge info-icon"></i>
-            <span class="info-label">معرف المستخدم (ID)</span>
+            <i class="fas fa-id-badge info-icon dark-icon"></i>
+            <span class="info-label dark-label">معرف المستخدم (ID)</span>
           </div>
           <div class="info-right">
-            <span class="info-value">{{ userData.uid }}</span>
-            <button class="copy-btn" @click="copy(userData.uid)">
+            <span class="info-value dark-value">{{ userData.uid }}</span>
+            <button class="copy-btn dark-copy" @click="copy(userData.uid)">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
 
-        <div class="info-row">
+        <div class="info-row dark-row">
           <div class="info-left">
-            <i class="fas fa-envelope info-icon"></i>
-            <span class="info-label">البريد الإلكتروني</span>
+            <i class="fas fa-envelope info-icon dark-icon"></i>
+            <span class="info-label dark-label">البريد الإلكتروني</span>
           </div>
           <div class="info-right">
-            <span class="info-value">{{ userData.email || 'غير مسجل' }}</span>
-            <button class="copy-btn" @click="copy(userData.email)" v-if="userData.email">
+            <span class="info-value dark-value">{{ userData.email || 'غير مسجل' }}</span>
+            <button class="copy-btn dark-copy" @click="copy(userData.email)" v-if="userData.email">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
 
-        <div class="info-row">
+        <div class="info-row dark-row">
           <div class="info-left">
-            <i class="fas fa-phone-alt info-icon"></i>
-            <span class="info-label">رقم الهاتف</span>
+            <i class="fas fa-phone-alt info-icon dark-icon"></i>
+            <span class="info-label dark-label">رقم الهاتف</span>
           </div>
           <div class="info-right">
-            <span class="info-value" :class="{ 'not-linked': !userData.phoneNumber }">
+            <span class="info-value dark-value" :class="{ 'not-linked': !userData.phoneNumber }">
               {{ userData.phoneNumber || 'لم يتم الربط بعد' }}
             </span>
-            <button class="link-btn-small" @click="openPhoneModal">
+            <button class="link-btn-small dark-link-btn" @click="openPhoneModal">
               <i class="fas fa-link"></i> {{ userData.phoneNumber ? 'تحديث' : 'ربط' }}
             </button>
           </div>
         </div>
 
-        <div class="info-row" v-if="userData.referralCode">
+        <div class="info-row dark-row" v-if="userData.referralCode">
           <div class="info-left">
-            <i class="fas fa-share-nodes info-icon"></i>
-            <span class="info-label">كود الإحالة</span>
+            <i class="fas fa-share-nodes info-icon dark-icon"></i>
+            <span class="info-label dark-label">كود الإحالة</span>
           </div>
           <div class="info-right">
-            <span class="info-value referral-code">{{ userData.referralCode }}</span>
-            <button class="copy-btn" @click="copy(userData.referralCode)">
+            <span class="info-value dark-value referral-code">{{ userData.referralCode }}</span>
+            <button class="copy-btn dark-copy" @click="copy(userData.referralCode)">
               <i class="fas fa-copy"></i>
             </button>
           </div>
@@ -652,7 +652,6 @@ export default {
         }
       } catch (error) {
         console.error('Error fetching crypto prices:', error);
-        // استخدام بيانات تجريبية في حالة فشل الاتصال
         if (this.cryptos.length === 0) {
           this.cryptos = [
             { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', current_price: 67234.50, price_change_percentage_24h: 2.35, image: '' },
@@ -667,7 +666,6 @@ export default {
     },
     
     handleImageError(crypto) {
-      // استخدام أيقونة بديلة عند فشل تحميل الصورة
       const fallbackIcons = {
         'bitcoin': '₿',
         'ethereum': '⟠',
@@ -1129,7 +1127,102 @@ export default {
   margin: 0;
 }
 
-/* ===== البطاقات ===== */
+/* ===== بطاقة معلومات الحساب - خلفية سوداء ===== */
+.dark-card {
+  background: #1a1a2e;
+  border-radius: 20px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.dark-title {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dark-title i {
+  color: #9ca3af;
+}
+
+.dark-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.dark-row:last-child {
+  border-bottom: none;
+}
+
+.dark-icon {
+  color: #9ca3af;
+  font-size: 15px;
+  width: 18px;
+}
+
+.dark-label {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.dark-value {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dark-value.not-linked {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.dark-copy {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.dark-copy:hover {
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+}
+
+.dark-link-btn {
+  background: #2a2a4e;
+  color: #ffffff;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.dark-link-btn:hover {
+  background: #3a3a6e;
+}
+
+/* ===== البطاقات الأخرى ===== */
 .info-card, .balance-card, .crypto-section {
   background: #ffffff;
   border-radius: 20px;
@@ -1150,96 +1243,6 @@ export default {
 
 .card-title i {
   color: #6b7280;
-}
-
-/* ===== صفوف المعلومات ===== */
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f2f5;
-}
-
-.info-row:last-child {
-  border-bottom: none;
-}
-
-.info-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.info-icon {
-  color: #6b7280;
-  font-size: 15px;
-  width: 18px;
-}
-
-.info-label {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.info-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.info-value {
-  font-size: 13px;
-  color: #1a1a2e;
-  font-weight: 500;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.info-value.not-linked {
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.referral-code {
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.copy-btn {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 13px;
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.copy-btn:hover {
-  background: #f0f2f5;
-  color: #1a1a2e;
-}
-
-.link-btn-small {
-  background: #1a1a2e;
-  color: #ffffff;
-  border: none;
-  padding: 4px 12px;
-  border-radius: 50px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  white-space: nowrap;
-}
-
-.link-btn-small:hover {
-  background: #2a2a4e;
 }
 
 /* ===== بطاقة الرصيد ===== */
@@ -1840,16 +1843,16 @@ export default {
     font-size: 13px;
   }
 
-  .info-card, .balance-card, .crypto-section {
+  .dark-card, .info-card, .balance-card, .crypto-section {
     padding: 14px 16px;
   }
 
-  .info-value {
+  .dark-value, .info-value {
     max-width: 80px;
     font-size: 12px;
   }
 
-  .info-label {
+  .dark-label, .info-label {
     font-size: 12px;
   }
 
@@ -1887,7 +1890,7 @@ export default {
 }
 
 @media (max-width: 380px) {
-  .info-row {
+  .dark-row, .info-row {
     flex-wrap: wrap;
     gap: 6px;
   }
@@ -1898,7 +1901,7 @@ export default {
     padding-right: 28px;
   }
 
-  .info-value {
+  .dark-value, .info-value {
     max-width: 150px;
   }
 
