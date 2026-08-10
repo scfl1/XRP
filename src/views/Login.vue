@@ -354,68 +354,6 @@
 
     </main>
 
-
-    <!-- =========================
-         الإعلان
-         ========================= -->
-    <div
-      id="companyAd"
-      class="ad-overlay"
-      v-if="showAd"
-      @click.self="closeAd"
-    >
-
-      <div class="ad-box">
-
-        <div class="ad-header">
-
-          <i class="fas fa-bullhorn"></i>
-
-          <h2>
-            إعلان
-          </h2>
-
-        </div>
-
-        <div class="ad-content">
-
-          <p>
-            مرحباً بالجميع!
-            <br><br>
-
-            تأسست Palm Treasure في سنغافورة في 20 أغسطس 2021
-            ومقرها حاليًا في منطقة الأعمال المركزية في سنغافورة.
-            <br><br>
-
-            👍 الحد الأدنى لإعادة الشحن: 12 USDT
-            <br>
-            الحد الأدنى للسحب: 3 USDT
-            <br><br>
-
-            💰 تدعم المنصة إعادة شحن العملة المشفرة.
-            <br><br>
-
-            🌈 وقت إعادة تعيين المهمة هو الساعة 12 ظهراً
-            في سنغافورة.
-            <br><br>
-
-            🕯 يمكنك سحب النقد مرة واحدة يومياً.
-          </p>
-
-        </div>
-
-        <button
-          type="button"
-          @click="closeAd"
-          class="ad-btn"
-        >
-          أنا أعرف
-        </button>
-
-      </div>
-
-    </div>
-
   </div>
 </template>
 
@@ -458,11 +396,6 @@ export default {
 
       loading: false,
 
-      /* الإعلان */
-      showAd: false,
-
-      adTimer: null,
-
       /* الأخطاء */
       phoneError: "",
 
@@ -487,10 +420,6 @@ export default {
       "keydown",
       this.handleEscKey
     );
-
-    if (this.adTimer) {
-      clearTimeout(this.adTimer);
-    }
 
   },
 
@@ -658,14 +587,7 @@ export default {
 
     handleEscKey(event) {
 
-      if (
-        event.key === "Escape" &&
-        this.showAd
-      ) {
-
-        this.closeAd();
-
-      }
+      // لا يوجد إعلان، لا حاجة للإغلاق
 
     },
 
@@ -848,13 +770,6 @@ export default {
         this.loading = false;
 
       }
-
-    },
-
-
-    closeAd() {
-
-      this.showAd = false;
 
     }
 
@@ -1752,132 +1667,6 @@ export default {
   letter-spacing: 6px;
 
   color: #111;
-
-}
-
-
-/* =====================================================
-   الإعلان
-   ===================================================== */
-
-.ad-overlay {
-
-  position: fixed;
-
-  inset: 0;
-
-  z-index: 1000;
-
-  background:
-    rgba(0,0,0,.72);
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding: 20px;
-
-}
-
-
-.ad-box {
-
-  width: 100%;
-
-  max-width: 420px;
-
-  background: #fff;
-
-  border-radius: 25px;
-
-  overflow: hidden;
-
-  box-shadow:
-    0 30px 80px rgba(0,0,0,.35);
-
-}
-
-
-.ad-header {
-
-  background: #000;
-
-  color: #fff;
-
-  padding: 18px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  gap: 10px;
-
-}
-
-
-.ad-header h2 {
-
-  margin: 0;
-
-  font-size: 19px;
-
-}
-
-
-.ad-content {
-
-  padding: 22px;
-
-  color: #222;
-
-  font-size: 13px;
-
-  line-height: 1.9;
-
-  max-height: 350px;
-
-  overflow-y: auto;
-
-}
-
-
-.ad-content p {
-
-  margin: 0;
-
-}
-
-
-.ad-btn {
-
-  width: 100%;
-
-  height: 55px;
-
-  border: none;
-
-  border-top: 1px solid #eee;
-
-  background: #fff;
-
-  color: #000;
-
-  font-size: 15px;
-
-  font-weight: 900;
-
-  cursor: pointer;
-
-}
-
-
-.ad-btn:hover {
-
-  background: #f5f5f5;
 
 }
 
