@@ -96,12 +96,12 @@
         </div>
       </div>
 
-      <!-- بطاقة الرصيد -->
+      <!-- بطاقة الرصيد الموحد -->
       <div class="balance-card">
         <h3 class="card-title"><i class="fas fa-wallet"></i> الرصيد</h3>
         <div class="balance-display">
           <div class="balance-amount">
-            <span class="balance-number">{{ Number(vipBalance).toFixed(2) }}</span>
+            <span class="balance-number">{{ Number(userBalance).toFixed(2) }}</span>
             <span class="balance-badge">USDT</span>
           </div>
         </div>
@@ -434,7 +434,7 @@ export default {
         referralCode: "",
         avatar: ""
       },
-      vipBalance: 0,
+      userBalance: 0, // الرصيد الموحد
       unsubscribeUser: null,
       modal: {
         visible: false,
@@ -574,7 +574,8 @@ export default {
         avatar: data.avatar || ""
       };
       
-      this.vipBalance = typeof data.vipBalance === 'number' ? data.vipBalance : 0;
+      // استخدام الرصيد الموحد
+      this.userBalance = typeof data.balance === 'number' ? data.balance : 0;
       this.editUsername = this.userData.username;
       
       const localAvatar = ProfileCacheManager.getAvatarFromLocal(data.uid);
@@ -609,7 +610,7 @@ export default {
               username: data.username || (data.email ? data.email.split("@")[0] : "مستخدم"),
               referralCode: data.referralCode || user.uid.substring(0, 6),
               avatar: data.avatar || "",
-              vipBalance: typeof data.vipBalance === 'number' ? data.vipBalance : 0
+              balance: typeof data.balance === 'number' ? data.balance : 0
             };
             
             this.applyUserData(userData);
