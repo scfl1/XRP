@@ -11,10 +11,26 @@
       <div class="hero-overlay"></div>
 
       <!-- اللغة -->
-      <button class="language-btn" type="button">
+      <button class="language-btn" type="button" @click="toggleLanguageMenu">
         <i class="fas fa-globe"></i>
-        العربية
+        {{ currentLanguageLabel }}
+        <i class="fas fa-chevron-down" style="font-size: 10px; margin-right: 4px;"></i>
       </button>
+
+      <!-- قائمة اللغات المنبثقة -->
+      <div v-if="showLanguageMenu" class="language-dropdown" @click.stop>
+        <button 
+          v-for="lang in languages" 
+          :key="lang.code"
+          class="language-option"
+          :class="{ active: currentLanguage === lang.code }"
+          @click="setLanguage(lang.code)"
+        >
+          <span class="lang-flag">{{ lang.flag }}</span>
+          <span class="lang-name">{{ lang.label }}</span>
+          <span class="lang-native">{{ lang.native }}</span>
+        </button>
+      </div>
 
       <!-- الشعار -->
       <div class="hero-content">
@@ -52,11 +68,11 @@
         <div class="heading-section">
 
           <h1>
-            تسجيل الدخول
+            {{ translations[ currentLanguage ].loginTitle }}
           </h1>
 
           <p>
-            مرحباً بك، قم بتسجيل الدخول إلى حسابك
+            {{ translations[ currentLanguage ].loginSubtitle }}
           </p>
 
         </div>
@@ -85,7 +101,7 @@
           >
             <span>
               <i class="fas fa-envelope"></i>
-              البريد الإلكتروني
+              {{ translations[ currentLanguage ].emailLabel }}
             </span>
           </button>
 
@@ -97,7 +113,7 @@
           >
             <span>
               <i class="fas fa-phone"></i>
-              رقم الهاتف
+              {{ translations[ currentLanguage ].phoneLabel }}
             </span>
           </button>
 
@@ -110,7 +126,7 @@
         <template v-if="loginType === 'email'">
 
           <label class="field-label">
-            البريد الإلكتروني
+            {{ translations[ currentLanguage ].emailLabel }}
             <i class="fas fa-envelope"></i>
           </label>
 
@@ -119,7 +135,7 @@
             <input
               type="email"
               v-model="email"
-              placeholder="أدخل البريد الإلكتروني"
+              :placeholder="translations[ currentLanguage ].emailPlaceholder"
               class="input-field"
               :class="{
                 'input-error':
@@ -143,7 +159,7 @@
         <template v-if="loginType === 'phone'">
 
           <label class="field-label">
-            رقم الهاتف
+            {{ translations[ currentLanguage ].phoneLabel }}
             <i class="fas fa-phone"></i>
           </label>
 
@@ -156,7 +172,7 @@
             >
 
               <option value="">
-                الرمز
+                {{ translations[ currentLanguage ].selectCode }}
               </option>
 
               <option value="+964">🇮🇶 العراق (+964)</option>
@@ -230,7 +246,7 @@
             <input
               type="tel"
               v-model="phoneNumber"
-              placeholder="رقم الهاتف"
+              :placeholder="translations[ currentLanguage ].phonePlaceholder"
               class="phone-input"
               :class="{
                 'input-error':
@@ -261,7 +277,7 @@
              كلمة المرور
              ========================= -->
         <label class="field-label">
-          كلمة المرور
+          {{ translations[ currentLanguage ].passwordLabel }}
           <i class="fas fa-lock"></i>
         </label>
 
@@ -270,7 +286,7 @@
           <input
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
-            placeholder="أدخل كلمة المرور"
+            :placeholder="translations[ currentLanguage ].passwordPlaceholder"
             class="input-field password-field"
             :class="{ 'input-error': errorMessage }"
             autocomplete="current-password"
@@ -308,7 +324,7 @@
         >
 
           <span v-if="!loading">
-            تسجيل الدخول
+            {{ translations[ currentLanguage ].loginButton }}
             <i class="fas fa-arrow-left"></i>
           </span>
 
@@ -317,7 +333,7 @@
             class="loading-content"
           >
             <span class="loader"></span>
-            جارٍ تسجيل الدخول...
+            {{ translations[ currentLanguage ].loadingText }}
           </span>
 
         </button>
@@ -327,11 +343,11 @@
         <div class="register-link">
 
           <span>
-            ليس لديك حساب؟
+            {{ translations[ currentLanguage ].noAccount }}
           </span>
 
           <router-link to="/register">
-            إنشاء حساب
+            {{ translations[ currentLanguage ].createAccount }}
           </router-link>
 
         </div>
@@ -373,6 +389,7 @@ import router from "../router";
 export default {
 
   data() {
+
     return {
 
       /* الصور */
@@ -399,10 +416,104 @@ export default {
       /* الأخطاء */
       phoneError: "",
 
-      errorMessage: ""
+      errorMessage: "",
+
+      /* اللغة */
+      currentLanguage: "ar",
+      showLanguageMenu: false,
+
+      languages: [
+        { code: "ar", label: "العربية", native: "العربية", flag: "🇸🇦" },
+        { code: "en", label: "English", native: "English", flag: "🇺🇸" },
+        { code: "ru", label: "Русский", native: "Русский", flag: "🇷🇺" }
+      ],
+
+      translations: {
+        ar: {
+          loginTitle: "تسجيل الدخول",
+          loginSubtitle: "مرحباً بك، قم بتسجيل الدخول إلى حسابك",
+          emailLabel: "البريد الإلكتروني",
+          emailPlaceholder: "أدخل البريد الإلكتروني",
+          phoneLabel: "رقم الهاتف",
+          phonePlaceholder: "رقم الهاتف",
+          selectCode: "الرمز",
+          passwordLabel: "كلمة المرور",
+          passwordPlaceholder: "أدخل كلمة المرور",
+          loginButton: "تسجيل الدخول",
+          loadingText: "جارٍ تسجيل الدخول...",
+          noAccount: "ليس لديك حساب؟",
+          createAccount: "إنشاء حساب",
+          errorWrongEmail: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+          errorWrongPhone: "رقم الهاتف أو كلمة المرور غير صحيحة.",
+          errorBlocked: "تم حظر حسابك، تواصل مع الدعم",
+          errorTooMany: "تم تعليق الحساب مؤقتاً لكثرة المحاولات. يرجى المحاولة لاحقاً.",
+          errorNetwork: "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.",
+          errorGeneral: "حدث خطأ. يرجى المحاولة لاحقاً.",
+          errorPhoneCode: "الرجاء اختيار رمز الدولة",
+          errorPhoneEmpty: "الرجاء إدخال رقم الهاتف",
+          errorPhoneLength: "رقم الهاتف يجب أن يكون بين 7 و 15 رقم",
+          errorPasswordLength: "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
+        },
+        en: {
+          loginTitle: "Login",
+          loginSubtitle: "Welcome, sign in to your account",
+          emailLabel: "Email",
+          emailPlaceholder: "Enter your email",
+          phoneLabel: "Phone Number",
+          phonePlaceholder: "Phone Number",
+          selectCode: "Code",
+          passwordLabel: "Password",
+          passwordPlaceholder: "Enter your password",
+          loginButton: "Login",
+          loadingText: "Logging in...",
+          noAccount: "Don't have an account?",
+          createAccount: "Create Account",
+          errorWrongEmail: "Email or password is incorrect.",
+          errorWrongPhone: "Phone number or password is incorrect.",
+          errorBlocked: "Your account has been blocked, contact support",
+          errorTooMany: "Account temporarily suspended due to too many attempts. Please try again later.",
+          errorNetwork: "Connection error. Please check your internet.",
+          errorGeneral: "An error occurred. Please try again later.",
+          errorPhoneCode: "Please select a country code",
+          errorPhoneEmpty: "Please enter a phone number",
+          errorPhoneLength: "Phone number must be between 7 and 15 digits",
+          errorPasswordLength: "Password must be at least 6 characters"
+        },
+        ru: {
+          loginTitle: "Вход",
+          loginSubtitle: "Добро пожаловать, войдите в свой аккаунт",
+          emailLabel: "Электронная почта",
+          emailPlaceholder: "Введите вашу электронную почту",
+          phoneLabel: "Номер телефона",
+          phonePlaceholder: "Номер телефона",
+          selectCode: "Код",
+          passwordLabel: "Пароль",
+          passwordPlaceholder: "Введите ваш пароль",
+          loginButton: "Войти",
+          loadingText: "Вход...",
+          noAccount: "Нет аккаунта?",
+          createAccount: "Создать аккаунт",
+          errorWrongEmail: "Неверный адрес электронной почты или пароль.",
+          errorWrongPhone: "Неверный номер телефона или пароль.",
+          errorBlocked: "Ваш аккаунт заблокирован, обратитесь в поддержку",
+          errorTooMany: "Аккаунт временно приостановлен из-за слишком большого количества попыток. Пожалуйста, попробуйте позже.",
+          errorNetwork: "Ошибка соединения. Проверьте интернет.",
+          errorGeneral: "Произошла ошибка. Пожалуйста, попробуйте позже.",
+          errorPhoneCode: "Пожалуйста, выберите код страны",
+          errorPhoneEmpty: "Пожалуйста, введите номер телефона",
+          errorPhoneLength: "Номер телефона должен содержать от 7 до 15 цифр",
+          errorPasswordLength: "Пароль должен содержать не менее 6 символов"
+        }
+      }
     };
   },
 
+  computed: {
+    currentLanguageLabel() {
+      const lang = this.languages.find(l => l.code === this.currentLanguage);
+      return lang ? lang.label : "العربية";
+    }
+  },
 
   mounted() {
 
@@ -410,6 +521,8 @@ export default {
       "keydown",
       this.handleEscKey
     );
+
+    document.addEventListener("click", this.closeLanguageMenuOutside);
 
   },
 
@@ -420,6 +533,8 @@ export default {
       "keydown",
       this.handleEscKey
     );
+
+    document.removeEventListener("click", this.closeLanguageMenuOutside);
 
   },
 
@@ -458,7 +573,7 @@ export default {
       if (!this.countryCode) {
 
         this.phoneError =
-          "الرجاء اختيار رمز الدولة";
+          this.translations[ this.currentLanguage ].errorPhoneCode;
 
         return false;
 
@@ -468,7 +583,7 @@ export default {
       if (!this.phoneNumber) {
 
         this.phoneError =
-          "الرجاء إدخال رقم الهاتف";
+          this.translations[ this.currentLanguage ].errorPhoneEmpty;
 
         return false;
 
@@ -488,7 +603,7 @@ export default {
       ) {
 
         this.phoneError =
-          "رقم الهاتف يجب أن يكون بين 7 و 15 رقم";
+          this.translations[ this.currentLanguage ].errorPhoneLength;
 
         return false;
 
@@ -522,12 +637,14 @@ export default {
 
     getErrorMessage(error) {
 
+      const t = this.translations[ this.currentLanguage ];
+
       if (
         error.code ===
         "auth/user-disabled"
       ) {
 
-        return "تم حظر حسابك، تواصل مع الدعم";
+        return t.errorBlocked;
 
       }
 
@@ -551,11 +668,11 @@ export default {
           "phone"
         ) {
 
-          return "رقم الهاتف أو كلمة المرور غير صحيحة.";
+          return t.errorWrongPhone;
 
         }
 
-        return "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+        return t.errorWrongEmail;
 
       }
 
@@ -565,7 +682,7 @@ export default {
         "auth/too-many-requests"
       ) {
 
-        return "تم تعليق الحساب مؤقتاً لكثرة المحاولات. يرجى المحاولة لاحقاً.";
+        return t.errorTooMany;
 
       }
 
@@ -575,20 +692,48 @@ export default {
         "auth/network-request-failed"
       ) {
 
-        return "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.";
+        return t.errorNetwork;
 
       }
 
 
-      return "حدث خطأ. يرجى المحاولة لاحقاً.";
+      return t.errorGeneral;
 
     },
 
 
     handleEscKey(event) {
 
-      // لا يوجد إعلان، لا حاجة للإغلاق
+      if (event.key === "Escape") {
+        this.showLanguageMenu = false;
+      }
 
+    },
+
+
+    closeLanguageMenuOutside(event) {
+      if (this.showLanguageMenu) {
+        const dropdown = document.querySelector('.language-dropdown');
+        const btn = document.querySelector('.language-btn');
+        if (dropdown && btn) {
+          if (!dropdown.contains(event.target) && !btn.contains(event.target)) {
+            this.showLanguageMenu = false;
+          }
+        }
+      }
+    },
+
+
+    toggleLanguageMenu(event) {
+      event.stopPropagation();
+      this.showLanguageMenu = !this.showLanguageMenu;
+    },
+
+
+    setLanguage(code) {
+      this.currentLanguage = code;
+      this.showLanguageMenu = false;
+      this.clearError();
     },
 
 
@@ -632,7 +777,7 @@ export default {
         ) {
 
           this.errorMessage =
-            "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+            this.translations[ this.currentLanguage ].errorWrongEmail;
 
           return;
 
@@ -653,12 +798,12 @@ export default {
         ) {
 
           this.errorMessage =
-            "رقم الهاتف أو كلمة المرور غير صحيحة.";
+            this.translations[ this.currentLanguage ].errorWrongPhone;
 
         } else {
 
           this.errorMessage =
-            "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+            this.translations[ this.currentLanguage ].errorWrongEmail;
 
         }
 
@@ -693,7 +838,7 @@ export default {
           await signOut(auth);
 
           this.errorMessage =
-            "تم حظر حسابك، تواصل مع الدعم";
+            this.translations[ this.currentLanguage ].errorBlocked;
 
           return;
 
@@ -715,7 +860,7 @@ export default {
           await signOut(auth);
 
           this.errorMessage =
-            "تم حظر حسابك، تواصل مع الدعم";
+            this.translations[ this.currentLanguage ].errorBlocked;
 
           return;
 
@@ -800,7 +945,6 @@ export default {
 
 /* =====================================================
    الخلفية العلوية
-   الصورة هنا كبيرة ولكن قصيرة
    ===================================================== */
 
 .hero-section {
@@ -861,7 +1005,7 @@ export default {
 
   right: 22px;
 
-  z-index: 5;
+  z-index: 6;
 
   height: 48px;
 
@@ -890,6 +1034,124 @@ export default {
   gap: 9px;
 
   cursor: pointer;
+
+  transition: all 0.3s ease;
+}
+
+.language-btn:hover {
+  background: rgba(0,0,0,0.5);
+}
+
+
+/* =====================================================
+   قائمة اللغات المنبثقة
+   ===================================================== */
+
+.language-dropdown {
+
+  position: absolute;
+
+  top: 78px;
+
+  right: 22px;
+
+  z-index: 7;
+
+  background: rgba(20, 20, 30, 0.95);
+
+  backdrop-filter: blur(16px);
+
+  -webkit-backdrop-filter: blur(16px);
+
+  border-radius: 16px;
+
+  border: 1px solid rgba(255,255,255,0.12);
+
+  padding: 8px;
+
+  min-width: 200px;
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.5);
+
+  animation: dropdownSlide 0.25s ease;
+
+}
+
+@keyframes dropdownSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.language-option {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  width: 100%;
+
+  padding: 10px 16px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: #fff;
+
+  cursor: pointer;
+
+  transition: all 0.25s ease;
+
+  font-size: 14px;
+
+  text-align: right;
+
+}
+
+.language-option:hover {
+
+  background: rgba(255,255,255,0.08);
+
+}
+
+.language-option.active {
+
+  background: rgba(255,255,255,0.12);
+
+  border: 1px solid rgba(255,255,255,0.15);
+
+}
+
+.language-option .lang-flag {
+
+  font-size: 20px;
+
+}
+
+.language-option .lang-name {
+
+  font-weight: 600;
+
+}
+
+.language-option .lang-native {
+
+  color: rgba(255,255,255,0.5);
+
+  font-size: 12px;
+
+  margin-right: auto;
 
 }
 
@@ -1014,7 +1276,6 @@ export default {
 
 /* =====================================================
    منطقة تسجيل الدخول
-   البطاقة تتداخل مع الخلفية
    ===================================================== */
 
 .login-area {
@@ -1331,6 +1592,8 @@ export default {
 
   margin-bottom: 20px;
 
+  width: 100%;
+
 }
 
 
@@ -1353,6 +1616,8 @@ export default {
   font-size: 13px;
 
   outline: none;
+
+  flex-shrink: 0;
 
 }
 
@@ -1382,6 +1647,8 @@ export default {
   text-align: left;
 
   outline: none;
+
+  min-width: 0;
 
 }
 
@@ -1696,6 +1963,19 @@ export default {
 
     padding: 0 17px;
 
+    font-size: 12px;
+
+  }
+
+  .language-dropdown {
+    top: 70px;
+    right: 15px;
+    min-width: 170px;
+  }
+
+  .language-option {
+    padding: 8px 14px;
+    font-size: 13px;
   }
 
 
@@ -1923,17 +2203,29 @@ export default {
 
     gap: 6px;
 
+    flex-wrap: wrap;
+
   }
 
 
   .country-select {
 
-    width: 105px;
+    width: 100%;
 
-    font-size: 11px;
+    font-size: 13px;
 
-    padding: 0 8px;
+    padding: 0 14px;
 
+  }
+
+  .phone-input {
+    width: 100%;
+  }
+
+  .language-dropdown {
+    right: 10px;
+    min-width: 150px;
+    top: 65px;
   }
 
 }
