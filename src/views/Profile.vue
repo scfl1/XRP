@@ -1,96 +1,147 @@
 <template>
   <div class="profile-page">
+    <!-- العنوان العلوي -->
+    <div class="page-top">
+      <h1 class="page-title">حسابي</h1>
+      <div class="top-icons">
+        <button class="icon-btn" @click="openEditProfileModal">
+          <i class="fas fa-sliders-h"></i>
+        </button>
+        <button class="icon-btn" @click="showInfoMessage('الإشعارات قيد التطوير')">
+          <i class="fas fa-bell"></i>
+        </button>
+      </div>
+    </div>
+
     <div v-if="loading" class="loading-container">
       <div class="spinner"></div>
       <p class="loading-text">جاري تحميل بيانات الحساب...</p>
     </div>
 
     <div v-else class="profile-container">
-      <!-- رأس الصفحة -->
-      <div class="profile-header">
-        <div class="avatar-box">
-          <div class="avatar-circle" :style="avatarStyle">
-            <span v-if="!userData.avatar">{{ userData.username ? userData.username.charAt(0).toUpperCase() : 'U' }}</span>
+      <!-- بطاقة الملف الشخصي -->
+      <div class="profile-card">
+        <div class="profile-avatar-section">
+          <div class="avatar-wrapper">
+            <div class="avatar-circle" :style="avatarStyle">
+              <span v-if="!userData.avatar">{{ userData.username ? userData.username.charAt(0).toUpperCase() : 'U' }}</span>
+            </div>
+            <button class="edit-avatar-btn" @click="openEditProfileModal">
+              <i class="fas fa-pencil-alt"></i>
+            </button>
+          </div>
+          <div class="profile-info">
+            <h2 class="profile-name">{{ userData.username || "المستخدم" }}</h2>
+            <p class="profile-email">{{ userData.email || "" }}</p>
           </div>
         </div>
-        <h2 class="username-display">{{ userData.username || "المستخدم" }}</h2>
-        <p class="user-email">{{ userData.email || "" }}</p>
       </div>
 
-      <!-- قسم معلومات الحساب -->
-      <div class="fields-section">
-        <h3 class="section-label"><i class="fas fa-user-circle"></i> معلومات الحساب</h3>
+      <!-- معلومات الحساب -->
+      <div class="info-card">
+        <h3 class="card-title"><i class="fas fa-user-circle"></i> معلومات الحساب</h3>
         
-        <div class="field">
-          <label><i class="fas fa-id-badge"></i> معرف المستخدم (ID)</label>
-          <div class="field-input-group">
-            <input type="text" :value="userData.uid" readonly class="input-field">
-            <button class="action-btn" @click="copy(userData.uid)">
+        <div class="info-row">
+          <div class="info-left">
+            <i class="fas fa-id-badge info-icon"></i>
+            <span class="info-label">معرف المستخدم (ID)</span>
+          </div>
+          <div class="info-right">
+            <span class="info-value">{{ userData.uid }}</span>
+            <button class="copy-btn" @click="copy(userData.uid)">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
 
-        <div class="field">
-          <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
-          <div class="field-input-group">
-            <input type="text" :value="userData.email || 'غير مسجل'" readonly class="input-field">
-            <button class="action-btn" @click="copy(userData.email)" v-if="userData.email">
+        <div class="info-row">
+          <div class="info-left">
+            <i class="fas fa-envelope info-icon"></i>
+            <span class="info-label">البريد الإلكتروني</span>
+          </div>
+          <div class="info-right">
+            <span class="info-value">{{ userData.email || 'غير مسجل' }}</span>
+            <button class="copy-btn" @click="copy(userData.email)" v-if="userData.email">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
 
-        <div class="field">
-          <label><i class="fas fa-phone-alt"></i> رقم الهاتف</label>
-          <div class="field-input-group">
-            <input type="text" :value="userData.phoneNumber || 'لم يتم الربط بعد'" readonly class="input-field">
-            <button class="action-btn link-btn" @click="openPhoneModal">
+        <div class="info-row">
+          <div class="info-left">
+            <i class="fas fa-phone-alt info-icon"></i>
+            <span class="info-label">رقم الهاتف</span>
+          </div>
+          <div class="info-right">
+            <span class="info-value" :class="{ 'not-linked': !userData.phoneNumber }">
+              {{ userData.phoneNumber || 'لم يتم الربط بعد' }}
+            </span>
+            <button class="link-btn-small" @click="openPhoneModal">
               <i class="fas fa-link"></i> {{ userData.phoneNumber ? 'تحديث' : 'ربط' }}
             </button>
           </div>
         </div>
 
-        <div class="field" v-if="userData.referralCode">
-          <label><i class="fas fa-share-nodes"></i> كود الإحالة</label>
-          <div class="field-input-group">
-            <input type="text" :value="userData.referralCode" readonly class="input-field highlight-code">
-            <button class="action-btn" @click="copy(userData.referralCode)">
+        <div class="info-row" v-if="userData.referralCode">
+          <div class="info-left">
+            <i class="fas fa-share-nodes info-icon"></i>
+            <span class="info-label">كود الإحالة</span>
+          </div>
+          <div class="info-right">
+            <span class="info-value referral-code">{{ userData.referralCode }}</span>
+            <button class="copy-btn" @click="copy(userData.referralCode)">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
       </div>
 
-      <!-- قسم الرصيد -->
-      <div class="fields-section">
-        <h3 class="section-label"><i class="fas fa-wallet"></i> الرصيد</h3>
-        
-        <div class="field balance-field">
-          <label><i class="fas fa-coins"></i> الرصيد (USDT)</label>
-          <div class="field-input-group">
-            <input type="text" :value="Number(vipBalance).toFixed(2)" readonly class="input-field balance-text">
-            <span class="currency-tag">USDT</span>
+      <!-- بطاقة الرصيد -->
+      <div class="balance-card">
+        <h3 class="card-title"><i class="fas fa-wallet"></i> الرصيد</h3>
+        <div class="balance-display">
+          <div class="balance-amount">
+            <span class="balance-number">{{ Number(vipBalance).toFixed(2) }}</span>
+            <span class="balance-badge">USDT</span>
           </div>
         </div>
+        <div class="balance-footer">
+          <i class="fas fa-calendar-alt"></i>
+          <span>تاريخ الانضمام: {{ formattedDate }}</span>
+        </div>
+      </div>
 
-        <div class="field">
-          <label><i class="fas fa-calendar-day"></i> تاريخ الانضمام</label>
-          <input type="text" :value="formattedDate" readonly class="input-field">
+      <!-- أسعار العملات -->
+      <div class="crypto-section">
+        <h3 class="card-title"><i class="fas fa-chart-line"></i> أسعار العملات الرقمية</h3>
+        <div class="crypto-list">
+          <div v-for="crypto in cryptos" :key="crypto.symbol" class="crypto-row">
+            <div class="crypto-left">
+              <span class="crypto-icon">{{ crypto.icon }}</span>
+              <div class="crypto-info">
+                <span class="crypto-name">{{ crypto.name }}</span>
+                <span class="crypto-symbol">{{ crypto.symbol }}</span>
+              </div>
+            </div>
+            <div class="crypto-right">
+              <span class="crypto-price">${{ formatPrice(crypto.price) }}</span>
+              <span class="crypto-change" :class="crypto.change >= 0 ? 'positive' : 'negative'">
+                {{ crypto.change >= 0 ? '+' : '' }}{{ crypto.change.toFixed(2) }}%
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- الأزرار -->
       <div class="action-buttons">
-        <button class="action-btn-main" @click="openEditProfileModal">
-          <i class="fas fa-user-edit"></i> تعديل
+        <button class="btn-primary" @click="openEditProfileModal">
+          <i class="fas fa-user-edit"></i> تعديل الحساب
         </button>
-        
-        <button class="action-btn-main" @click="copyReferralLink" v-if="userData.referralCode">
+        <button class="btn-primary" @click="copyReferralLink" v-if="userData.referralCode">
           <i class="fas fa-link"></i> نسخ الرابط
         </button>
-
-        <button class="action-btn-danger" @click="confirmLogout">
+        <button class="btn-danger" @click="confirmLogout">
           <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
         </button>
       </div>
@@ -111,7 +162,6 @@
           </div>
           
           <div class="modal-body">
-            <!-- قسم الصورة -->
             <div class="edit-avatar-section">
               <div class="edit-avatar-circle" :style="editAvatarStyle">
                 <span v-if="!editAvatarPreview && !userData.avatar">{{ editUsername ? editUsername.charAt(0).toUpperCase() : 'U' }}</span>
@@ -127,7 +177,6 @@
               </div>
             </div>
 
-            <!-- قسم الاسم -->
             <div class="field">
               <label><i class="fas fa-user"></i> اسم المستخدم</label>
               <input 
@@ -295,7 +344,6 @@ import { auth, db, batchUpdateUserData } from "../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import { onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
 
-// ==================== PROFILE CACHE MANAGER ====================
 class ProfileCacheManager {
   static CACHE_PREFIX = 'profile_data';
   static AVATAR_PREFIX = 'user_avatar_';
@@ -392,7 +440,13 @@ export default {
         callback: null
       },
       _isDestroyed: false,
-      _authUnsubscribe: null
+      _authUnsubscribe: null,
+      cryptos: [
+        { name: 'XRP', symbol: 'XRP', icon: '✕', price: 0.6245, change: -0.42 },
+        { name: 'Bitcoin', symbol: 'BTC', icon: '₿', price: 67234.50, change: 2.35 },
+        { name: 'Ethereum', symbol: 'ETH', icon: '⟠', price: 3456.20, change: 1.85 },
+        { name: 'Tether', symbol: 'USDT', icon: '₮', price: 1.0002, change: 0.01 }
+      ]
     };
   },
   
@@ -562,7 +616,6 @@ export default {
       );
     },
     
-    // ==================== MODAL METHODS ====================
     showModal(options) {
       if (this._isDestroyed) return;
       
@@ -625,6 +678,15 @@ export default {
       });
     },
 
+    showInfoMessage(message) {
+      this.showModal({
+        type: 'info',
+        title: 'معلومات',
+        message: message,
+        buttonText: 'حسناً'
+      });
+    },
+
     showConfirm(title, message, callback) {
       this.showModal({
         type: 'confirm',
@@ -636,7 +698,6 @@ export default {
       });
     },
 
-    // ==================== PROFILE EDIT METHODS ====================
     openEditProfileModal() {
       if (this._isDestroyed) return;
       
@@ -751,7 +812,6 @@ export default {
       }
     },
 
-    // ==================== UTILITY METHODS ====================
     copy(text) { 
       if (!text || this._isDestroyed) return; 
       navigator.clipboard.writeText(text); 
@@ -760,7 +820,6 @@ export default {
 
     copyReferralLink() { this.copy(this.referralLink); },
 
-    // ==================== PHONE METHODS ====================
     openPhoneModal() { 
       if (this._isDestroyed) return;
       
@@ -850,7 +909,6 @@ export default {
       }
     },
 
-    // ==================== LOGOUT METHOD ====================
     confirmLogout() {
       if (this._isDestroyed) return;
       
@@ -868,6 +926,17 @@ export default {
           this.$router.push("/login");
         }
       );
+    },
+
+    formatPrice(price) {
+      if (price === undefined || price === null) return '0.00';
+      if (price >= 1000) {
+        return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else if (price >= 1) {
+        return price.toFixed(2);
+      } else {
+        return price.toFixed(4);
+      }
     }
   }
 };
@@ -876,295 +945,408 @@ export default {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: #f5f6f8;
   color: #1a1a2e;
-  padding: 20px;
-  padding-top: 40px;
+  padding: 16px;
+  padding-top: 12px;
   padding-bottom: 100px;
   direction: rtl;
-  font-family: 'Cairo', sans-serif;
+  font-family: 'Cairo', 'Montserrat', sans-serif;
 }
 
-.profile-container {
-  max-width: 450px;
-  margin: 0 auto;
+/* ===== العنوان العلوي ===== */
+.page-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
-.profile-header {
-  text-align: center;
-  margin-bottom: 30px;
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
 }
 
-.avatar-box {
+.top-icons {
+  display: flex;
+  gap: 12px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  transition: all 0.2s;
+}
+
+.icon-btn:hover {
+  color: #1a1a2e;
+}
+
+/* ===== بطاقة الملف الشخصي ===== */
+.profile-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.profile-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar-wrapper {
   position: relative;
-  display: inline-block;
-  margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .avatar-circle {
-  width: 80px;
-  height: 80px;
-  background: #e8eaed;
-  border: 2px solid #1a1a2e;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
-  font-weight: bold;
-  color: #1a1a2e;
-  background-size: cover;
-  background-position: center;
-}
-
-.username-display {
-  font-size: 20px;
-  color: #1a1a2e;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.user-email {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.edit-avatar-section {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.edit-avatar-circle {
-  width: 80px;
-  height: 80px;
-  background: #e8eaed;
-  border: 2px solid #1a1a2e;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 34px;
-  font-weight: bold;
-  color: #1a1a2e;
-  margin: 0 auto 12px;
-  background-size: cover;
-  background-position: center;
-}
-
-.avatar-upload-buttons {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.upload-avatar-btn {
+  width: 72px;
+  height: 72px;
   background: #1a1a2e;
-  color: #ffffff;
-  padding: 6px 14px;
-  border-radius: 50px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.3s ease;
-  display: inline-flex;
+  border-radius: 50%;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  border: none;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  background-size: cover;
+  background-position: center;
 }
 
-.upload-avatar-btn:hover {
+.edit-avatar-btn {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  background: #1a1a2e;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.edit-avatar-btn:hover {
   background: #2a2a4e;
 }
 
-.remove-avatar-btn {
-  background: #e8eaed;
-  color: #dc3545;
-  padding: 6px 12px;
-  border-radius: 50px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid #dc3545;
+.profile-info {
+  flex: 1;
 }
 
-.remove-avatar-btn:hover {
-  background: #dc3545;
-  color: #ffffff;
-}
-
-.fields-section {
-  margin-bottom: 20px;
-  background: #ffffff;
-  padding: 18px 20px;
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-}
-
-.section-label {
-  font-size: 15px;
+.profile-name {
+  font-size: 20px;
+  font-weight: 700;
   color: #1a1a2e;
+  margin: 0 0 4px 0;
+}
+
+.profile-email {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ===== البطاقات ===== */
+.info-card, .balance-card, .crypto-section {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 18px 20px;
   margin-bottom: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 16px 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 700;
 }
 
-.field {
-  margin-bottom: 14px;
-}
-
-.field:last-child {
-  margin-bottom: 0;
-}
-
-.field label {
-  display: block;
-  font-size: 12px;
+.card-title i {
   color: #6b7280;
-  margin-bottom: 5px;
-  margin-right: 4px;
-  font-weight: 500;
 }
 
-.field-input-group {
+/* ===== صفوف المعلومات ===== */
+.info-row {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-icon {
+  color: #6b7280;
+  font-size: 15px;
+  width: 18px;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.info-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 13px;
+  color: #1a1a2e;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-value.not-linked {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.referral-code {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.copy-btn:hover {
+  background: #f0f2f5;
+  color: #1a1a2e;
+}
+
+.link-btn-small {
+  background: #1a1a2e;
+  color: #ffffff;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.link-btn-small:hover {
+  background: #2a2a4e;
+}
+
+/* ===== بطاقة الرصيد ===== */
+.balance-display {
+  text-align: center;
+  padding: 8px 0 12px;
+}
+
+.balance-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
   gap: 8px;
 }
 
-.input-field {
-  flex: 1;
-  background: #f8f9fa;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px 14px;
+.balance-number {
+  font-size: 38px;
+  font-weight: 800;
   color: #1a1a2e;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
-  width: 100%;
-  font-family: 'Cairo', sans-serif;
 }
 
-.input-field:focus {
-  border-color: #1a1a2e;
-  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
-}
-
-.input-field:read-only {
-  cursor: default;
-}
-
-.highlight-code {
-  color: #1a1a2e;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.action-btn {
-  background: #f8f9fa;
-  border: 1px solid #e5e7eb;
-  color: #6b7280;
-  padding: 0 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.action-btn:hover {
+.balance-badge {
   background: #1a1a2e;
   color: #ffffff;
-  border-color: #1a1a2e;
-}
-
-.link-btn {
-  min-width: 60px;
-  justify-content: center;
+  padding: 2px 12px;
+  border-radius: 50px;
+  font-size: 12px;
   font-weight: 600;
 }
 
-.balance-field .input-field {
-  border-color: #1a1a2e;
+.balance-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #6b7280;
+  font-size: 13px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.balance-footer i {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ===== أسعار العملات ===== */
+.crypto-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.crypto-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 14px;
+  transition: all 0.2s;
+}
+
+.crypto-row:hover {
   background: #f0f2f5;
 }
 
-.balance-text {
-  font-size: 22px !important;
-  font-weight: 800 !important;
-  color: #1a1a2e !important;
-  text-align: center;
-}
-
-.currency-tag {
-  background: #1a1a2e;
-  color: #ffffff;
-  padding: 0 14px;
-  border-radius: 10px;
+.crypto-left {
   display: flex;
   align-items: center;
-  font-weight: 700;
-  font-size: 13px;
+  gap: 12px;
 }
 
+.crypto-icon {
+  width: 36px;
+  height: 36px;
+  background: #1a1a2e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.crypto-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.crypto-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.crypto-symbol {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.crypto-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.crypto-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.crypto-change {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.crypto-change.positive {
+  color: #22a65e;
+}
+
+.crypto-change.negative {
+  color: #dc3545;
+}
+
+/* ===== الأزرار ===== */
 .action-buttons {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 20px;
+  margin-top: 4px;
 }
 
-.action-btn-main {
+.btn-primary {
   background: #1a1a2e;
   color: #ffffff;
   border: none;
   border-radius: 50px;
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  flex: 1;
   justify-content: center;
-  min-width: 100px;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 
-.action-btn-main:hover {
+.btn-primary:hover {
   background: #2a2a4e;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.2);
+  box-shadow: 0 4px 16px rgba(26, 26, 46, 0.15);
 }
 
-.action-btn-danger {
-  background: transparent;
-  border: 1px solid #dc3545;
+.btn-danger {
+  background: #ffffff;
   color: #dc3545;
+  border: 1px solid #dc3545;
   border-radius: 50px;
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-  flex: 1;
   justify-content: center;
-  min-width: 100px;
+  gap: 10px;
+  transition: all 0.3s ease;
 }
 
-.action-btn-danger:hover {
+.btn-danger:hover {
   background: #dc3545;
   color: #ffffff;
   transform: translateY(-2px);
@@ -1241,26 +1423,6 @@ export default {
   font-size: 20px;
   background: #f0f2f5;
   color: #1a1a2e;
-}
-
-.modal-header.info .header-icon {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.modal-header.success .header-icon {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.modal-header.error .header-icon {
-  background: #fce4ec;
-  color: #c62828;
-}
-
-.modal-header.confirm .header-icon {
-  background: #fff3e0;
-  color: #e65100;
 }
 
 .modal-header h3 {
@@ -1372,7 +1534,117 @@ export default {
   background: #1a1a2e;
 }
 
-/* ===== PHONE INPUT ===== */
+/* ===== EDIT AVATAR ===== */
+.edit-avatar-section {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.edit-avatar-circle {
+  width: 80px;
+  height: 80px;
+  background: #e8eaed;
+  border: 2px solid #1a1a2e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: bold;
+  color: #1a1a2e;
+  margin: 0 auto 12px;
+  background-size: cover;
+  background-position: center;
+}
+
+.avatar-upload-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.upload-avatar-btn {
+  background: #1a1a2e;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+}
+
+.upload-avatar-btn:hover {
+  background: #2a2a4e;
+}
+
+.remove-avatar-btn {
+  background: #e8eaed;
+  color: #dc3545;
+  padding: 6px 12px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dc3545;
+}
+
+.remove-avatar-btn:hover {
+  background: #dc3545;
+  color: #ffffff;
+}
+
+/* ===== FIELD ===== */
+.field {
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 5px;
+  margin-right: 4px;
+  font-weight: 500;
+}
+
+.input-field {
+  width: 100%;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #1a1a2e;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: 'Cairo', sans-serif;
+}
+
+.input-field:focus {
+  border-color: #1a1a2e;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
+}
+
+.error-txt {
+  color: #dc3545;
+  font-size: 13px;
+  margin-top: 12px;
+  text-align: center;
+  background: rgba(220, 53, 69, 0.05);
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 53, 69, 0.15);
+}
+
+/* ===== PHONE ===== */
 .phone-input-box {
   display: flex;
   flex-direction: column;
@@ -1410,17 +1682,6 @@ export default {
   font-weight: bold;
 }
 
-.error-txt {
-  color: #dc3545;
-  font-size: 13px;
-  margin-top: 12px;
-  text-align: center;
-  background: rgba(220, 53, 69, 0.05);
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(220, 53, 69, 0.15);
-}
-
 /* ===== LOADING ===== */
 .loading-container {
   text-align: center;
@@ -1450,49 +1711,92 @@ export default {
 @media (max-width: 480px) {
   .profile-page {
     padding: 12px;
-    padding-top: 30px;
+    padding-bottom: 90px;
   }
-  
-  .fields-section {
+
+  .profile-card {
+    padding: 16px;
+  }
+
+  .avatar-circle {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+
+  .profile-name {
+    font-size: 17px;
+  }
+
+  .profile-email {
+    font-size: 13px;
+  }
+
+  .info-card, .balance-card, .crypto-section {
     padding: 14px 16px;
   }
-  
-  .modal-container {
-    margin: 16px;
-  }
-  
-  .modal-header h3 {
-    font-size: 16px;
-  }
-  
-  .balance-text {
-    font-size: 18px !important;
-  }
-  
-  .avatar-circle {
-    width: 70px;
-    height: 70px;
-    font-size: 28px;
-  }
-  
-  .username-display {
-    font-size: 18px;
-  }
-  
-  .edit-avatar-circle {
-    width: 70px;
-    height: 70px;
-    font-size: 28px;
-  }
-  
-  .action-btn-main, .action-btn-danger {
+
+  .info-value {
+    max-width: 80px;
     font-size: 12px;
-    padding: 8px 14px;
-    min-width: 70px;
   }
-  
-  .action-buttons {
-    gap: 8px;
+
+  .info-label {
+    font-size: 12px;
+  }
+
+  .balance-number {
+    font-size: 30px;
+  }
+
+  .crypto-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+  }
+
+  .crypto-name {
+    font-size: 13px;
+  }
+
+  .crypto-price {
+    font-size: 13px;
+  }
+
+  .btn-primary, .btn-danger {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .modal-container {
+    margin: 12px;
+  }
+
+  .edit-avatar-circle {
+    width: 64px;
+    height: 64px;
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 380px) {
+  .info-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .info-right {
+    width: 100%;
+    justify-content: flex-start;
+    padding-right: 28px;
+  }
+
+  .info-value {
+    max-width: 150px;
+  }
+
+  .balance-number {
+    font-size: 26px;
   }
 }
 </style>
