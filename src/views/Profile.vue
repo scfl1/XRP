@@ -1,7 +1,7 @@
 <template>
   <div class="profile-page">
     <div v-if="loading" class="loading-container">
-      <div class="gold-spinner"></div>
+      <div class="spinner"></div>
       <p class="loading-text">جاري تحميل بيانات الحساب...</p>
     </div>
 
@@ -21,41 +21,41 @@
       <div class="fields-section">
         <h3 class="section-label"><i class="fas fa-user-circle"></i> معلومات الحساب</h3>
         
-        <div class="gold-field">
+        <div class="field">
           <label><i class="fas fa-id-badge"></i> معرف المستخدم (ID)</label>
           <div class="field-input-group">
-            <input type="text" :value="userData.uid" readonly class="gold-input-field">
-            <button class="field-action-btn" @click="copy(userData.uid)">
+            <input type="text" :value="userData.uid" readonly class="input-field">
+            <button class="action-btn" @click="copy(userData.uid)">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
 
-        <div class="gold-field">
+        <div class="field">
           <label><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
           <div class="field-input-group">
-            <input type="text" :value="userData.email || 'غير مسجل'" readonly class="gold-input-field">
-            <button class="field-action-btn" @click="copy(userData.email)" v-if="userData.email">
+            <input type="text" :value="userData.email || 'غير مسجل'" readonly class="input-field">
+            <button class="action-btn" @click="copy(userData.email)" v-if="userData.email">
               <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
 
-        <div class="gold-field">
+        <div class="field">
           <label><i class="fas fa-phone-alt"></i> رقم الهاتف</label>
           <div class="field-input-group">
-            <input type="text" :value="userData.phoneNumber || 'لم يتم الربط بعد'" readonly class="gold-input-field">
-            <button class="field-action-btn link-btn" @click="openPhoneModal">
-              <i class="fas fa-link"></i> {{ userData.phoneNumber ? 'تحديث' : 'ربط الآن' }}
+            <input type="text" :value="userData.phoneNumber || 'لم يتم الربط بعد'" readonly class="input-field">
+            <button class="action-btn link-btn" @click="openPhoneModal">
+              <i class="fas fa-link"></i> {{ userData.phoneNumber ? 'تحديث' : 'ربط' }}
             </button>
           </div>
         </div>
 
-        <div class="gold-field" v-if="userData.referralCode">
-          <label><i class="fas fa-share-nodes"></i> كود الإحالة الخاص بك</label>
+        <div class="field" v-if="userData.referralCode">
+          <label><i class="fas fa-share-nodes"></i> كود الإحالة</label>
           <div class="field-input-group">
-            <input type="text" :value="userData.referralCode" readonly class="gold-input-field highlight-gold">
-            <button class="field-action-btn" @click="copy(userData.referralCode)">
+            <input type="text" :value="userData.referralCode" readonly class="input-field highlight-code">
+            <button class="action-btn" @click="copy(userData.referralCode)">
               <i class="fas fa-copy"></i>
             </button>
           </div>
@@ -64,37 +64,33 @@
 
       <!-- قسم الرصيد -->
       <div class="fields-section">
-        <h3 class="section-label"><i class="fas fa-chart-line"></i> الرصيد والبيانات</h3>
+        <h3 class="section-label"><i class="fas fa-wallet"></i> الرصيد</h3>
         
-        <div class="gold-field balance-field">
-          <label><i class="fas fa-wallet"></i> الرصيد القابل للسحب (USDT)</label>
+        <div class="field balance-field">
+          <label><i class="fas fa-coins"></i> الرصيد (USDT)</label>
           <div class="field-input-group">
-            <input type="text" :value="Number(vipBalance).toFixed(2)" readonly class="gold-input-field balance-text">
+            <input type="text" :value="Number(vipBalance).toFixed(2)" readonly class="input-field balance-text">
             <span class="currency-tag">USDT</span>
           </div>
         </div>
 
-        <div class="gold-field">
+        <div class="field">
           <label><i class="fas fa-calendar-day"></i> تاريخ الانضمام</label>
-          <input type="text" :value="formattedDate" readonly class="gold-input-field">
+          <input type="text" :value="formattedDate" readonly class="input-field">
         </div>
       </div>
 
       <!-- الأزرار -->
       <div class="action-buttons">
-        <button class="main-gold-btn" @click="openEditProfileModal">
-          <i class="fas fa-user-edit"></i> تعديل الملف الشخصي
+        <button class="action-btn-main" @click="openEditProfileModal">
+          <i class="fas fa-user-edit"></i> تعديل
         </button>
         
-        <button class="main-gold-btn" @click="openChangePasswordModal">
-          <i class="fas fa-key"></i> تغيير كلمة المرور
-        </button>
-        
-        <button class="outline-gold-btn" @click="copyReferralLink" v-if="userData.referralCode">
-          <i class="fas fa-link"></i> نسخ رابط الدعوة
+        <button class="action-btn-main" @click="copyReferralLink" v-if="userData.referralCode">
+          <i class="fas fa-link"></i> نسخ الرابط
         </button>
 
-        <button class="danger-btn" @click="confirmLogout">
+        <button class="action-btn-danger" @click="confirmLogout">
           <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
         </button>
       </div>
@@ -102,9 +98,9 @@
 
     <!-- نافذة تعديل الملف الشخصي -->
     <transition name="modal-fade-scale">
-      <div v-if="showEditProfileModal" class="custom-modal-overlay" @click.self="closeEditProfileModal">
-        <div class="custom-modal-container small">
-          <div class="custom-modal-header info">
+      <div v-if="showEditProfileModal" class="modal-overlay" @click.self="closeEditProfileModal">
+        <div class="modal-container small">
+          <div class="modal-header">
             <div class="header-icon">
               <i class="fas fa-user-edit"></i>
             </div>
@@ -114,7 +110,7 @@
             </button>
           </div>
           
-          <div class="custom-modal-body">
+          <div class="modal-body">
             <!-- قسم الصورة -->
             <div class="edit-avatar-section">
               <div class="edit-avatar-circle" :style="editAvatarStyle">
@@ -122,23 +118,23 @@
               </div>
               <div class="avatar-upload-buttons">
                 <label class="upload-avatar-btn">
-                  <i class="fas fa-camera"></i> اختيار صورة
+                  <i class="fas fa-camera"></i> صورة
                   <input type="file" accept="image/*" @change="handleImageUpload" style="display: none;">
                 </label>
                 <button v-if="editAvatarPreview || userData.avatar" class="remove-avatar-btn" @click="removeAvatar">
-                  <i class="fas fa-trash-alt"></i> إزالة
+                  <i class="fas fa-trash-alt"></i>
                 </button>
               </div>
             </div>
 
             <!-- قسم الاسم -->
-            <div class="gold-field">
+            <div class="field">
               <label><i class="fas fa-user"></i> اسم المستخدم</label>
               <input 
                 type="text" 
                 v-model="editUsername" 
                 placeholder="أدخل اسم المستخدم الجديد"
-                class="gold-input-field"
+                class="input-field"
                 maxlength="30"
               >
             </div>
@@ -146,21 +142,21 @@
             <p v-if="editProfileError" class="error-txt">{{ editProfileError }}</p>
           </div>
           
-          <div class="custom-modal-footer">
+          <div class="modal-footer">
             <button class="modal-btn modal-btn-primary" @click="saveProfileChanges" :disabled="editProfileLoading">
-              <i class="fas fa-save"></i> {{ editProfileLoading ? 'جاري الحفظ...' : 'حفظ التغييرات' }}
+              <i class="fas fa-save"></i> {{ editProfileLoading ? 'جاري...' : 'حفظ' }}
             </button>
           </div>
-          <div class="modal-gold-line"></div>
+          <div class="modal-line"></div>
         </div>
       </div>
     </transition>
 
     <!-- نافذة منبثقة عامة -->
     <transition name="modal-fade-scale">
-      <div v-if="modal.visible" class="custom-modal-overlay" @click.self="closeModal">
-        <div class="custom-modal-container" :class="modal.size">
-          <div class="custom-modal-header" :class="modal.type">
+      <div v-if="modal.visible" class="modal-overlay" @click.self="closeModal">
+        <div class="modal-container" :class="modal.size">
+          <div class="modal-header" :class="modal.type">
             <div class="header-icon">
               <i :class="modal.icon"></i>
             </div>
@@ -170,7 +166,7 @@
             </button>
           </div>
           
-          <div class="custom-modal-body">
+          <div class="modal-body">
             <p>{{ modal.message }}</p>
             <div v-if="modal.type === 'confirm'" class="confirm-options">
               <button class="modal-btn modal-btn-cancel" @click="closeModal">
@@ -182,21 +178,21 @@
             </div>
           </div>
           
-          <div class="custom-modal-footer" v-if="modal.type !== 'confirm'">
+          <div class="modal-footer" v-if="modal.type !== 'confirm'">
             <button class="modal-btn modal-btn-primary" @click="closeModal">
               {{ modal.buttonText || 'فهمت' }}
             </button>
           </div>
-          <div class="modal-gold-line"></div>
+          <div class="modal-line"></div>
         </div>
       </div>
     </transition>
 
     <!-- نافذة ربط الهاتف -->
     <transition name="modal-fade-scale">
-      <div v-if="showPhoneModal" class="custom-modal-overlay" @click.self="closePhoneModal">
-        <div class="custom-modal-container small">
-          <div class="custom-modal-header info">
+      <div v-if="showPhoneModal" class="modal-overlay" @click.self="closePhoneModal">
+        <div class="modal-container small">
+          <div class="modal-header">
             <div class="header-icon">
               <i class="fas fa-mobile-screen-button"></i>
             </div>
@@ -206,8 +202,8 @@
             </button>
           </div>
           
-          <div class="custom-modal-body">
-            <div class="gold-field">
+          <div class="modal-body">
+            <div class="field">
               <label>اختر الدولة ورقم الهاتف</label>
               <div class="phone-input-box">
                 <select v-model="phoneForm.countryCode" class="country-select" @change="updatePhoneLimit">
@@ -266,68 +262,28 @@
                   type="tel" 
                   v-model="phoneForm.phone" 
                   placeholder="رقم الهاتف" 
-                  class="gold-input-field"
+                  class="input-field"
                   @input="handlePhoneInput"
                 >
               </div>
               <p class="phone-hint" v-if="phoneForm.countryCode">
                 <i class="fas fa-info-circle"></i> 
-                يجب إدخال <span>{{ phoneLimit }}</span> أرقام لهذا الرمز (أدخلت: {{ phoneForm.phone.length }})
+                يجب إدخال <span>{{ phoneLimit }}</span> أرقام (أدخلت: {{ phoneForm.phone.length }})
               </p>
             </div>
-            <div class="gold-field">
+            <div class="field">
               <label>كلمة المرور للتأكيد</label>
-              <input type="password" v-model="phoneForm.password" placeholder="أدخل كلمة المرور" class="gold-input-field">
+              <input type="password" v-model="phoneForm.password" placeholder="أدخل كلمة المرور" class="input-field">
             </div>
             <p v-if="phoneError" class="error-txt">{{ phoneError }}</p>
           </div>
           
-          <div class="custom-modal-footer">
+          <div class="modal-footer">
             <button class="modal-btn modal-btn-primary" @click="updatePhoneNumber" :disabled="phoneLoading">
-              {{ phoneLoading ? 'جاري المعالجة...' : 'تأكيد الربط' }}
+              {{ phoneLoading ? 'جاري...' : 'تأكيد الربط' }}
             </button>
           </div>
-          <div class="modal-gold-line"></div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- نافذة تغيير كلمة المرور -->
-    <transition name="modal-fade-scale">
-      <div v-if="showChangePasswordModal" class="custom-modal-overlay" @click.self="closeChangePasswordModal">
-        <div class="custom-modal-container small">
-          <div class="custom-modal-header info">
-            <div class="header-icon">
-              <i class="fas fa-key"></i>
-            </div>
-            <h3>تغيير كلمة المرور</h3>
-            <button class="modal-close-btn" @click="closeChangePasswordModal">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          
-          <div class="custom-modal-body">
-            <div class="gold-field">
-              <label>كلمة المرور الحالية</label>
-              <input type="password" v-model="passwordForm.currentPassword" placeholder="أدخل كلمة المرور الحالية" class="gold-input-field">
-            </div>
-            <div class="gold-field">
-              <label>كلمة المرور الجديدة</label>
-              <input type="password" v-model="passwordForm.newPassword" placeholder="أدخل كلمة المرور الجديدة" class="gold-input-field">
-            </div>
-            <div class="gold-field">
-              <label>تأكيد كلمة المرور الجديدة</label>
-              <input type="password" v-model="passwordForm.confirmPassword" placeholder="أكد كلمة المرور الجديدة" class="gold-input-field">
-            </div>
-            <p v-if="passwordError" class="error-txt">{{ passwordError }}</p>
-          </div>
-          
-          <div class="custom-modal-footer">
-            <button class="modal-btn modal-btn-primary" @click="updatePassword" :disabled="passwordLoading">
-              {{ passwordLoading ? 'جاري التحديث...' : 'حفظ التغييرات' }}
-            </button>
-          </div>
-          <div class="modal-gold-line"></div>
+          <div class="modal-line"></div>
         </div>
       </div>
     </transition>
@@ -335,9 +291,9 @@
 </template>
 
 <script>
-import { auth, db, cacheManager, batchUpdateUserData } from "../firebase";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
-import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateProfile } from "firebase/auth";
+import { auth, db, batchUpdateUserData } from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { onAuthStateChanged, signOut, updateProfile } from "firebase/auth";
 
 // ==================== PROFILE CACHE MANAGER ====================
 class ProfileCacheManager {
@@ -351,7 +307,6 @@ class ProfileCacheManager {
       if (cached) {
         const parsed = JSON.parse(cached);
         const now = Date.now();
-        // الكاش صالح لمدة 10 دقائق
         if (now - parsed.timestamp < 10 * 60 * 1000) {
           return parsed.data;
         }
@@ -402,20 +357,16 @@ export default {
   data() {
     return {
       loading: true,
-      showChangePasswordModal: false,
       showPhoneModal: false,
       showEditProfileModal: false,
-      passwordLoading: false,
       phoneLoading: false,
       editProfileLoading: false,
-      passwordError: "",
       phoneError: "",
       editProfileError: "",
       phoneLimit: 9,
       editUsername: "",
       editAvatarPreview: null,
       selectedImageFile: null,
-      passwordForm: { currentPassword: "", newPassword: "", confirmPassword: "" },
       phoneForm: { countryCode: "+966", phone: "", password: "" },
       userData: { 
         email: "", 
@@ -487,40 +438,27 @@ export default {
   },
   
   methods: {
-    /**
-     * تنظيف جميع الموارد عند مغادرة الصفحة
-     */
     cleanup() {
       this._isDestroyed = true;
       
-      // إلغاء الاشتراك في Auth
       if (this._authUnsubscribe) {
         this._authUnsubscribe();
         this._authUnsubscribe = null;
       }
       
-      // إلغاء الاشتراك في Firestore
       if (this.unsubscribeUser) {
         this.unsubscribeUser();
         this.unsubscribeUser = null;
       }
       
-      // إغلاق جميع النوافذ
       this.showEditProfileModal = false;
-      this.showChangePasswordModal = false;
       this.showPhoneModal = false;
       this.modal.visible = false;
-      
-      // استعادة التمرير
       document.body.style.overflow = 'auto';
     },
     
-    /**
-     * تهيئة الملف الشخصي مع نظام الكاش
-     */
     async initProfile() {
       try {
-        // محاولة تحميل البيانات من الكاش أولاً
         const cachedUser = auth.currentUser ? ProfileCacheManager.getProfileFromCache(auth.currentUser.uid) : null;
         
         this._authUnsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -533,13 +471,11 @@ export default {
           }
           
           try {
-            // إذا كانت البيانات موجودة في الكاش، عرضها فوراً
             if (cachedUser && cachedUser.uid === user.uid) {
               this.applyUserData(cachedUser);
               this.loading = false;
             }
             
-            // إعداد المستمع المباشر
             await this.setupRealtimeListener(user);
             
           } catch (err) {
@@ -557,9 +493,6 @@ export default {
       }
     },
     
-    /**
-     * تطبيق بيانات المستخدم
-     */
     applyUserData(data) {
       if (this._isDestroyed) return;
       
@@ -576,28 +509,21 @@ export default {
       this.vipBalance = typeof data.vipBalance === 'number' ? data.vipBalance : 0;
       this.editUsername = this.userData.username;
       
-      // تحميل الصورة الرمزية المحلية
       const localAvatar = ProfileCacheManager.getAvatarFromLocal(data.uid);
       if (localAvatar && !this.userData.avatar) {
         this.userData.avatar = localAvatar;
       }
     },
     
-    /**
-     * إعداد مستمع Firestore مع تحسينات
-     */
     async setupRealtimeListener(user) {
       if (this._isDestroyed) return;
       
-      // إلغاء المستمع السابق
       if (this.unsubscribeUser) {
         this.unsubscribeUser();
         this.unsubscribeUser = null;
       }
       
       const userRef = doc(db, "users", user.uid);
-      
-      // استخدام متغير لتتبع أول تحميل
       let isFirstLoad = true;
       
       this.unsubscribeUser = onSnapshot(userRef, 
@@ -619,8 +545,6 @@ export default {
             };
             
             this.applyUserData(userData);
-            
-            // تخزين في الكاش للتحديثات المستقبلية
             ProfileCacheManager.setProfileToCache(user.uid, userData);
             
             if (isFirstLoad) {
@@ -712,18 +636,6 @@ export default {
       });
     },
 
-    // ==================== AVATAR METHODS ====================
-    saveAvatarToLocal(avatarData) {
-      ProfileCacheManager.saveAvatarToLocal(this.userData.uid, avatarData);
-    },
-
-    loadLocalAvatar() {
-      const savedAvatar = ProfileCacheManager.getAvatarFromLocal(this.userData.uid);
-      if (savedAvatar && !this.userData.avatar) {
-        this.userData.avatar = savedAvatar;
-      }
-    },
-
     // ==================== PROFILE EDIT METHODS ====================
     openEditProfileModal() {
       if (this._isDestroyed) return;
@@ -774,10 +686,6 @@ export default {
       if (name.length < 3) {
         return "الاسم قصير جداً (الحد الأدنى 3 أحرف)";
       }
-      const validRegex = /^[\u0600-\u06FF\u0750-\u077Fa-zA-Z0-9\s]+$/;
-      if (!validRegex.test(name)) {
-        return "الاسم يحتوي على أحرف غير مسموحة";
-      }
       return null;
     },
 
@@ -797,7 +705,6 @@ export default {
         const user = auth.currentUser;
         if (!user) throw new Error("المستخدم غير مسجل الدخول");
         
-        // تجهيز التحديثات في كائن واحد
         const updates = { 
           username: this.editUsername.trim()
         };
@@ -809,19 +716,17 @@ export default {
             reader.readAsDataURL(this.selectedImageFile);
           });
           
-          this.saveAvatarToLocal(avatarBase64);
+          ProfileCacheManager.saveAvatarToLocal(user.uid, avatarBase64);
           updates.avatar = avatarBase64;
           this.userData.avatar = avatarBase64;
         } else if (this.editAvatarPreview === null && this.userData.avatar) {
-          this.saveAvatarToLocal(null);
+          ProfileCacheManager.saveAvatarToLocal(user.uid, null);
           updates.avatar = "";
           this.userData.avatar = "";
         }
         
-        // استخدام التحديث المجمع لتقليل عمليات الكتابة
         await batchUpdateUserData(user.uid, updates);
         
-        // تحديث Auth Profile إذا تغير الاسم
         if (updates.username !== this.userData.username) {
           try {
             await updateProfile(user, { displayName: updates.username });
@@ -831,8 +736,6 @@ export default {
         }
         
         this.userData.username = this.editUsername.trim();
-        
-        // تحديث الكاش
         ProfileCacheManager.setProfileToCache(user.uid, this.userData);
         
         this.closeEditProfileModal();
@@ -856,69 +759,6 @@ export default {
     },
 
     copyReferralLink() { this.copy(this.referralLink); },
-
-    // ==================== PASSWORD METHODS ====================
-    openChangePasswordModal() { 
-      if (this._isDestroyed) return;
-      
-      this.showChangePasswordModal = true; 
-      this.passwordError = ""; 
-      this.passwordForm = { currentPassword: "", newPassword: "", confirmPassword: "" };
-      document.body.style.overflow = 'hidden';
-    },
-    
-    closeChangePasswordModal() { 
-      this.showChangePasswordModal = false; 
-      document.body.style.overflow = 'auto';
-    },
-    
-    translateError(error) {
-      const code = error.code || error.message;
-      if (code.includes('wrong-password') || code.includes('invalid-credential')) {
-        return 'كلمة المرور غير صحيحة';
-      }
-      switch (code) {
-        case 'auth/user-not-found': return 'المستخدم غير موجود';
-        case 'auth/too-many-requests': return 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً';
-        case 'auth/network-request-failed': return 'خطأ في الاتصال بالشبكة';
-        case 'auth/weak-password': return 'كلمة المرور الجديدة ضعيفة جداً';
-        default: return 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى';
-      }
-    },
-
-    async updatePassword() {
-      if (this._isDestroyed) return;
-      
-      this.passwordError = "";
-      if (!this.passwordForm.currentPassword) { 
-        this.passwordError = "يرجى إدخال كلمة المرور الحالية"; 
-        return; 
-      }
-      if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) { 
-        this.passwordError = "كلمات المرور الجديدة غير متطابقة"; 
-        return; 
-      }
-      if (this.passwordForm.newPassword.length < 6) {
-        this.passwordError = "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل";
-        return;
-      }
-      
-      this.passwordLoading = true;
-      try {
-        const user = auth.currentUser;
-        const credential = EmailAuthProvider.credential(user.email, this.passwordForm.currentPassword);
-        await reauthenticateWithCredential(user, credential);
-        await updatePassword(user, this.passwordForm.newPassword);
-        this.closeChangePasswordModal();
-        this.showSuccess("تم تحديث كلمة المرور بنجاح ✓");
-      } catch (e) { 
-        this.passwordError = this.translateError(e);
-      } finally {
-        if (!this._isDestroyed) {
-          this.passwordLoading = false;
-        }
-      }
-    },
 
     // ==================== PHONE METHODS ====================
     openPhoneModal() { 
@@ -961,6 +801,19 @@ export default {
       }
     },
 
+    translateError(error) {
+      const code = error.code || error.message;
+      if (code.includes('wrong-password') || code.includes('invalid-credential')) {
+        return 'كلمة المرور غير صحيحة';
+      }
+      switch (code) {
+        case 'auth/user-not-found': return 'المستخدم غير موجود';
+        case 'auth/too-many-requests': return 'محاولات كثيرة جداً، يرجى المحاولة لاحقاً';
+        case 'auth/network-request-failed': return 'خطأ في الاتصال بالشبكة';
+        default: return 'حدث خطأ غير متوقع، يرجى المحاولة مرة أخرى';
+      }
+    },
+
     async updatePhoneNumber() {
       if (this._isDestroyed) return;
       
@@ -981,11 +834,8 @@ export default {
       this.phoneLoading = true;
       try {
         const user = auth.currentUser;
-        const credential = EmailAuthProvider.credential(user.email, this.phoneForm.password);
-        await reauthenticateWithCredential(user, credential);
         const fullPhone = this.phoneForm.countryCode + this.phoneForm.phone;
         
-        // استخدام التحديث المجمع
         await batchUpdateUserData(user.uid, { phoneNumber: fullPhone });
         
         this.userData.phoneNumber = fullPhone;
@@ -1008,15 +858,12 @@ export default {
         'تسجيل الخروج',
         'هل أنت متأكد من رغبتك في تسجيل الخروج؟',
         async () => {
-          // تنظيف الموارد
           this.cleanup();
           
-          // مسح كاش المستخدم
           if (auth.currentUser) {
             ProfileCacheManager.clearProfileCache(auth.currentUser.uid);
           }
           
-          // تسجيل الخروج
           await signOut(auth);
           this.$router.push("/login");
         }
@@ -1029,10 +876,10 @@ export default {
 <style scoped>
 .profile-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f1419 0%, #1a1f2e 100%);
-  color: #ffffff;
+  background: #f5f7fa;
+  color: #1a1a2e;
   padding: 20px;
-  padding-top: 60px;
+  padding-top: 40px;
   padding-bottom: 100px;
   direction: rtl;
   font-family: 'Cairo', sans-serif;
@@ -1055,130 +902,133 @@ export default {
 }
 
 .avatar-circle {
-  width: 90px;
-  height: 90px;
-  background: linear-gradient(135deg, #1a1f2e, #0f1419);
-  border: 2px solid #D4AF37;
+  width: 80px;
+  height: 80px;
+  background: #e8eaed;
+  border: 2px solid #1a1a2e;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
+  font-size: 32px;
   font-weight: bold;
-  color: #D4AF37;
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+  color: #1a1a2e;
   background-size: cover;
   background-position: center;
 }
 
 .username-display {
   font-size: 20px;
-  color: #F6E27A;
+  color: #1a1a2e;
   font-weight: 700;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .user-email {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.5);
+  color: #6b7280;
 }
 
 .edit-avatar-section {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 20px;
 }
 
 .edit-avatar-circle {
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(135deg, #1a1f2e, #0f1419);
-  border: 2px solid #D4AF37;
+  width: 80px;
+  height: 80px;
+  background: #e8eaed;
+  border: 2px solid #1a1a2e;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 42px;
+  font-size: 34px;
   font-weight: bold;
-  color: #D4AF37;
-  margin: 0 auto 15px;
+  color: #1a1a2e;
+  margin: 0 auto 12px;
   background-size: cover;
   background-position: center;
 }
 
 .avatar-upload-buttons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
-  margin-bottom: 8px;
   flex-wrap: wrap;
 }
 
 .upload-avatar-btn {
-  background: rgba(212, 175, 55, 0.15);
-  border: 1px solid #D4AF37;
-  color: #D4AF37;
-  padding: 8px 16px;
+  background: #1a1a2e;
+  color: #ffffff;
+  padding: 6px 14px;
   border-radius: 50px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  border: none;
 }
 
 .upload-avatar-btn:hover {
-  background: #D4AF37;
-  color: #0f1419;
+  background: #2a2a4e;
 }
 
 .remove-avatar-btn {
-  background: rgba(255, 68, 68, 0.15);
-  border: 1px solid #ff4444;
-  color: #ff4444;
-  padding: 8px 16px;
+  background: #e8eaed;
+  color: #dc3545;
+  padding: 6px 12px;
   border-radius: 50px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  border: 1px solid #dc3545;
 }
 
 .remove-avatar-btn:hover {
-  background: #ff4444;
-  color: #fff;
+  background: #dc3545;
+  color: #ffffff;
 }
 
 .fields-section {
-  margin-bottom: 25px;
-  background: linear-gradient(135deg, #1a1f2e, #0f1419);
-  padding: 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .section-label {
-  font-size: 16px;
-  color: #D4AF37;
-  margin-bottom: 20px;
+  font-size: 15px;
+  color: #1a1a2e;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
   gap: 10px;
   font-weight: 700;
 }
 
-.gold-field {
-  margin-bottom: 18px;
+.field {
+  margin-bottom: 14px;
 }
 
-.gold-field label {
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field label {
   display: block;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 6px;
+  color: #6b7280;
+  margin-bottom: 5px;
   margin-right: 4px;
+  font-weight: 500;
 }
 
 .field-input-group {
@@ -1186,154 +1036,149 @@ export default {
   gap: 8px;
 }
 
-.gold-input-field {
+.input-field {
   flex: 1;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 12px;
-  padding: 12px;
-  color: #ffffff;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #1a1a2e;
   font-size: 14px;
   outline: none;
   transition: all 0.3s ease;
   width: 100%;
+  font-family: 'Cairo', sans-serif;
 }
 
-.gold-input-field:focus {
-  border-color: #D4AF37;
-  box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+.input-field:focus {
+  border-color: #1a1a2e;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
 }
 
-.highlight-gold {
-  color: #D4AF37 !important;
-  font-weight: bold;
+.input-field:read-only {
+  cursor: default;
 }
 
-.field-action-btn {
-  background: rgba(212, 175, 55, 0.1);
-  border: 1px solid #D4AF37;
-  color: #D4AF37;
-  padding: 0 15px;
-  border-radius: 12px;
+.highlight-code {
+  color: #1a1a2e;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.action-btn {
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  padding: 0 14px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 13px;
+  font-weight: 500;
 }
 
-.field-action-btn:hover {
-  background: #D4AF37;
-  color: #0f1419;
-  transform: translateY(-2px);
+.action-btn:hover {
+  background: #1a1a2e;
+  color: #ffffff;
+  border-color: #1a1a2e;
 }
 
 .link-btn {
-  min-width: 90px;
+  min-width: 60px;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 600;
 }
 
-.balance-field .gold-input-field {
-  border-color: #D4AF37;
-  background: rgba(212, 175, 55, 0.05);
+.balance-field .input-field {
+  border-color: #1a1a2e;
+  background: #f0f2f5;
 }
 
 .balance-text {
-  font-size: 24px !important;
-  font-weight: 900 !important;
-  color: #F6E27A !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  color: #1a1a2e !important;
   text-align: center;
 }
 
 .currency-tag {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0f1419;
-  padding: 0 15px;
-  border-radius: 12px;
+  background: #1a1a2e;
+  color: #ffffff;
+  padding: 0 14px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .action-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 25px;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
 }
 
-.main-gold-btn {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0f1419;
+.action-btn-main {
+  background: #1a1a2e;
+  color: #ffffff;
   border: none;
   border-radius: 50px;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 800;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  gap: 8px;
   transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
+  flex: 1;
+  justify-content: center;
+  min-width: 100px;
 }
 
-.main-gold-btn:hover {
+.action-btn-main:hover {
+  background: #2a2a4e;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.2);
 }
 
-.outline-gold-btn {
+.action-btn-danger {
   background: transparent;
-  border: 1px solid #D4AF37;
-  color: #D4AF37;
+  border: 1px solid #dc3545;
+  color: #dc3545;
   border-radius: 50px;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 700;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  flex: 1;
   justify-content: center;
-  gap: 10px;
-  transition: all 0.3s ease;
+  min-width: 100px;
 }
 
-.outline-gold-btn:hover {
-  background: rgba(212, 175, 55, 0.1);
+.action-btn-danger:hover {
+  background: #dc3545;
+  color: #ffffff;
   transform: translateY(-2px);
 }
 
-.danger-btn {
-  background: transparent;
-  border: 1px solid #ff4444;
-  color: #ff4444;
-  border-radius: 50px;
-  padding: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 5px;
-  transition: all 0.3s ease;
-}
-
-.danger-btn:hover {
-  background: rgba(255, 68, 68, 0.1);
-  transform: translateY(-2px);
-}
-
-.custom-modal-overlay {
+/* ===== MODAL ===== */
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1341,18 +1186,18 @@ export default {
   padding: 20px;
 }
 
-.custom-modal-container {
-  background: linear-gradient(145deg, rgba(26, 31, 46, 0.98), rgba(15, 20, 25, 0.98));
-  border-radius: 28px;
+.modal-container {
+  background: #ffffff;
+  border-radius: 24px;
   width: 100%;
   max-width: 450px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
   animation: modalFloatIn 0.35s cubic-bezier(0.21, 1.11, 0.35, 1);
 }
 
-.custom-modal-container.small {
+.modal-container.small {
   max-width: 400px;
 }
 
@@ -1378,59 +1223,61 @@ export default {
   transform: scale(0.92);
 }
 
-.custom-modal-header {
-  padding: 22px 24px 16px;
+.modal-header {
+  padding: 18px 20px 14px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  gap: 12px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.custom-modal-header .header-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
+.modal-header .header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-}
-
-.custom-modal-header.info .header-icon {
-  background: rgba(33, 150, 243, 0.15);
-  color: #2196F3;
-}
-
-.custom-modal-header.success .header-icon {
-  background: rgba(76, 175, 80, 0.15);
-  color: #4CAF50;
-}
-
-.custom-modal-header.error .header-icon {
-  background: rgba(244, 67, 54, 0.15);
-  color: #F44336;
-}
-
-.custom-modal-header.confirm .header-icon {
-  background: rgba(212, 175, 55, 0.15);
-  color: #D4AF37;
-}
-
-.custom-modal-header h3 {
-  flex: 1;
   font-size: 20px;
+  background: #f0f2f5;
+  color: #1a1a2e;
+}
+
+.modal-header.info .header-icon {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.modal-header.success .header-icon {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.modal-header.error .header-icon {
+  background: #fce4ec;
+  color: #c62828;
+}
+
+.modal-header.confirm .header-icon {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.modal-header h3 {
+  flex: 1;
+  font-size: 18px;
   font-weight: 700;
   margin: 0;
-  color: #F6E27A;
+  color: #1a1a2e;
 }
 
 .modal-close-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.06);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f8f9fa;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: #6b7280;
   cursor: pointer;
   font-size: 16px;
   transition: all 0.2s;
@@ -1440,36 +1287,36 @@ export default {
 }
 
 .modal-close-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: #e5e7eb;
+  color: #1a1a2e;
   transform: rotate(90deg);
 }
 
-.custom-modal-body {
-  padding: 24px;
+.modal-body {
+  padding: 20px;
 }
 
-.custom-modal-body p {
+.modal-body p {
   margin: 0;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.85);
+  color: #374151;
   font-size: 15px;
   text-align: center;
 }
 
 .confirm-options {
   display: flex;
-  gap: 15px;
-  margin-top: 28px;
+  gap: 12px;
+  margin-top: 24px;
   justify-content: center;
 }
 
-.custom-modal-footer {
-  padding: 16px 24px 24px;
+.modal-footer {
+  padding: 14px 20px 20px;
 }
 
 .modal-btn {
-  padding: 12px 28px;
+  padding: 10px 24px;
   border-radius: 50px;
   font-weight: 600;
   font-size: 14px;
@@ -1478,20 +1325,20 @@ export default {
   border: none;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
   width: 100%;
 }
 
 .modal-btn-primary {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0f1419;
+  background: #1a1a2e;
+  color: #ffffff;
   font-weight: 700;
 }
 
 .modal-btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.35);
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.25);
 }
 
 .modal-btn-primary:disabled {
@@ -1500,92 +1347,94 @@ export default {
 }
 
 .modal-btn-confirm {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A);
-  color: #0f1419;
+  background: #1a1a2e;
+  color: #ffffff;
   flex: 1;
 }
 
 .modal-btn-cancel {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: #f8f9fa;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
   flex: 1;
 }
 
 .modal-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: #e5e7eb;
 }
 
-.modal-gold-line {
+.modal-line {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #D4AF37, #F6E27A, #D4AF37, transparent);
-  animation: goldShine 2s linear infinite;
+  background: #1a1a2e;
 }
 
-@keyframes goldShine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
+/* ===== PHONE INPUT ===== */
 .phone-input-box {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .country-select {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 12px;
-  padding: 12px;
-  color: #D4AF37;
-  font-weight: bold;
+  background: #f8f9fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #1a1a2e;
+  font-weight: 500;
   outline: none;
   font-size: 14px;
   width: 100%;
   cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+}
+
+.country-select:focus {
+  border-color: #1a1a2e;
+  box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
 }
 
 .phone-hint {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 10px;
-  margin-right: 5px;
+  color: #6b7280;
+  margin-top: 8px;
+  margin-right: 4px;
 }
 
 .phone-hint span {
-  color: #D4AF37;
+  color: #1a1a2e;
   font-weight: bold;
 }
 
 .error-txt {
-  color: #ff4444;
+  color: #dc3545;
   font-size: 13px;
-  margin-top: 15px;
+  margin-top: 12px;
   text-align: center;
-  background: rgba(255, 68, 68, 0.1);
+  background: rgba(220, 53, 69, 0.05);
   padding: 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 68, 68, 0.2);
+  border-radius: 10px;
+  border: 1px solid rgba(220, 53, 69, 0.15);
 }
 
+/* ===== LOADING ===== */
 .loading-container {
   text-align: center;
-  padding: 100px 0;
+  padding: 80px 0;
 }
 
-.gold-spinner {
-  width: 50px;
-  height: 50px;
-  border: 3px solid rgba(212, 175, 55, 0.1);
-  border-top-color: #D4AF37;
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1a1a2e;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
 }
 
 @keyframes spin {
@@ -1593,30 +1442,31 @@ export default {
 }
 
 .loading-text {
-  color: rgba(255, 255, 255, 0.7);
+  color: #6b7280;
   font-size: 14px;
 }
 
+/* ===== RESPONSIVE ===== */
 @media (max-width: 480px) {
   .profile-page {
-    padding: 15px;
-    padding-top: 50px;
+    padding: 12px;
+    padding-top: 30px;
   }
   
   .fields-section {
-    padding: 15px;
+    padding: 14px 16px;
   }
   
-  .custom-modal-container {
-    margin: 20px;
+  .modal-container {
+    margin: 16px;
   }
   
-  .custom-modal-header h3 {
-    font-size: 18px;
+  .modal-header h3 {
+    font-size: 16px;
   }
   
   .balance-text {
-    font-size: 20px !important;
+    font-size: 18px !important;
   }
   
   .avatar-circle {
@@ -1630,9 +1480,19 @@ export default {
   }
   
   .edit-avatar-circle {
-    width: 80px;
-    height: 80px;
-    font-size: 34px;
+    width: 70px;
+    height: 70px;
+    font-size: 28px;
+  }
+  
+  .action-btn-main, .action-btn-danger {
+    font-size: 12px;
+    padding: 8px 14px;
+    min-width: 70px;
+  }
+  
+  .action-buttons {
+    gap: 8px;
   }
 }
 </style>
