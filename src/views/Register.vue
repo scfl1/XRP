@@ -1477,7 +1477,7 @@ export default {
 
 
 /* =====================================================
-   الهاتف
+   الهاتف - الإصلاح
    ===================================================== */
 
 .phone-container {
@@ -1487,6 +1487,10 @@ export default {
   gap: 10px;
 
   margin-bottom: 20px;
+
+  width: 100%;
+
+  box-sizing: border-box;
 
 }
 
@@ -1510,6 +1514,8 @@ export default {
   font-size: 13px;
 
   outline: none;
+
+  flex-shrink: 0;
 
 }
 
@@ -1539,6 +1545,8 @@ export default {
   text-align: left;
 
   outline: none;
+
+  min-width: 0;
 
 }
 
@@ -2086,17 +2094,23 @@ export default {
 
     gap: 6px;
 
+    flex-wrap: wrap;
+
   }
 
 
   .country-select {
 
-    width: 105px;
+    width: 100%;
 
-    font-size: 11px;
+    font-size: 13px;
 
-    padding: 0 8px;
+    padding: 0 14px;
 
+  }
+
+  .phone-input {
+    width: 100%;
   }
 
 }
