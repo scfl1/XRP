@@ -113,20 +113,29 @@
 
       <!-- أسعار العملات -->
       <div class="crypto-section">
-        <h3 class="card-title"><i class="fas fa-chart-line"></i> أسعار العملات الرقمية</h3>
-        <div class="crypto-list">
+        <div class="crypto-header">
+          <h3 class="card-title"><i class="fas fa-chart-line"></i> أسعار العملات الرقمية</h3>
+          <button class="refresh-crypto-btn" @click="fetchCryptoPrices" :disabled="cryptoLoading">
+            <i :class="cryptoLoading ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
+          </button>
+        </div>
+        <div v-if="cryptoLoading" class="crypto-loading">
+          <span>جاري تحميل الأسعار...</span>
+        </div>
+        <div v-else class="crypto-list">
           <div v-for="crypto in cryptos" :key="crypto.symbol" class="crypto-row">
             <div class="crypto-left">
-              <span class="crypto-icon">{{ crypto.icon }}</span>
+              <img :src="crypto.image" :alt="crypto.name" class="crypto-image" @error="handleImageError(crypto)" />
               <div class="crypto-info">
                 <span class="crypto-name">{{ crypto.name }}</span>
-                <span class="crypto-symbol">{{ crypto.symbol }}</span>
+                <span class="crypto-symbol">{{ crypto.symbol.toUpperCase() }}</span>
               </div>
             </div>
             <div class="crypto-right">
-              <span class="crypto-price">${{ formatPrice(crypto.price) }}</span>
-              <span class="crypto-change" :class="crypto.change >= 0 ? 'positive' : 'negative'">
-                {{ crypto.change >= 0 ? '+' : '' }}{{ crypto.change.toFixed(2) }}%
+              <span class="crypto-price">${{ formatPrice(crypto.current_price) }}</span>
+              <span class="crypto-change" :class="crypto.price_change_percentage_24h >= 0 ? 'positive' : 'negative'">
+                <i :class="crypto.price_change_percentage_24h >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                {{ crypto.price_change_percentage_24h >= 0 ? '+' : '' }}{{ crypto.price_change_percentage_24h?.toFixed(2) || '0.00' }}%
               </span>
             </div>
           </div>
@@ -441,12 +450,10 @@ export default {
       },
       _isDestroyed: false,
       _authUnsubscribe: null,
-      cryptos: [
-        { name: 'XRP', symbol: 'XRP', icon: '✕', price: 0.6245, change: -0.42 },
-        { name: 'Bitcoin', symbol: 'BTC', icon: '₿', price: 67234.50, change: 2.35 },
-        { name: 'Ethereum', symbol: 'ETH', icon: '⟠', price: 3456.20, change: 1.85 },
-        { name: 'Tether', symbol: 'USDT', icon: '₮', price: 1.0002, change: 0.01 }
-      ]
+      cryptos: [],
+      cryptoLoading: false,
+      cryptoInterval: null,
+      cryptoIds: ['bitcoin', 'ethereum', 'ripple', 'tether']
     };
   },
   
@@ -485,10 +492,17 @@ export default {
   
   created() { 
     this.initProfile();
+    this.fetchCryptoPrices();
+    this.cryptoInterval = setInterval(() => {
+      this.fetchCryptoPrices();
+    }, 60000);
   },
   
   beforeUnmount() {
     this.cleanup();
+    if (this.cryptoInterval) {
+      clearInterval(this.cryptoInterval);
+    }
   },
   
   methods: {
@@ -616,6 +630,66 @@ export default {
       );
     },
     
+    // ==================== CRYPTO PRICES ====================
+    async fetchCryptoPrices() {
+      if (this.cryptoLoading) return;
+      
+      this.cryptoLoading = true;
+      
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${this.cryptoIds.join(',')}&order=market_cap_desc&per_page=100&page=1&sparkline=false`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          this.cryptos = data;
+        }
+      } catch (error) {
+        console.error('Error fetching crypto prices:', error);
+        // استخدام بيانات تجريبية في حالة فشل الاتصال
+        if (this.cryptos.length === 0) {
+          this.cryptos = [
+            { id: 'bitcoin', symbol: 'btc', name: 'Bitcoin', current_price: 67234.50, price_change_percentage_24h: 2.35, image: '' },
+            { id: 'ethereum', symbol: 'eth', name: 'Ethereum', current_price: 3456.20, price_change_percentage_24h: 1.85, image: '' },
+            { id: 'ripple', symbol: 'xrp', name: 'XRP', current_price: 0.6245, price_change_percentage_24h: -0.42, image: '' },
+            { id: 'tether', symbol: 'usdt', name: 'Tether', current_price: 1.0002, price_change_percentage_24h: 0.01, image: '' }
+          ];
+        }
+      } finally {
+        this.cryptoLoading = false;
+      }
+    },
+    
+    handleImageError(crypto) {
+      // استخدام أيقونة بديلة عند فشل تحميل الصورة
+      const fallbackIcons = {
+        'bitcoin': '₿',
+        'ethereum': '⟠',
+        'ripple': '✕',
+        'tether': '₮'
+      };
+      crypto.image = '';
+      crypto.fallbackIcon = fallbackIcons[crypto.id] || '₿';
+    },
+    
+    formatPrice(price) {
+      if (price === undefined || price === null) return '0.00';
+      if (price >= 1000) {
+        return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else if (price >= 1) {
+        return price.toFixed(2);
+      } else {
+        return price.toFixed(4);
+      }
+    },
+    
+    // ==================== MODAL METHODS ====================
     showModal(options) {
       if (this._isDestroyed) return;
       
@@ -698,6 +772,7 @@ export default {
       });
     },
 
+    // ==================== PROFILE EDIT ====================
     openEditProfileModal() {
       if (this._isDestroyed) return;
       
@@ -812,6 +887,7 @@ export default {
       }
     },
 
+    // ==================== UTILITY ====================
     copy(text) { 
       if (!text || this._isDestroyed) return; 
       navigator.clipboard.writeText(text); 
@@ -820,6 +896,7 @@ export default {
 
     copyReferralLink() { this.copy(this.referralLink); },
 
+    // ==================== PHONE ====================
     openPhoneModal() { 
       if (this._isDestroyed) return;
       
@@ -909,6 +986,7 @@ export default {
       }
     },
 
+    // ==================== LOGOUT ====================
     confirmLogout() {
       if (this._isDestroyed) return;
       
@@ -926,17 +1004,6 @@ export default {
           this.$router.push("/login");
         }
       );
-    },
-
-    formatPrice(price) {
-      if (price === undefined || price === null) return '0.00';
-      if (price >= 1000) {
-        return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      } else if (price >= 1) {
-        return price.toFixed(2);
-      } else {
-        return price.toFixed(4);
-      }
     }
   }
 };
@@ -1075,7 +1142,7 @@ export default {
   font-size: 15px;
   font-weight: 700;
   color: #1a1a2e;
-  margin: 0 0 16px 0;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1220,6 +1287,45 @@ export default {
 }
 
 /* ===== أسعار العملات ===== */
+.crypto-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.crypto-header .card-title {
+  margin: 0;
+}
+
+.refresh-crypto-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.refresh-crypto-btn:hover:not(:disabled) {
+  background: #f0f2f5;
+  color: #1a1a2e;
+}
+
+.refresh-crypto-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crypto-loading {
+  text-align: center;
+  padding: 16px 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
 .crypto-list {
   display: flex;
   flex-direction: column;
@@ -1246,17 +1352,12 @@ export default {
   gap: 12px;
 }
 
-.crypto-icon {
+.crypto-image {
   width: 36px;
   height: 36px;
-  background: #1a1a2e;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: 700;
+  object-fit: contain;
+  background: #e8eaed;
 }
 
 .crypto-info {
@@ -1290,6 +1391,9 @@ export default {
 .crypto-change {
   font-size: 12px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .crypto-change.positive {
@@ -1298,6 +1402,10 @@ export default {
 
 .crypto-change.negative {
   color: #dc3545;
+}
+
+.crypto-change i {
+  font-size: 10px;
 }
 
 /* ===== الأزرار ===== */
@@ -1749,10 +1857,9 @@ export default {
     font-size: 30px;
   }
 
-  .crypto-icon {
+  .crypto-image {
     width: 30px;
     height: 30px;
-    font-size: 13px;
   }
 
   .crypto-name {
