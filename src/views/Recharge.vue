@@ -83,15 +83,14 @@
             </div>
           </div>
 
-          <!-- QR Code -->
+          <!-- QR Code - استخدام الصور من مجلد public -->
           <div class="qr-card">
             <div class="qr-wrapper">
-              <qrcode-vue
-                v-if="walletAddress"
-                :value="walletAddress"
-                :size="180"
-                level="H"
-                class="qr-code"
+              <img 
+                :src="getQrImage(selectedNetwork)" 
+                :alt="selectedNetwork"
+                class="qr-code-image"
+                @error="handleQrError"
               />
             </div>
             <p class="qr-hint">امسح الرمز للإيداع</p>
@@ -163,16 +162,9 @@
 import { auth, db } from "../firebase";
 import { doc, getDoc, addDoc, collection, query, where, orderBy, getDocs, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import QrcodeVue from "qrcode.vue";
-
-// صور الشبكات (SVG inline)
-const bitcoinIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 14.09v.58c0 .41-.34.75-.75.75h-.86v.83h-1.6v-.83h-.86c-.41 0-.75-.34-.75-.75v-4.11c0-.41.34-.75.75-.75h.86v-.83h1.6v.83h.86c.41 0 .75.34.75.75v.58zm-3.46-2.86h2.07v-1.66h-2.07v1.66zm0 3.08h2.07v-1.7h-2.07v1.7z"/></svg>';
 
 export default {
   name: "RechargePage",
-  components: {
-    QrcodeVue
-  },
   data() {
     return {
       balance: 0,
@@ -240,6 +232,18 @@ export default {
       } catch {
         return "—";
       }
+    },
+
+    // دالة للحصول على صورة QR من مجلد public
+    getQrImage(network) {
+      // استخدام الصور من مجلد /public/qr/
+      return `/qr/${network}.png`;
+    },
+
+    // معالجة خطأ تحميل الصورة
+    handleQrError(event) {
+      // إذا فشل تحميل الصورة، نستخدم صورة افتراضية
+      event.target.src = '/qr/default.png';
     },
 
     async loadUserData() {
@@ -768,7 +772,10 @@ export default {
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.qr-code {
+.qr-code-image {
+  width: 180px;
+  height: 180px;
+  object-fit: contain;
   display: block;
 }
 
@@ -1039,6 +1046,11 @@ export default {
     font-size: 12px;
     word-break: break-all;
   }
+
+  .qr-code-image {
+    width: 140px;
+    height: 140px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -1056,6 +1068,11 @@ export default {
 
   .balance-number {
     font-size: 26px;
+  }
+
+  .qr-code-image {
+    width: 120px;
+    height: 120px;
   }
 }
 </style>
