@@ -50,9 +50,6 @@
             <span class="amount">{{ formatNumber(totalBalance) }}</span>
             <span class="currency">USDT</span>
           </div>
-          <button class="refresh-btn" @click="refreshBalance" :disabled="refreshing">
-            <i :class="refreshing ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
-          </button>
         </div>
 
         <button class="notif-btn" @click="navigateTo('/notifications')">
@@ -97,21 +94,6 @@
       </div>
     </div>
 
-    <!-- ==================== SEARCH SECTION ==================== -->
-    <div class="search-section">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input 
-          type="text" 
-          :placeholder="t('searchPlaceholder')"
-          v-model="searchQuery"
-        >
-        <button class="filter-btn" @click="showInfoMessage(t('searchFeatureMessage'))">
-          <i class="fas fa-filter"></i>
-        </button>
-      </div>
-    </div>
-
     <!-- ==================== QUICK ACTIONS CARDS ==================== -->
     <div class="quick-actions">
       <div class="action-card deposit" @click="navigateTo('/recharge')">
@@ -121,6 +103,9 @@
         <div class="action-text">
           <div class="action-title">{{ t('deposit') }}</div>
           <div class="action-subtitle">{{ t('addFunds') }}</div>
+        </div>
+        <div class="action-arrow">
+          <i class="fas fa-chevron-left"></i>
         </div>
       </div>
 
@@ -132,6 +117,9 @@
           <div class="action-title">{{ t('withdraw') }}</div>
           <div class="action-subtitle">{{ t('cashout') }}</div>
         </div>
+        <div class="action-arrow">
+          <i class="fas fa-chevron-left"></i>
+        </div>
       </div>
 
       <div class="action-card team" @click="navigateTo('/team')">
@@ -142,6 +130,9 @@
           <div class="action-title">{{ t('team') }}</div>
           <div class="action-subtitle">{{ t('myReferrals') }}</div>
         </div>
+        <div class="action-arrow">
+          <i class="fas fa-chevron-left"></i>
+        </div>
       </div>
 
       <div class="action-card history" @click="navigateTo('/transactions')">
@@ -151,6 +142,9 @@
         <div class="action-text">
           <div class="action-title">{{ t('transactions') }}</div>
           <div class="action-subtitle">{{ t('viewHistory') }}</div>
+        </div>
+        <div class="action-arrow">
+          <i class="fas fa-chevron-left"></i>
         </div>
       </div>
     </div>
@@ -241,15 +235,15 @@
               <div class="commission-list">
                 <div class="comm-item">
                   <span>{{ t('level1') }}</span>
-                  <strong>6%</strong>
+                  <strong>15%</strong>
                 </div>
                 <div class="comm-item">
                   <span>{{ t('level2') }}</span>
-                  <strong>2%</strong>
+                  <strong>10%</strong>
                 </div>
                 <div class="comm-item">
                   <span>{{ t('level3') }}</span>
-                  <strong>1%</strong>
+                  <strong>5%</strong>
                 </div>
               </div>
             </div>
@@ -278,11 +272,9 @@ export default {
       username: "جار التحميل...",
       totalBalance: 0,
       currentUserUid: null,
-      refreshing: false,
       
       showCompany: false,
       sidebarOpen: false,
-      searchQuery: "",
       currentLang: localStorage.getItem("app_language") || "AR",
 
       // ==================== CUSTOM MODAL SYSTEM ====================
@@ -323,8 +315,6 @@ export default {
         AR: {
           totalBalance: 'الرصيد الإجمالي',
           welcome: 'مرحباً',
-          searchPlaceholder: 'ابحث عن ميزة...',
-          searchFeatureMessage: 'ميزة البحث قيد التطوير قريباً',
           deposit: 'تعبئة رصيد',
           addFunds: 'أضف أموال',
           withdraw: 'سحب',
@@ -347,17 +337,12 @@ export default {
           profile: 'حسابي',
           agency: 'وكالة',
           program: 'تحميل التطبيق',
-          balanceUpdated: 'تم تحديث الرصيد بنجاح ✓',
-          refreshError: 'حدث خطأ في تحديث الرصيد، حاول مرة أخرى',
-          languageChanged: 'تم تغيير اللغة بنجاح',
           futureOfFinance: 'مستقبل التمويل الرقمي',
           companyMessage: 'نحن نعمل على تطوير تجربة رقمية حديثة تركز على سهولة الاستخدام، وضوح العمليات، وتحسين تجربة المستخدم. يتم تطوير المنصة باستمرار بهدف تقديم واجهة مستقرة وسريعة وآمنة، مع متابعة أداء الخدمات وتحسينها بشكل مستمر.'
         },
         EN: {
           totalBalance: 'Total Balance',
           welcome: 'Welcome',
-          searchPlaceholder: 'Search feature...',
-          searchFeatureMessage: 'Search feature coming soon',
           deposit: 'Deposit',
           addFunds: 'Add Funds',
           withdraw: 'Withdraw',
@@ -380,9 +365,6 @@ export default {
           profile: 'Profile',
           agency: 'Agency',
           program: 'Download App',
-          balanceUpdated: 'Balance updated successfully ✓',
-          refreshError: 'Error refreshing balance, please try again',
-          languageChanged: 'Language changed successfully',
           futureOfFinance: 'Future of Digital Finance',
           companyMessage: 'We are working on developing a modern digital experience focused on ease of use, process clarity, and improving user experience. The platform is continuously being developed to provide a stable, fast, and secure interface, with ongoing monitoring and improvement of service performance.'
         }
@@ -434,36 +416,6 @@ export default {
       this.closeModal();
     },
 
-    showInfoMessage(message) {
-      this.showModal({
-        type: 'info',
-        title: 'معلومات',
-        message: message,
-        buttonText: 'فهمت',
-        size: 'small'
-      });
-    },
-
-    showSuccessMessage(message) {
-      this.showModal({
-        type: 'success',
-        title: 'تم بنجاح',
-        message: message,
-        buttonText: 'حسناً',
-        size: 'small'
-      });
-    },
-
-    showErrorMessage(message) {
-      this.showModal({
-        type: 'error',
-        title: 'خطأ',
-        message: message,
-        buttonText: 'حسناً',
-        size: 'small'
-      });
-    },
-
     t(key) {
       return this.translations[this.currentLang]?.[key] || this.translations['AR'][key] || key;
     },
@@ -501,26 +453,6 @@ export default {
       }
     },
 
-    async refreshBalance() {
-      if (this.refreshing || !this.currentUserUid) return;
-      
-      this.refreshing = true;
-      try {
-        const userRef = doc(db, "users", this.currentUserUid);
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          this.totalBalance = Number(data.balance || data.vipBalance || 0);
-          this.showSuccessMessage(this.t('balanceUpdated'));
-        }
-      } catch (error) {
-        console.error("Refresh error:", error);
-        this.showErrorMessage(this.t('refreshError'));
-      } finally {
-        setTimeout(() => { this.refreshing = false; }, 500);
-      }
-    },
-
     navigateTo(route) {
       if (this.$route.path !== route) {
         this.$router.push(route);
@@ -543,7 +475,6 @@ export default {
       localStorage.setItem('app_language', this.currentLang);
       document.documentElement.dir = this.currentLang === 'AR' ? 'rtl' : 'ltr';
       document.documentElement.lang = this.currentLang.toLowerCase();
-      this.showSuccessMessage(this.t('languageChanged'));
     },
     
     showCompanyModal() {
@@ -637,26 +568,6 @@ export default {
   font-size: 12px;
   color: #6b7280;
   font-weight: 600;
-}
-
-.refresh-btn {
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 4px 8px;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.refresh-btn:hover:not(:disabled) {
-  color: #1a1a2e;
-  transform: rotate(180deg);
-}
-
-.refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .welcome-section {
@@ -792,86 +703,69 @@ export default {
   font-weight: 600;
 }
 
-/* ==================== SEARCH SECTION ==================== */
-.search-section {
-  padding: 0 20px 16px;
-}
-
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  padding: 12px 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s;
-}
-
-.search-box:focus-within {
-  border-color: #0070ff;
-  box-shadow: 0 4px 16px rgba(0, 112, 255, 0.1);
-}
-
-.search-box i {
-  color: #9ca3af;
-  font-size: 16px;
-}
-
-.search-box input {
-  flex: 1;
-  background: none;
-  border: none;
-  color: #1a1a2e;
-  font-size: 14px;
-  outline: none;
-  font-family: inherit;
-}
-
-.search-box input::placeholder {
-  color: #9ca3af;
-}
-
-.filter-btn {
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 4px;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-.filter-btn:hover {
-  color: #1a1a2e;
-}
-
 /* ==================== QUICK ACTIONS ==================== */
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 0 20px 20px;
 }
 
 .action-card {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
-  padding: 16px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   gap: 14px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.action-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.action-card.deposit::before {
+  background: linear-gradient(135deg, rgba(46, 125, 50, 0.05), rgba(46, 125, 50, 0.02));
+}
+
+.action-card.withdraw::before {
+  background: linear-gradient(135deg, rgba(21, 101, 192, 0.05), rgba(21, 101, 192, 0.02));
+}
+
+.action-card.team::before {
+  background: linear-gradient(135deg, rgba(230, 81, 0, 0.05), rgba(230, 81, 0, 0.02));
+}
+
+.action-card.history::before {
+  background: linear-gradient(135deg, rgba(106, 27, 154, 0.05), rgba(106, 27, 154, 0.02));
 }
 
 .action-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 112, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.action-card:hover::before {
+  opacity: 1;
+}
+
+.action-card:active {
+  transform: translateY(-2px) scale(0.98);
 }
 
 .action-icon {
@@ -883,6 +777,13 @@ export default {
   justify-content: center;
   font-size: 20px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.action-card:hover .action-icon {
+  transform: scale(1.05);
 }
 
 .action-card.deposit .action-icon {
@@ -908,18 +809,44 @@ export default {
 .action-text {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 .action-title {
   font-size: 15px;
   font-weight: 700;
   color: #1a1a2e;
+  line-height: 1.2;
 }
 
 .action-subtitle {
   font-size: 11px;
   color: #6b7280;
   font-weight: 500;
+  margin-top: 2px;
+}
+
+.action-arrow {
+  color: #d1d5db;
+  font-size: 14px;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
+}
+
+.action-card:hover .action-arrow {
+  color: #1a1a2e;
+  transform: translateX(-4px);
+}
+
+.home-container[dir="rtl"] .action-arrow {
+  transform: rotate(180deg);
+}
+
+.home-container[dir="rtl"] .action-card:hover .action-arrow {
+  transform: rotate(180deg) translateX(-4px);
 }
 
 /* ==================== MAIN MENU ==================== */
@@ -932,7 +859,6 @@ export default {
 
 .menu-item {
   background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   padding: 18px 12px;
   display: flex;
@@ -940,19 +866,52 @@ export default {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(0, 112, 255, 0.04), rgba(0, 112, 255, 0.01));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.menu-item:hover::before {
+  opacity: 1;
 }
 
 .menu-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 112, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 112, 255, 0.15);
+}
+
+.menu-item:active {
+  transform: translateY(-2px) scale(0.98);
 }
 
 .menu-item.special {
-  border: 1px solid rgba(0, 112, 255, 0.2);
+  border-color: rgba(0, 112, 255, 0.15);
   background: linear-gradient(135deg, #f8faff, #ffffff);
+}
+
+.menu-item.special::before {
+  background: linear-gradient(135deg, rgba(245, 124, 0, 0.06), rgba(245, 124, 0, 0.02));
+}
+
+.menu-item.special:hover {
+  border-color: rgba(245, 124, 0, 0.3);
+  box-shadow: 0 12px 32px rgba(245, 124, 0, 0.08);
 }
 
 .menu-icon {
@@ -966,6 +925,11 @@ export default {
   font-size: 20px;
   color: #0070ff;
   position: relative;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover .menu-icon {
+  transform: scale(1.05);
 }
 
 .menu-icon.gold {
@@ -981,6 +945,14 @@ export default {
 .menu-icon.icon-program {
   background: #f3e5f5;
   color: #6a1b9a;
+}
+
+.menu-icon.icon-agency:hover {
+  background: #c8e6c9;
+}
+
+.menu-icon.icon-program:hover {
+  background: #e1bee7;
 }
 
 .badge {
@@ -1001,11 +973,30 @@ export default {
   font-weight: 600;
   color: #1a1a2e;
   text-align: center;
+  transition: color 0.3s ease;
+}
+
+.menu-item:hover .menu-title {
+  color: #0070ff;
+}
+
+.menu-item.special:hover .menu-title {
+  color: #f57c00;
 }
 
 .menu-arrow {
   color: #d1d5db;
   font-size: 10px;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover .menu-arrow {
+  color: #1a1a2e;
+  transform: translateX(-4px);
+}
+
+.home-container[dir="rtl"] .menu-item:hover .menu-arrow {
+  transform: translateX(4px);
 }
 
 .menu-item.small {
@@ -1580,12 +1571,11 @@ export default {
   }
   
   .quick-actions {
-    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   
   .action-card {
-    padding: 14px;
+    padding: 14px 16px;
   }
   
   .action-icon {
@@ -1595,7 +1585,6 @@ export default {
   }
   
   .main-menu {
-    grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
   
@@ -1655,12 +1644,11 @@ export default {
   }
   
   .quick-actions {
-    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
   
   .action-card {
-    padding: 12px;
+    padding: 12px 14px;
   }
   
   .action-icon {
@@ -1674,7 +1662,6 @@ export default {
   }
   
   .main-menu {
-    grid-template-columns: repeat(3, 1fr);
     gap: 8px;
   }
   
