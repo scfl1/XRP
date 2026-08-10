@@ -277,47 +277,6 @@
 
       </section>
 
-
-      <!-- ================= EXTRA MENU ================= -->
-      <section class="extra-menu">
-
-        <button
-          class="extra-item"
-          @click="navigateTo('/agency')"
-        >
-
-          <div class="extra-icon">
-            <i class="fas fa-id-card"></i>
-          </div>
-
-          <span>
-            {{ t('agency') }}
-          </span>
-
-          <i class="fas fa-chevron-left"></i>
-
-        </button>
-
-
-        <button
-          class="extra-item"
-          @click="navigateTo('/program')"
-        >
-
-          <div class="extra-icon">
-            <i class="fas fa-download"></i>
-          </div>
-
-          <span>
-            {{ t('program') }}
-          </span>
-
-          <i class="fas fa-chevron-left"></i>
-
-        </button>
-
-      </section>
-
     </main>
 
 
@@ -442,10 +401,10 @@
         @click="navigateTo('/tasks')"
       >
 
-        <i class="fas fa-list-check"></i>
+        <i class="fas fa-rocket"></i>
 
         <span>
-          {{ t('tasks') }}
+          XRP
         </span>
 
       </button>
@@ -531,8 +490,8 @@ export default {
 
         {
           path: "/tasks",
-          icon: "fas fa-list-check",
-          label: "tasks"
+          icon: "fas fa-rocket",
+          label: "xrp"
         },
 
         {
@@ -589,13 +548,9 @@ export default {
           companyMessage:
             "نعمل على تطوير تجربة رقمية حديثة تركز على سهولة الاستخدام ووضوح العمليات وتحسين تجربة المستخدم. يتم تطوير المنصة باستمرار بهدف تقديم واجهة مستقرة وسريعة مع متابعة أداء الخدمات وتحسينها بشكل مستمر.",
 
-          agency: "الوكالة",
-
-          program: "تحميل التطبيق",
-
           home: "الرئيسية",
 
-          tasks: "المهام",
+          xrp: "XRP",
 
           profile: "حسابي"
 
@@ -639,13 +594,9 @@ export default {
           companyMessage:
             "We are developing a modern digital experience focused on ease of use, process clarity, and improving the user experience. The platform is continuously developed to provide a stable and fast interface while continuously monitoring and improving service performance.",
 
-          agency: "Agency",
-
-          program: "Download App",
-
           home: "Home",
 
-          tasks: "Tasks",
+          xrp: "XRP",
 
           profile: "Account"
 
@@ -1745,88 +1696,6 @@ export default {
 
 
 /* =========================================================
-   EXTRA MENU
-========================================================= */
-
-.extra-menu {
-
-  display: grid;
-
-  grid-template-columns: 1fr 1fr;
-
-  gap: 12px;
-
-  margin-top: 16px;
-
-}
-
-
-.extra-item {
-
-  background: #ffffff;
-
-  border: 1px solid #e9e9e9;
-
-  border-radius: 18px;
-
-  padding: 14px;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 10px;
-
-  font-family: inherit;
-
-  cursor: pointer;
-
-  color: #111111;
-
-}
-
-
-.extra-item span {
-
-  flex: 1;
-
-  font-size: 13px;
-
-  font-weight: 700;
-
-}
-
-
-.extra-item > i {
-
-  color: #999999;
-
-  font-size: 11px;
-
-}
-
-
-.extra-icon {
-
-  width: 40px;
-  height: 40px;
-
-  border-radius: 12px;
-
-  background: #111111;
-
-  color: #ffffff;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-}
-
-
-/* =========================================================
    BOTTOM NAVIGATION
 ========================================================= */
 
@@ -2412,20 +2281,6 @@ export default {
     font-size: 11px;
 
     line-height: 1.9;
-
-  }
-
-
-  .extra-menu {
-
-    gap: 9px;
-
-  }
-
-
-  .extra-item {
-
-    padding: 12px;
 
   }
 
