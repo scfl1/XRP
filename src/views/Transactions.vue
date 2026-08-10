@@ -1,657 +1,425 @@
-<template>
-  <div class="transactions-page">
-    <div class="card">
-      <div class="card-header">
-        <h2 class="title">
-          <i class="fas fa-history"></i>
-          سجل المعاملات
-          <span class="title-glow">USDT</span>
-        </h2>
-        <div class="header-glow"></div>
-        <p class="sub">جميع عمليات السحب والإيداع الخاصة بك</p>
-      </div>
-
-      <div v-if="loading" class="loading-box">
-        <i class="fas fa-spinner fa-spin"></i>
-        <p>جاري تحميل المعاملات...</p>
-      </div>
-
-      <div v-else-if="transactions.length === 0" class="empty-box">
-        <i class="fas fa-inbox"></i>
-        <p>لا توجد معاملات حتى الآن</p>
-        <p class="uid-info">معرف المستخدم: {{ currentUserId }}</p>
-      </div>
-
-      <div v-else class="transactions-list">
-        <div class="stats-box">
-          <div class="stat-item">
-            <span class="stat-label">إجمالي المعاملات</span>
-            <span class="stat-value">{{ transactions.length }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">المبلغ الإجمالي</span>
-            <span class="stat-value">{{ totalAmount }} USDT</span>
-          </div>
-        </div>
-
-        <div
-          v-for="tx in transactions"
-          :key="tx.id"
-          class="transaction-card"
-          :class="tx.type"
-        >
-          <!-- حالة الموافقة -->
-          <div v-if="tx.adminAction === 'approved'" class="approval-badge">
-            <i class="fas fa-check-circle"></i>
-            <span>تمت الموافقة</span>
-          </div>
-          
-          <div v-if="tx.adminAction === 'rejected'" class="rejection-badge">
-            <i class="fas fa-times-circle"></i>
-            <span>تم الرفض</span>
-          </div>
-
-          <!-- رأس البطاقة -->
-          <div class="card-header-mini">
-            <div class="type-badge" :class="tx.type">
-              <i :class="getTypeIcon(tx.type)"></i>
-              {{ getTypeLabel(tx.type) }}
-            </div>
-            <div class="status-badge" :class="tx.status">
-              {{ getStatusLabel(tx.status) }}
-            </div>
-          </div>
-
-          <!-- تفاصيل المعاملة -->
-          <div class="details-grid">
-            <div class="detail-item">
-              <span class="detail-label">
-                <i class="fas fa-hashtag"></i>
-                رقم المعاملة
-              </span>
-              <span class="detail-value code">{{ tx.transactionId || tx.id.substring(0, 12) }}</span>
-            </div>
-
-            <div class="detail-item">
-              <span class="detail-label">
-                <i class="fas fa-coins"></i>
-                المبلغ
-              </span>
-              <span class="detail-value amount">{{ tx.amount }} {{ tx.currency || 'USDT' }}</span>
-            </div>
-
-            <div class="detail-item">
-              <span class="detail-label">
-                <i class="fas fa-calendar"></i>
-                التاريخ والوقت
-              </span>
-              <span class="detail-value">{{ formatDate(tx.createdAt) }}</span>
-            </div>
-
-            <!-- حقول السحب -->
-            <template v-if="tx.type === 'withdraw' || tx.type === 'withdrawal'">
-              <div class="detail-item">
-                <span class="detail-label">
-                  <i class="fas fa-network-wired"></i>
-                  الشبكة
-                </span>
-                <span class="detail-value network">{{ tx.network || 'غير محدد' }}</span>
-              </div>
-
-              <div class="detail-item full-width">
-                <span class="detail-label">
-                  <i class="fas fa-wallet"></i>
-                  عنوان المحفظة
-                </span>
-                <span class="detail-value address">{{ tx.wallet || tx.walletAddress || 'غير متوفر' }}</span>
-              </div>
-            </template>
-
-            <!-- حقول الإيداع -->
-            <template v-if="tx.type === 'deposit' || tx.type === 'recharge'">
-              <div class="detail-item">
-                <span class="detail-label">
-                  <i class="fas fa-credit-card"></i>
-                  طريقة الدفع
-                </span>
-                <span class="detail-value">{{ tx.paymentMethod || 'غير محدد' }}</span>
-              </div>
-
-              <div v-if="tx.transactionHash" class="detail-item full-width">
-                <span class="detail-label">
-                  <i class="fas fa-link"></i>
-                  رابط المعاملة
-                </span>
-                <span class="detail-value hash">{{ tx.transactionHash }}</span>
-              </div>
-            </template>
-
-            <!-- معلومات VIP -->
-            <div v-if="tx.vipLevel" class="detail-item">
-              <span class="detail-label">
-                <i class="fas fa-crown"></i>
-                مستوى VIP
-              </span>
-              <span class="detail-value vip">{{ tx.vipLevel }}</span>
-            </div>
-
-            <!-- رقم الهاتف (إذا وجد) -->
-            <div v-if="tx.userPhone" class="detail-item full-width">
-              <span class="detail-label">
-                <i class="fas fa-phone"></i>
-                رقم الهاتف
-              </span>
-              <span class="detail-value phone">{{ tx.userPhone }}</span>
-            </div>
-
-            <!-- البريد الإلكتروني (إذا وجد) -->
-            <div v-if="tx.userEmail" class="detail-item full-width">
-              <span class="detail-label">
-                <i class="fas fa-envelope"></i>
-                البريد الإلكتروني
-              </span>
-              <span class="detail-value email">{{ tx.userEmail }}</span>
-            </div>
-
-            <!-- معرف المستخدم -->
-            <div class="detail-item full-width">
-              <span class="detail-label">
-                <i class="fas fa-id-card"></i>
-                معرف المستخدم
-              </span>
-              <span class="detail-value user-id">{{ tx.userId }}</span>
-            </div>
-          </div>
-
-          <!-- رسالة الإدارة -->
-          <div v-if="tx.adminMessage" class="admin-message" :class="{ 'approved': tx.adminAction === 'approved', 'rejected': tx.adminAction === 'rejected' }">
-            <i :class="tx.adminAction === 'approved' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
-            <div>
-              <strong>{{ tx.adminAction === 'approved' ? 'رسالة الموافقة' : 'سبب الرفض' }}:</strong>
-              <p>{{ tx.adminMessage }}</p>
-              <span v-if="tx.approvedAt" class="message-date">{{ formatDate(tx.approvedAt) }}</span>
-            </div>
-          </div>
-
-          <!-- رسالة للمستخدم -->
-          <div v-if="tx.userMessage" class="user-message">
-            <i class="fas fa-bell"></i>
-            <div>
-              <strong>رسالة:</strong>
-              <p>{{ tx.userMessage }}</p>
-            </div>
-          </div>
-
-          <!-- ملاحظات -->
-          <div v-if="tx.reason && tx.reason !== tx.adminMessage" class="reason-box">
-            <i class="fas fa-comment"></i>
-            <div>
-              <strong>ملاحظات:</strong>
-              <p>{{ tx.reason }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<script>
-import { auth, db } from "../firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  limit
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-
-export default {
-  name: "Transactions",
-
-  data() {
-    return {
-      loading: true,
-      transactions: [],
-      currentUserId: ""
-    };
-  },
-
-  computed: {
-    totalAmount() {
-      return this.transactions.reduce((sum, tx) => sum + (tx.amount || 0), 0).toFixed(2);
-    }
-  },
-
-  created() {
-    this.loadTransactions();
-  },
-
-  methods: {
-    async loadTransactions() {
-      onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          this.loading = false;
-          return;
-        }
-
-        this.currentUserId = user.uid;
-
-        try {
-          // تحميل المعاملات بدون orderBy لتجنب الحاجة إلى فهرس
-          const q = query(
-            collection(db, "transactions"),
-            where("userId", "==", user.uid),
-            limit(50)
-          );
-          
-          const snapshot = await getDocs(q);
-          let transactions = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          
-          // ترتيب يدوي في الذاكرة (أكثر كفاءة من إنشاء فهرس)
-          transactions.sort((a, b) => {
-            const dateA = this.getTimestampValue(a.createdAt);
-            const dateB = this.getTimestampValue(b.createdAt);
-            return dateB - dateA;
-          });
-          
-          this.transactions = transactions;
-          
-        } catch (error) {
-          console.error("خطأ في تحميل المعاملات:", error);
-          // محاولة بدون شرط userId إذا فشل
-          try {
-            const q = query(
-              collection(db, "transactions"),
-              limit(50)
-            );
-            const snapshot = await getDocs(q);
-            let transactions = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            }));
-            
-            // تصفية المعاملات الخاصة بالمستخدم
-            transactions = transactions.filter(tx => tx.userId === user.uid);
-            
-            // ترتيب يدوي
-            transactions.sort((a, b) => {
-              const dateA = this.getTimestampValue(a.createdAt);
-              const dateB = this.getTimestampValue(b.createdAt);
-              return dateB - dateA;
-            });
-            
-            this.transactions = transactions;
-          } catch (err) {
-            console.error("خطأ في المحاولة الثانية:", err);
-          }
-        }
-
-        this.loading = false;
-      });
-    },
-
-    // دالة مساعدة لاستخراج قيمة الوقت من timestamp
-    getTimestampValue(ts) {
-      if (!ts) return 0;
-      try {
-        if (ts.toDate) {
-          return ts.toDate().getTime();
-        } else if (ts.seconds) {
-          return ts.seconds * 1000;
-        } else if (typeof ts === 'number') {
-          return ts;
-        } else if (ts instanceof Date) {
-          return ts.getTime();
-        }
-        return new Date(ts).getTime();
-      } catch (error) {
-        return 0;
-      }
-    },
-
-    getTypeIcon(type) {
-      const icons = {
-        withdraw: 'fas fa-arrow-up',
-        withdrawal: 'fas fa-arrow-up',
-        deposit: 'fas fa-arrow-down',
-        recharge: 'fas fa-arrow-down',
-        vip: 'fas fa-crown'
-      };
-      return icons[type] || 'fas fa-exchange-alt';
-    },
-
-    getTypeLabel(type) {
-      const labels = {
-        withdraw: 'سحب',
-        withdrawal: 'سحب',
-        deposit: 'إيداع',
-        recharge: 'تعبئة رصيد',
-        vip: 'اشتراك VIP'
-      };
-      return labels[type] || type;
-    },
-
-    getStatusLabel(status) {
-      const labels = {
-        pending: 'قيد الانتظار',
-        approved: 'تمت الموافقة',
-        rejected: 'مرفوض',
-        completed: 'مكتمل'
-      };
-      return labels[status] || status;
-    },
-
-    formatDate(ts) {
-      if (!ts) return "غير متوفر";
-      
-      try {
-        let date;
-        if (ts.toDate) {
-          date = ts.toDate();
-        } else if (ts.seconds) {
-          date = new Date(ts.seconds * 1000);
-        } else if (typeof ts === 'number') {
-          date = new Date(ts);
-        } else {
-          date = new Date(ts);
-        }
-        
-        if (isNaN(date.getTime())) {
-          return "تاريخ غير صالح";
-        }
-        
-        return date.toLocaleString("ar-EG", {
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-      } catch (error) {
-        return "تاريخ غير صالح";
-      }
-    }
-  }
-};
-</script>
-
 <style scoped>
+/* =========================================
+   Transactions — Black & White Premium UI
+   التصميم فقط — بدون تعديل الوظائف
+========================================= */
+
 .transactions-page {
   min-height: 100vh;
-  background: #0A0C10;
+  width: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(255,255,255,0.055), transparent 30%),
+    radial-gradient(circle at bottom left, rgba(255,255,255,0.035), transparent 30%),
+    #050505;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 24px;
   direction: rtl;
   font-family: 'Cairo', sans-serif;
+  color: #fff;
+  box-sizing: border-box;
 }
+
+/* =========================================
+   Main Card
+========================================= */
 
 .card {
-  background: #11151C;
   width: 100%;
-  max-width: 800px;
-  border-radius: 30px;
+  max-width: 900px;
+  background: rgba(15, 15, 15, 0.96);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 28px;
   padding: 30px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   position: relative;
   overflow: hidden;
+
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.65),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+
+  box-sizing: border-box;
 }
 
+/* خط علوي فاخر */
 .card::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.03) 0%, transparent 70%);
-  animation: rotate 30s linear infinite;
+  top: 0;
+  right: 8%;
+  left: 8%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,0.65),
+    transparent
+  );
+}
+
+/* إضاءة خلفية */
+.card::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  top: -220px;
+  right: -180px;
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.045),
+    transparent 70%
+  );
   pointer-events: none;
 }
 
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* =========================================
+   Header
+========================================= */
 
 .card-header {
   position: relative;
-  margin-bottom: 30px;
   text-align: center;
+  margin-bottom: 28px;
+  z-index: 2;
 }
 
 .title {
-  font-size: 28px;
-  font-weight: 800;
-  color: #ffffff;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
-  margin-bottom: 8px;
+  gap: 11px;
+
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .title i {
-  color: #D4AF37;
-  font-size: 32px;
+  color: #fff;
+  font-size: 27px;
+  opacity: 0.9;
 }
 
 .title-glow {
-  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #fff;
+  background: none;
+  -webkit-text-fill-color: #fff;
   font-weight: 900;
 }
 
-.header-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
-  filter: blur(30px);
-  z-index: 0;
-}
-
 .sub {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
-  position: relative;
-  z-index: 1;
+  margin: 10px 0 0;
+  color: rgba(255,255,255,0.48);
+  font-size: 13px;
 }
 
-/* صناديق الحالات */
-.loading-box, .empty-box {
-  background: linear-gradient(135deg, #1A1F2A, #11151C);
+.header-glow {
+  display: none;
+}
+
+/* =========================================
+   Loading / Empty
+========================================= */
+
+.loading-box,
+.empty-box {
+  position: relative;
+  z-index: 2;
+
+  background: #0d0d0d;
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 20px;
-  padding: 40px;
+
+  padding: 55px 25px;
   text-align: center;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  color: #ffffff;
+
+  color: #fff;
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.03);
 }
 
 .loading-box i {
-  font-size: 40px;
-  color: #D4AF37;
+  display: block;
+  color: #fff;
+  font-size: 36px;
   margin-bottom: 15px;
+}
+
+.loading-box p,
+.empty-box p {
+  margin: 0;
+  color: rgba(255,255,255,0.72);
 }
 
 .empty-box i {
-  font-size: 50px;
-  color: #D4AF37;
+  display: block;
+  font-size: 48px;
+  color: rgba(255,255,255,0.25);
   margin-bottom: 15px;
-  opacity: 0.5;
 }
 
 .uid-info {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 10px;
+  margin-top: 12px !important;
+  color: rgba(255,255,255,0.3) !important;
+  font-size: 11px;
   direction: ltr;
 }
 
-/* إحصائيات */
+/* =========================================
+   Statistics
+========================================= */
+
 .stats-box {
-  display: flex;
-  justify-content: space-around;
-  background: linear-gradient(135deg, #1A1F2A, #11151C);
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 25px;
-  border: 1px solid #D4AF37;
+  position: relative;
+  z-index: 2;
+
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+
+  border-radius: 18px;
+  overflow: hidden;
+
+  margin-bottom: 24px;
 }
 
 .stat-item {
+  padding: 18px 15px;
   text-align: center;
+  background: #0d0d0d;
 }
 
 .stat-label {
   display: block;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
   margin-bottom: 5px;
+
+  color: rgba(255,255,255,0.42);
+  font-size: 12px;
 }
 
 .stat-value {
   display: block;
-  color: #D4AF37;
-  font-size: 24px;
+
+  color: #fff;
+  font-size: 22px;
   font-weight: 800;
 }
 
-/* بطاقة المعاملة */
+/* =========================================
+   Transaction Card
+========================================= */
+
 .transaction-card {
-  background: linear-gradient(135deg, #1A1F2A, #11151C);
-  border-radius: 20px;
-  padding: 20px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  transition: all 0.3s ease;
   position: relative;
+  z-index: 2;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,0.035),
+      rgba(255,255,255,0.012)
+    ),
+    #0d0d0d;
+
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+
+  padding: 22px;
+  margin-bottom: 16px;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+
   overflow: hidden;
 }
 
-.transaction-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
-  border-color: #D4AF37;
+.transaction-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 3px;
+  height: 100%;
+
+  background: rgba(255,255,255,0.22);
+  opacity: 0;
+  transition: opacity 0.25s ease;
 }
 
-/* شارات الموافقة والرفض */
-.approval-badge, .rejection-badge {
+.transaction-card:hover {
+  transform: translateY(-3px);
+
+  border-color: rgba(255,255,255,0.18);
+
+  box-shadow:
+    0 15px 40px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.transaction-card:hover::before {
+  opacity: 1;
+}
+
+/* =========================================
+   Approval / Rejection
+========================================= */
+
+.approval-badge,
+.rejection-badge {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  padding: 5px 15px;
-  border-radius: 50px;
-  font-size: 12px;
-  font-weight: 700;
+  top: 15px;
+  left: 15px;
+
   display: flex;
   align-items: center;
-  gap: 5px;
-  z-index: 2;
+  gap: 6px;
+
+  padding: 6px 12px;
+
+  border-radius: 30px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  backdrop-filter: blur(8px);
 }
 
+/* موافقة */
 .approval-badge {
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
-  border: 1px solid #22c55e;
+  color: #fff;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
 }
 
+/* رفض */
 .rejection-badge {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-  border: 1px solid #ef4444;
+  color: #fff;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.12);
 }
 
-/* رأس البطاقة المصغر */
+.approval-badge i,
+.rejection-badge i {
+  color: #fff;
+}
+
+/* =========================================
+   Mini Header
+========================================= */
+
 .card-header-mini {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  justify-content: space-between;
+
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
+
+/* =========================================
+   Type Badge
+========================================= */
 
 .type-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 50px;
+
+  padding: 8px 14px;
+
+  border-radius: 12px;
+
+  font-size: 12px;
   font-weight: 700;
-  font-size: 14px;
+
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
-.type-badge.withdraw, .type-badge.withdrawal {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid #ef4444;
+.type-badge i {
+  font-size: 12px;
 }
 
-.type-badge.deposit, .type-badge.recharge {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border: 1px solid #22c55e;
-}
-
+.type-badge.withdraw,
+.type-badge.withdrawal,
+.type-badge.deposit,
+.type-badge.recharge,
 .type-badge.vip {
-  background: rgba(212, 175, 55, 0.1);
-  color: #D4AF37;
-  border: 1px solid #D4AF37;
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border-color: rgba(255,255,255,0.1);
 }
+
+/* =========================================
+   Status
+========================================= */
 
 .status-badge {
-  padding: 5px 12px;
-  border-radius: 50px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 6px 12px;
+
+  border-radius: 30px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  background: transparent;
+  color: rgba(255,255,255,0.65);
+
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
-.status-badge.pending {
-  background: rgba(212, 175, 55, 0.1);
-  color: #D4AF37;
-  border: 1px solid #D4AF37;
-}
-
-.status-badge.approved {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border: 1px solid #22c55e;
-}
-
+.status-badge.pending,
+.status-badge.approved,
 .status-badge.rejected {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid #ef4444;
+  background: rgba(255,255,255,0.045);
+  color: #fff;
+  border-color: rgba(255,255,255,0.11);
 }
 
-/* شبكة التفاصيل */
+/* =========================================
+   Details Grid
+========================================= */
+
 .details-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 15px;
+  gap: 13px;
+
+  margin-bottom: 16px;
 }
 
 .detail-item {
+  min-width: 0;
+
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+
+  padding: 12px;
+
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.045);
+  border-radius: 12px;
+
+  transition: background 0.2s ease;
+}
+
+.detail-item:hover {
+  background: rgba(255,255,255,0.045);
 }
 
 .detail-item.full-width {
@@ -661,183 +429,320 @@ export default {
 .detail-label {
   display: flex;
   align-items: center;
-  gap: 5px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
+  gap: 6px;
+
+  color: rgba(255,255,255,0.38);
+  font-size: 11px;
 }
 
 .detail-label i {
-  color: #D4AF37;
-  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  font-size: 11px;
 }
 
 .detail-value {
-  color: #ffffff;
-  font-size: 14px;
+  color: #fff;
+  font-size: 13px;
   font-weight: 600;
   word-break: break-word;
 }
 
+/* المبلغ */
 .detail-value.amount {
-  color: #D4AF37;
+  color: #fff;
   font-size: 16px;
+  font-weight: 800;
 }
 
+/* الأكواد */
 .detail-value.code,
 .detail-value.hash,
 .detail-value.user-id {
+  color: rgba(255,255,255,0.68);
   font-family: monospace;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 11px;
   direction: ltr;
 }
 
+/* الشبكة */
 .detail-value.network {
-  color: #D4AF37;
+  color: #fff;
 }
 
+/* المحفظة */
 .detail-value.address {
+  color: rgba(255,255,255,0.82);
   font-family: monospace;
-  font-size: 12px;
-  color: #22c55e;
+  font-size: 11px;
   direction: ltr;
   word-break: break-all;
 }
 
+/* الهاتف */
 .detail-value.phone {
-  color: #D4AF37;
-  font-size: 14px;
-  font-weight: 600;
+  color: #fff;
 }
 
+/* البريد */
 .detail-value.email {
-  color: #D4AF37;
+  color: #fff;
 }
 
+/* VIP */
 .detail-value.vip {
-  color: #D4AF37;
+  color: #fff;
+  font-weight: 800;
 }
 
-/* رسائل الإدارة */
+/* =========================================
+   Admin Message
+========================================= */
+
 .admin-message {
-  margin-top: 15px;
-  padding: 15px;
-  border-radius: 12px;
   display: flex;
-  gap: 10px;
   align-items: flex-start;
+  gap: 11px;
+
+  margin-top: 14px;
+  padding: 14px;
+
+  border-radius: 14px;
+
+  background: rgba(255,255,255,0.035);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
-.admin-message.approved {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid #22c55e;
-}
-
+.admin-message.approved,
 .admin-message.rejected {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
+  background: rgba(255,255,255,0.035);
+  border-color: rgba(255,255,255,0.1);
 }
 
 .admin-message i {
-  font-size: 20px;
+  margin-top: 2px;
+  font-size: 18px;
+  color: #fff;
 }
 
-.admin-message.approved i {
-  color: #22c55e;
-}
-
-.admin-message.rejected i {
-  color: #ef4444;
+.admin-message strong {
+  color: #fff;
+  font-size: 12px;
 }
 
 .admin-message p {
-  margin: 5px 0 0 0;
-  color: #ffffff;
+  margin: 5px 0 0;
+  color: rgba(255,255,255,0.72);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .message-date {
   display: block;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
-  margin-top: 5px;
+  margin-top: 7px;
+
+  color: rgba(255,255,255,0.3);
+  font-size: 10px;
 }
 
+/* =========================================
+   User Message
+========================================= */
+
 .user-message {
-  margin-top: 10px;
-  padding: 10px;
-  background: rgba(212, 175, 55, 0.1);
-  border-radius: 10px;
   display: flex;
-  gap: 10px;
   align-items: flex-start;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  gap: 10px;
+
+  margin-top: 10px;
+  padding: 12px 14px;
+
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.07);
+
+  border-radius: 13px;
 }
 
 .user-message i {
-  color: #D4AF37;
-  font-size: 16px;
+  color: #fff;
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.user-message strong {
+  color: #fff;
+  font-size: 12px;
 }
 
 .user-message p {
-  margin: 5px 0 0 0;
-  color: #ffffff;
-  font-size: 13px;
+  margin: 4px 0 0;
+  color: rgba(255,255,255,0.65);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
+/* =========================================
+   Reason
+========================================= */
+
 .reason-box {
-  margin-top: 10px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
   display: flex;
-  gap: 10px;
   align-items: flex-start;
+  gap: 10px;
+
+  margin-top: 10px;
+  padding: 12px 14px;
+
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.055);
+
+  border-radius: 13px;
 }
 
 .reason-box i {
-  color: #D4AF37;
-  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.reason-box strong {
+  color: rgba(255,255,255,0.75);
+  font-size: 11px;
 }
 
 .reason-box p {
-  margin: 5px 0 0 0;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  margin: 4px 0 0;
+  color: rgba(255,255,255,0.5);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
-/* تحسينات للجوال */
-@media (max-width: 600px) {
+/* =========================================
+   Scrollbar
+========================================= */
+
+.transactions-page ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.transactions-page ::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+.transactions-page ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 10px;
+}
+
+.transactions-page ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+/* =========================================
+   Mobile
+========================================= */
+
+@media (max-width: 700px) {
+  .transactions-page {
+    padding: 12px;
+    align-items: flex-start;
+  }
+
   .card {
-    padding: 20px;
+    margin-top: 10px;
+    padding: 18px;
+    border-radius: 22px;
   }
 
   .title {
-    font-size: 24px;
+    font-size: 22px;
+  }
+
+  .title i {
+    font-size: 21px;
+  }
+
+  .sub {
+    font-size: 12px;
+  }
+
+  .transaction-card {
+    padding: 16px;
+    border-radius: 17px;
   }
 
   .details-grid {
     grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .detail-item.full-width {
+    grid-column: auto;
   }
 
   .stats-box {
-    flex-direction: column;
-    gap: 15px;
+    grid-template-columns: 1fr;
   }
 
-  .approval-badge, .rejection-badge {
+  .card-header-mini {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .approval-badge,
+  .rejection-badge {
     position: static;
-    margin-bottom: 10px;
     width: fit-content;
+    margin-bottom: 10px;
   }
 }
 
-/* أنيميشن */
+/* =========================================
+   Small Phones
+========================================= */
+
+@media (max-width: 400px) {
+  .transactions-page {
+    padding: 8px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .title {
+    font-size: 19px;
+  }
+
+  .type-badge {
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+
+  .status-badge {
+    font-size: 10px;
+    padding: 5px 9px;
+  }
+
+  .stat-value {
+    font-size: 19px;
+  }
+}
+
+/* =========================================
+   Spinner
+========================================= */
+
 .fa-spinner {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
