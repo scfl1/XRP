@@ -217,19 +217,10 @@ export default {
         if (userDoc.exists()) {
           const data = userDoc.data();
           
-          let vipBalance = 0;
-          let depositBalance = 0;
-          
-          if (typeof data.vipBalance === 'number') {
-            vipBalance = data.vipBalance;
-            depositBalance = typeof data.depositBalance === 'number' ? data.depositBalance : 0;
-          } else if (typeof data.balance === 'number') {
-            vipBalance = data.balance;
-            depositBalance = 0;
-          }
-          
-          this.userBalance = vipBalance + depositBalance;
+          // رصيد واحد فقط - استخدام balance
+          this.userBalance = Number(data.balance ?? 0);
 
+          // قراءة رقم الهاتف
           if (data.phone) {
             this.userPhone = data.phone;
           }
@@ -310,7 +301,6 @@ export default {
           txid: this.txid,
           network: this.network,
           status: "pending",
-          targetBalance: "depositBalance",
           createdAt: serverTimestamp(),
         });
         
@@ -322,7 +312,6 @@ export default {
           network: this.network,
           txid: this.txid,
           status: "pending",
-          targetBalance: "depositBalance",
           createdAt: serverTimestamp(),
         });
         
