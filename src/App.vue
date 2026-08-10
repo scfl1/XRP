@@ -1122,12 +1122,17 @@ export default {
           user.uid
         );
 
+        // عرض النافذة بعد تسجيل الدخول مباشرة
+        setTimeout(() => {
+          this.showOfferMessage = true;
+          this.hasNewOffer = false;
+        }, 1500);
 
         setTimeout(() => {
 
           this.showAd = true;
 
-        }, 1000);
+        }, 3000);
 
       } else {
 
