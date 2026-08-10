@@ -89,7 +89,7 @@
         <div class="lvl-header">مستوى 1</div>
         <div class="lvl-body">
           <div>عدد الإحالات: <strong>{{ stats.l1.count }}</strong></div>
-          <div>العمولة: <strong>15%</strong></div>
+          <div>العمولة: <strong>6%</strong></div>
           <div>الدخل: <strong>{{ stats.l1.earnings.toFixed(2) }} USDT</strong></div>
         </div>
       </div>
@@ -98,7 +98,7 @@
         <div class="lvl-header">مستوى 2</div>
         <div class="lvl-body">
           <div>عدد الإحالات: <strong>{{ stats.l2.count }}</strong></div>
-          <div>العمولة: <strong>10%</strong></div>
+          <div>العمولة: <strong>2%</strong></div>
           <div>الدخل: <strong>{{ stats.l2.earnings.toFixed(2) }} USDT</strong></div>
         </div>
       </div>
@@ -107,7 +107,7 @@
         <div class="lvl-header">مستوى 3</div>
         <div class="lvl-body">
           <div>عدد الإحالات: <strong>{{ stats.l3.count }}</strong></div>
-          <div>العمولة: <strong>5%</strong></div>
+          <div>العمولة: <strong>1%</strong></div>
           <div>الدخل: <strong>{{ stats.l3.earnings.toFixed(2) }} USDT</strong></div>
         </div>
       </div>
@@ -146,7 +146,7 @@
               {{ modal.buttonText || 'حسناً' }}
             </button>
           </div>
-          <div class="modal-line"></div>
+          <div class="modal-gold-line"></div>
         </div>
       </div>
     </transition>
@@ -192,6 +192,7 @@ export default {
         l3: { count: 0, earnings: 0 },
       },
 
+      // ==================== CUSTOM MODAL SYSTEM ====================
       modal: {
         visible: false,
         type: 'info',
@@ -313,15 +314,17 @@ export default {
         });
     },
 
+    // دالة مشاركة عبر واتساب
     shareViaWhatsApp() {
-      const message = `انضم إلى فريقي باستخدام رابط الدعوة الخاص بي: ${this.inviteLink}`;
+      const message = `انضم إلى فريقي في Palm Treasure باستخدام رابط الدعوة الخاص بي: ${this.inviteLink}`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
       this.showSuccessMessage("تم فتح واتساب للمشاركة");
     },
 
+    // دالة مشاركة عبر تليجرام
     shareViaTelegram() {
-      const message = `انضم إلى فريقي باستخدام رابط الدعوة الخاص بي: ${this.inviteLink}`;
+      const message = `انضم إلى فريقي في Palm Treasure باستخدام رابط الدعوة الخاص بي: ${this.inviteLink}`;
       const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(this.inviteLink)}&text=${encodeURIComponent(message)}`;
       window.open(telegramUrl, '_blank');
       this.showSuccessMessage("تم فتح تليجرام للمشاركة");
@@ -339,11 +342,13 @@ export default {
       try {
         const usersRef = collection(db, "users");
 
+        // L1
         const q1 = query(usersRef, where("invitedBy", "==", uid));
         const s1 = await getDocs(q1);
         const level1Ids = s1.docs.map((d) => d.id);
         this.stats.l1.count = level1Ids.length;
 
+        // L2
         let level2Ids = [];
         if (level1Ids.length) {
           const chunks = this.chunkArray(level1Ids, 10);
@@ -355,6 +360,7 @@ export default {
         }
         this.stats.l2.count = level2Ids.length;
 
+        // L3
         let level3Ids = [];
         if (level2Ids.length) {
           const chunks2 = this.chunkArray(level2Ids, 10);
@@ -439,6 +445,7 @@ export default {
         const txField = this.txIdFieldInLogs;
 
         for (const memberId of membersUnique) {
+          // withdraw_logs
           const withdrawQ = query(collection(db, "withdraw_logs"), where(uidField, "==", memberId));
           const wSnap = await getDocs(withdrawQ);
 
@@ -460,6 +467,7 @@ export default {
           });
           if (memberHadWithdraw) firstWithdrawCount++;
 
+          // recharge_logs
           const rechargeQ = query(collection(db, "recharge_logs"), where(uidField, "==", memberId));
           const rSnap = await getDocs(rechargeQ);
 
@@ -500,15 +508,15 @@ export default {
 .team-page {
   direction: rtl;
   padding: 15px;
-  background: #f5f6f8;
+  background: #0A0C10;
   min-height: 100vh;
   padding-bottom: 90px;
-  color: #1a1a2e;
+  color: #fff;
   font-family: 'Cairo', sans-serif;
 }
 
 h2 {
-  color: #1a1a2e;
+  color: #D4AF37;
   font-size: 20px;
   margin-bottom: 15px;
   text-align: center;
@@ -516,12 +524,11 @@ h2 {
 
 /* قسم الدعوة */
 .invite-section {
-  background: #ffffff;
+  background: #11151C;
   padding: 20px;
   border-radius: 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(212, 175, 55, 0.2);
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .ref-box {
@@ -533,39 +540,31 @@ h2 {
 }
 
 .ref-box label {
-  color: #1a1a2e;
+  color: #D4AF37;
   min-width: 90px;
   font-size: 14px;
-  font-weight: 600;
 }
 
 .ref-code {
   flex: 1;
-  background: #f8f9fa;
+  background: #1A1F2A;
   padding: 10px 12px;
   border-radius: 10px;
-  color: #1a1a2e;
+  color: #fff;
   font-size: 13px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(212, 175, 55, 0.2);
   word-break: break-all;
 }
 
 .ref-box button {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
   border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
+  padding: 8px 15px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.ref-box button:hover {
-  background: #2a2a4e;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.2);
 }
 
 /* أزرار مشاركة صغيرة */
@@ -577,8 +576,8 @@ h2 {
 }
 
 .share-small-btn {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
   display: flex;
@@ -586,7 +585,7 @@ h2 {
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .share-small-btn.whatsapp {
@@ -601,17 +600,16 @@ h2 {
 
 .share-small-btn:hover {
   transform: scale(1.1);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 /* إحصائيات الفريق - مربعات صغيرة */
 .team-stats-box {
-  background: #ffffff;
+  background: #11151C;
   padding: 20px;
   border-radius: 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(212, 175, 55, 0.2);
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .stats-row {
@@ -626,30 +624,24 @@ h2 {
 
 .stat-card {
   flex: 1;
-  background: #f8f9fa;
+  background: #1A1F2A;
   border-radius: 12px;
-  padding: 12px 5px;
+  padding: 10px 5px;
   text-align: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(212, 175, 55, 0.15);
   min-width: 0;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
 .stat-icon {
-  font-size: 22px;
+  font-size: 20px;
   margin-bottom: 5px;
-  color: #1a1a2e;
+  color: #D4AF37;
 }
 
 .stat-value {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a2e;
+  font-size: 14px;
+  font-weight: 600;
+  color: #D4AF37;
   margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -658,7 +650,7 @@ h2 {
 
 .stat-label {
   font-size: 11px;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
 }
 
@@ -672,53 +664,43 @@ h2 {
 
 .level-card {
   border-radius: 14px;
-  padding: 14px 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: all 0.3s ease;
+  padding: 12px;
+  border: 1px solid rgba(212, 175, 55, 0.2);
 }
 
-.level-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+.level1 {
+  background: linear-gradient(135deg, #D4AF37, #C5A028);
 }
-
-.level-card.level1 {
-  border-top: 4px solid #1a1a2e;
+.level2 {
+  background: linear-gradient(135deg, #C5A028, #B8962E);
 }
-
-.level-card.level2 {
-  border-top: 4px solid #4a4a6a;
-}
-
-.level-card.level3 {
-  border-top: 4px solid #6b7280;
+.level3 {
+  background: linear-gradient(135deg, #B8962E, #A47C1E);
 }
 
 .lvl-header {
   font-weight: 700;
-  font-size: 16px;
-  margin-bottom: 10px;
-  color: #1a1a2e;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 6px;
+  font-size: 15px;
+  margin-bottom: 8px;
+  color: #0A0C10;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  padding-bottom: 4px;
   text-align: center;
 }
 
 .lvl-body {
-  font-size: 13px;
-  color: #374151;
+  font-size: 12px;
+  color: #0A0C10;
 }
 
 .lvl-body div {
-  margin: 6px 0;
+  margin: 4px 0;
   display: flex;
   justify-content: space-between;
 }
 
 .lvl-body strong {
-  color: #1a1a2e;
+  color: #0A0C10;
   font-weight: 700;
 }
 
@@ -726,38 +708,35 @@ h2 {
 .btn-back {
   width: 100%;
   padding: 14px;
-  border-radius: 12px;
-  border: 2px solid #1a1a2e;
+  border-radius: 14px;
+  border: 2px solid #D4AF37;
   background: transparent;
-  color: #1a1a2e;
+  color: #D4AF37;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
   margin-top: 10px;
 }
 
 .btn-back:hover {
-  background: #1a1a2e;
-  color: #ffffff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(26, 26, 46, 0.15);
+  background: #D4AF37;
+  color: #0A0C10;
 }
 
 /* حالات التحميل */
 .loading-box, .error-box {
-  background: #ffffff;
+  background: #11151C;
   padding: 20px;
   border-radius: 16px;
   text-align: center;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(212, 175, 55, 0.2);
   margin: 20px auto;
   max-width: 300px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .error-box {
-  color: #dc3545;
+  color: #ff6b6b;
 }
 
 /* ==================== CUSTOM MODAL SYSTEM ==================== */
@@ -767,8 +746,8 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -777,13 +756,13 @@ h2 {
 }
 
 .custom-modal-container {
-  background: #ffffff;
-  border-radius: 24px;
+  background: linear-gradient(145deg, rgba(26, 31, 46, 0.98), rgba(15, 20, 25, 0.98));
+  border-radius: 28px;
   width: 100%;
   max-width: 400px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(212, 175, 55, 0.2);
   animation: modalFloatIn 0.35s cubic-bezier(0.21, 1.11, 0.35, 1);
 }
 
@@ -810,58 +789,58 @@ h2 {
 }
 
 .custom-modal-header {
-  padding: 18px 20px 14px;
+  padding: 22px 24px 16px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  gap: 14px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
 }
 
 .custom-modal-header .header-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .custom-modal-header.info .header-icon {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
 }
 
 .custom-modal-header.success .header-icon {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: rgba(76, 175, 80, 0.15);
+  color: #4CAF50;
 }
 
 .custom-modal-header.error .header-icon {
-  background: #fce4ec;
-  color: #c62828;
+  background: rgba(244, 67, 54, 0.15);
+  color: #F44336;
 }
 
 .custom-modal-header.confirm .header-icon {
-  background: #fff3e0;
-  color: #e65100;
+  background: rgba(212, 175, 55, 0.15);
+  color: #D4AF37;
 }
 
 .custom-modal-header h3 {
   flex: 1;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   margin: 0;
-  color: #1a1a2e;
+  color: #F6E27A;
 }
 
 .modal-close-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #f8f9fa;
+  width: 34px;
+  height: 34px;
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.06);
   border: none;
-  color: #6b7280;
+  color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
   font-size: 16px;
   transition: all 0.2s;
@@ -871,36 +850,36 @@ h2 {
 }
 
 .modal-close-btn:hover {
-  background: #e5e7eb;
-  color: #1a1a2e;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
   transform: rotate(90deg);
 }
 
 .custom-modal-body {
-  padding: 20px;
+  padding: 24px;
 }
 
 .custom-modal-body p {
   margin: 0;
   line-height: 1.6;
-  color: #374151;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 15px;
   text-align: center;
 }
 
 .confirm-options {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 15px;
+  margin-top: 28px;
   justify-content: center;
 }
 
 .custom-modal-footer {
-  padding: 14px 20px 20px;
+  padding: 16px 24px 24px;
 }
 
 .modal-btn {
-  padding: 10px 24px;
+  padding: 12px 28px;
   border-radius: 50px;
   font-weight: 600;
   font-size: 14px;
@@ -909,46 +888,57 @@ h2 {
   border: none;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
   width: 100%;
 }
 
 .modal-btn-primary {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0f1419;
   font-weight: 700;
 }
 
 .modal-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.25);
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.35);
+}
+
+.modal-btn-primary:active {
+  transform: translateY(1px);
 }
 
 .modal-btn-confirm {
-  background: #1a1a2e;
-  color: #ffffff;
+  background: linear-gradient(135deg, #D4AF37, #F6E27A);
+  color: #0f1419;
   flex: 1;
 }
 
 .modal-btn-cancel {
-  background: #f8f9fa;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(212, 175, 55, 0.3);
   flex: 1;
 }
 
 .modal-btn-cancel:hover {
-  background: #e5e7eb;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(212, 175, 55, 0.5);
 }
 
-.modal-line {
+.modal-gold-line {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: #1a1a2e;
+  background: linear-gradient(90deg, transparent, #D4AF37, #F6E27A, #D4AF37, transparent);
+  animation: goldShine 2s linear infinite;
+}
+
+@keyframes goldShine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* تحسينات للشاشات الصغيرة */
@@ -978,7 +968,7 @@ h2 {
   }
   
   .level-card {
-    padding: 10px 6px;
+    padding: 8px 5px;
   }
   
   .lvl-header {
@@ -986,22 +976,13 @@ h2 {
   }
   
   .lvl-body {
-    font-size: 11px;
+    font-size: 10px;
   }
   
   .share-small-btn {
-    width: 38px;
-    height: 38px;
+    width: 35px;
+    height: 35px;
     font-size: 18px;
-  }
-  
-  .ref-box {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .ref-box label {
-    min-width: auto;
   }
   
   .custom-modal-container {
@@ -1009,7 +990,7 @@ h2 {
   }
   
   .custom-modal-header h3 {
-    font-size: 17px;
+    font-size: 18px;
   }
   
   .custom-modal-body p {
