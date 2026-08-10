@@ -103,9 +103,7 @@
         </div>
 
 
-        <div class="hero-description">
-          {{ t('balanceDescription') }}
-        </div>
+        <!-- تم حذف رسالة "يمكنك استخدام هذا الرصيد في الترقية أو السحب" -->
 
 
         <!-- ================= DEPOSIT / WITHDRAW ================= -->
@@ -518,9 +516,6 @@ export default {
 
           digitalFinance: "مستقبل التمويل الرقمي",
 
-          balanceDescription:
-            "يمكنك استخدام هذا الرصيد في الترقية أو السحب.",
-
           withdraw: "سحب",
 
           deposit: "إيداع",
@@ -563,9 +558,6 @@ export default {
           totalBalance: "Total Balance",
 
           digitalFinance: "Future of Digital Finance",
-
-          balanceDescription:
-            "You can use this balance for upgrades or withdrawals.",
 
           withdraw: "Withdraw",
 
@@ -1294,23 +1286,7 @@ export default {
 }
 
 
-.hero-description {
-
-  position: relative;
-
-  z-index: 2;
-
-  margin-top: 14px;
-
-  max-width: 480px;
-
-  color: rgba(255,255,255,0.68);
-
-  font-size: 12px;
-
-  line-height: 1.8;
-
-}
+/* تم حذف .hero-description بالكامل */
 
 
 /* =========================================================
