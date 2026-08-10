@@ -3,30 +3,6 @@
 
     <!-- ==================== الأزرار العائمة ==================== -->
 
-    <!-- زر تغيير اللغة -->
-    <div
-      class="circle-btn lang-btn"
-      ref="langBtn"
-      @click="toggleLanguageMenu"
-      @mousedown="startDrag"
-      @touchstart="startDrag"
-    >
-      <i class="fas fa-globe"></i>
-      <span class="lang-code">{{ currentLang }}</span>
-    </div>
-
-    <!-- زر الأخبار / التحديثات -->
-    <div
-      class="circle-btn offer-btn"
-      ref="offerBtn"
-      @click="toggleOfferMessage"
-      @mousedown="startDrag"
-      @touchstart="startDrag"
-    >
-      <span class="xrp-mark">X</span>
-      <div class="notification-badge" v-if="hasNewOffer">3</div>
-    </div>
-
     <!-- زر الدعم -->
     <div
       class="circle-btn support-btn"
@@ -141,49 +117,6 @@
         </div>
 
       </div>
-    </transition>
-
-
-    <!-- ==================== قائمة اللغات ==================== -->
-
-    <transition name="fade">
-
-      <div v-if="showLangMenu" class="lang-menu" @click.stop>
-
-        <div class="lang-menu-header">
-
-          <i class="fas fa-language"></i>
-
-          <span>
-            {{ t('selectLanguage') }}
-          </span>
-
-        </div>
-
-        <div class="lang-menu-body">
-
-          <div
-            v-for="lang in languages"
-            :key="lang.code"
-            class="lang-item"
-            @click="setLanguage(lang)"
-            :class="{ active: currentLang === lang.code }"
-          >
-
-            <span class="lang-name">
-              {{ lang.name }}
-            </span>
-
-            <span class="lang-badge">
-              {{ lang.code }}
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-
     </transition>
 
 
@@ -360,6 +293,17 @@
                   {{ t('xrpMessage1') }}
                 </p>
 
+                <p>
+                  {{ t('xrpMessage2') }}
+                </p>
+
+                <p>
+                  {{ t('xrpMessage3') }}
+                </p>
+
+                <p>
+                  {{ t('xrpMessage4') }}
+                </p>
 
                 <div class="highlight-box">
 
@@ -368,141 +312,6 @@
                   <strong>
                     {{ t('communityInfo') }}
                   </strong>
-
-                </div>
-
-
-                <p>
-                  {{ t('xrpMessage2') }}
-                </p>
-
-
-                <h4>
-                  📌 {{ t('communityPrinciples') }}
-                </h4>
-
-
-                <div class="rewards-table">
-
-                  <div class="table-header">
-
-                    <div class="col-members">
-                      🌐 {{ t('item') }}
-                    </div>
-
-                    <div class="col-salary">
-                      ✓ {{ t('status') }}
-                    </div>
-
-                  </div>
-
-
-                  <div class="table-body">
-
-                    <div class="table-row">
-
-                      <div class="col-members">
-                        {{ t('information') }}
-                      </div>
-
-                      <div class="col-salary">
-                        {{ t('available') }}
-                      </div>
-
-                    </div>
-
-
-                    <div class="table-row">
-
-                      <div class="col-members">
-                        {{ t('community') }}
-                      </div>
-
-                      <div class="col-salary">
-                        {{ t('active') }}
-                      </div>
-
-                    </div>
-
-
-                    <div class="table-row">
-
-                      <div class="col-members">
-                        {{ t('updates') }}
-                      </div>
-
-                      <div class="col-salary">
-                        {{ t('ongoing') }}
-                      </div>
-
-                    </div>
-
-
-                    <div class="table-row">
-
-                      <div class="col-members">
-                        {{ t('security') }}
-                      </div>
-
-                      <div class="col-salary">
-                        {{ t('important') }}
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-
-                <div class="offer-notes">
-
-                  <div class="note-item">
-
-                    <i class="fas fa-check-circle"></i>
-
-                    <span>
-                      {{ t('note1') }}
-                    </span>
-
-                  </div>
-
-
-                  <div class="note-item">
-
-                    <i class="fas fa-check-circle"></i>
-
-                    <span>
-                      {{ t('note2') }}
-                    </span>
-
-                  </div>
-
-
-                  <div class="note-item">
-
-                    <i class="fas fa-check-circle"></i>
-
-                    <span>
-                      {{ t('note3') }}
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-                <div class="important-note">
-
-                  <i class="fas fa-exclamation-triangle"></i>
-
-                  <strong>
-                    {{ t('importantNote') }}:
-                  </strong>
-
-                  <p>
-                    {{ t('notOfficialNotice') }}
-                  </p>
 
                 </div>
 
@@ -906,8 +715,6 @@ export default {
 
       /* ==================== MENUS ==================== */
 
-      showLangMenu: false,
-
       showSupportMenu: false,
 
       showAd: false,
@@ -965,38 +772,6 @@ export default {
         {
           title: "Security",
           icon: "🔐"
-        }
-
-      ],
-
-
-      /* ==================== LANGUAGES ==================== */
-
-      languages: [
-
-        {
-          name: "العربية",
-          code: "AR"
-        },
-
-        {
-          name: "English",
-          code: "EN"
-        },
-
-        {
-          name: "Français",
-          code: "FR"
-        },
-
-        {
-          name: "Español",
-          code: "ES"
-        },
-
-        {
-          name: "Deutsch",
-          code: "DE"
         }
 
       ],
@@ -1068,8 +843,6 @@ export default {
 
           supportCenter: "مركز الدعم",
 
-          selectLanguage: "اختر اللغة",
-
           whatsapp: "واتساب",
 
           telegram: "تيليجرام",
@@ -1098,64 +871,22 @@ export default {
             "تحديث المجتمع",
 
           welcomeXrp:
-            "مرحباً بكم في مجتمع XRP",
+            "💰 مجتمع XRP — الأرباح اليومية",
 
           xrpMessage1:
-            "مرحباً بكم في مجتمع XRP. تم تصميم هذه الواجهة لتوفير مساحة بسيطة ومنظمة لمتابعة المعلومات والأخبار والمناقشات المتعلقة بـ XRP.",
-
-          communityInfo:
-            "المعلومات المعروضة هنا هي معلومات مجتمعية وليست إعلاناً رسمياً من XRP أو Ripple.",
+            "مرحباً بكم في مجتمع XRP 🌟",
 
           xrpMessage2:
-            "ننصح دائماً بالاعتماد على المصادر الرسمية والتحقق من أي معلومة قبل اتخاذ أي قرار مالي أو استثماري.",
+            "توفر منصتنا تجربة متكاملة للمستخدمين لمتابعة برامج الأرباح والمكافآت اليومية المرتبطة بالمنصة، مع عرض الرصيد والأرباح بشكل واضح ومنظم.",
 
-          communityPrinciples:
-            "مبادئ المجتمع",
+          xrpMessage3:
+            "📈 الأرباح اليومية: يمكن للمستخدمين متابعة الأرباح التي يتم احتسابها على حساباتهم وفقاً للبرنامج والشروط المعمول بها.",
 
-          item:
-            "العنصر",
+          xrpMessage4:
+            "💵 يتم تحديث بيانات الأرباح والرصيد بصورة منتظمة، ويمكن للمستخدم متابعة سجل العمليات والأرباح من داخل حسابه.\n\n🔐 نحرص على توفير تجربة آمنة وشفافة، وننصح جميع المستخدمين بقراءة الشروط وفهم آلية الأرباح والمخاطر قبل إيداع أي أموال.\n\n🌍 منصة عالمية لمتابعة الأرباح والمكافآت اليومية.",
 
-          status:
-            "الحالة",
-
-          information:
-            "المعلومات",
-
-          available:
-            "متاحة",
-
-          community:
-            "المجتمع",
-
-          active:
-            "نشط",
-
-          updates:
-            "التحديثات",
-
-          ongoing:
-            "مستمرة",
-
-          security:
-            "الأمان",
-
-          important:
-            "مهم",
-
-          note1:
-            "متابعة الأخبار والمعلومات من مصادر موثوقة.",
-
-          note2:
-            "التحقق من الروابط والحسابات قبل التفاعل معها.",
-
-          note3:
-            "عدم الاعتماد على وعود الأرباح أو العوائد المضمونة.",
-
-          importantNote:
-            "ملاحظة مهمة",
-
-          notOfficialNotice:
-            "هذا المشروع المجتمعي ليس تابعاً رسمياً لـ XRP أو Ripple. يجب التحقق دائماً من الحسابات والمصادر الرسمية.",
+          communityInfo:
+            "هذه المعلومات خاصة بالمنصة ومتابعة الأرباح اليومية.",
 
           understood:
             "فهمت، شكراً",
@@ -1233,9 +964,6 @@ export default {
           supportCenter:
             "Support Center",
 
-          selectLanguage:
-            "Select Language",
-
           whatsapp:
             "WhatsApp",
 
@@ -1270,64 +998,22 @@ export default {
             "Community Update",
 
           welcomeXrp:
-            "Welcome to the XRP Community",
+            "💰 XRP Community — Daily Earnings",
 
           xrpMessage1:
-            "Welcome to the XRP Community. This interface provides a simple and organized place to follow information, news and discussions related to XRP.",
-
-          communityInfo:
-            "The information displayed here is community content and is not an official announcement from XRP or Ripple.",
+            "Welcome to the XRP Community 🌟",
 
           xrpMessage2:
-            "Always verify information through official sources before making any financial or investment decision.",
+            "Our platform provides an integrated experience for users to follow daily profit programs and rewards linked to the platform, with clear and organized display of balance and profits.",
 
-          communityPrinciples:
-            "Community Principles",
+          xrpMessage3:
+            "📈 Daily Profits: Users can track the profits calculated on their accounts according to the program and applicable terms.",
 
-          item:
-            "Item",
+          xrpMessage4:
+            "💵 Profit and balance data are updated regularly, and users can track transaction history and profits from within their account.\n\n🔐 We are committed to providing a safe and transparent experience, and we advise all users to read the terms and understand the profit mechanism and risks before depositing any funds.\n\n🌍 A global platform for tracking daily profits and rewards.",
 
-          status:
-            "Status",
-
-          information:
-            "Information",
-
-          available:
-            "Available",
-
-          community:
-            "Community",
-
-          active:
-            "Active",
-
-          updates:
-            "Updates",
-
-          ongoing:
-            "Ongoing",
-
-          security:
-            "Security",
-
-          important:
-            "Important",
-
-          note1:
-            "Follow news and information from reliable sources.",
-
-          note2:
-            "Verify links and accounts before interacting with them.",
-
-          note3:
-            "Do not rely on guaranteed profit or return promises.",
-
-          importantNote:
-            "Important Note",
-
-          notOfficialNotice:
-            "This community project is not officially affiliated with XRP or Ripple. Always verify official accounts and sources.",
+          communityInfo:
+            "This information is specific to the platform and daily profit tracking.",
 
           understood:
             "Understood, Thanks",
@@ -1611,26 +1297,6 @@ export default {
     },
 
 
-    setLanguage(lang) {
-
-      this.currentLang =
-        lang.code;
-
-
-      localStorage.setItem(
-        "app_language",
-        lang.code
-      );
-
-
-      this.showLangMenu = false;
-
-
-      this.applyLanguageDirection();
-
-    },
-
-
     /* ---------- BLOCK CHECK ---------- */
 
     startBlockCheck(userId) {
@@ -1894,34 +1560,6 @@ export default {
 
     /* ---------- MENUS ---------- */
 
-    toggleLanguageMenu() {
-
-      if (this.hasDragged) {
-
-        this.hasDragged =
-          false;
-
-        return;
-
-      }
-
-
-      this.showLangMenu =
-        !this.showLangMenu;
-
-
-      if (
-        this.showLangMenu
-      ) {
-
-        this.showSupportMenu =
-          false;
-
-      }
-
-    },
-
-
     toggleSupportMenu() {
 
       if (this.hasDragged) {
@@ -1936,16 +1574,6 @@ export default {
 
       this.showSupportMenu =
         !this.showSupportMenu;
-
-
-      if (
-        this.showSupportMenu
-      ) {
-
-        this.showLangMenu =
-          false;
-
-      }
 
     },
 
@@ -2387,21 +2015,6 @@ export default {
 
       if (
         !event.target.closest(
-          ".lang-menu"
-        ) &&
-        !event.target.closest(
-          ".lang-btn"
-        )
-      ) {
-
-        this.showLangMenu =
-          false;
-
-      }
-
-
-      if (
-        !event.target.closest(
           ".support-menu"
         ) &&
         !event.target.closest(
@@ -2580,107 +2193,7 @@ body {
 }
 
 
-/* ==================== XRP SYMBOL ==================== */
-
-.xrp-mark {
-
-  font-size: 18px;
-
-  font-weight: 800;
-
-  line-height: 1;
-
-  color: #ffffff;
-
-}
-
-
-.offer-btn {
-
-  background: #1A1A1A;
-
-  border-color: rgba(255,255,255,0.12);
-
-}
-
-
-.lang-code {
-
-  font-size: 9px;
-
-  font-weight: 700;
-
-  margin-top: -2px;
-
-  background: rgba(255,255,255,0.12);
-
-  color: #ffffff;
-
-  padding: 1px 6px;
-
-  border-radius: 4px;
-
-}
-
-
-.notification-badge {
-
-  position: absolute;
-
-  top: -4px;
-
-  right: -4px;
-
-  background: #ff3b30;
-
-  color: white;
-
-  font-size: 10px;
-
-  font-weight: bold;
-
-  min-width: 20px;
-
-  height: 20px;
-
-  border-radius: 20px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  padding: 0 5px;
-
-  border:
-    2px solid #0A0A0A;
-
-  box-shadow:
-    0 2px 10px
-    rgba(255,59,48,0.5);
-
-  animation:
-    pulse 2s infinite;
-
-}
-
-
-@keyframes pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-
-}
-
-
-.lang-btn {
+.support-btn {
 
   right: 12px;
 
@@ -2689,27 +2202,9 @@ body {
 }
 
 
-.offer-btn {
-
-  right: 68px;
-
-  bottom: 100px;
-
-}
-
-
-.support-btn {
-
-  right: 124px;
-
-  bottom: 100px;
-
-}
-
-
 .x-btn {
 
-  right: 180px;
+  right: 68px;
 
   bottom: 100px;
 
@@ -2733,10 +2228,9 @@ body {
 }
 
 
-/* ==================== MENUS ==================== */
+/* ==================== SUPPORT MENU ==================== */
 
-.support-menu,
-.lang-menu {
+.support-menu {
 
   position: fixed;
 
@@ -2755,6 +2249,10 @@ body {
   overflow: hidden;
 
   min-width: 250px;
+
+  bottom: 155px;
+
+  right: 12px;
 
   animation:
     slideUp 0.3s
@@ -2791,26 +2289,7 @@ body {
 }
 
 
-.support-menu {
-
-  bottom: 155px;
-
-  right: 68px;
-
-}
-
-
-.lang-menu {
-
-  bottom: 155px;
-
-  right: 12px;
-
-}
-
-
-.support-menu-header,
-.lang-menu-header {
+.support-menu-header {
 
   padding: 16px 18px;
 
@@ -2846,8 +2325,7 @@ body {
 }
 
 
-.support-menu-header i,
-.lang-menu-header i {
+.support-menu-header i {
 
   font-size: 18px;
 
@@ -2897,8 +2375,7 @@ body {
 }
 
 
-.support-menu-body,
-.lang-menu-body {
+.support-menu-body {
 
   max-height: 300px;
 
@@ -3022,79 +2499,6 @@ body {
     rgba(255,255,255,0.3);
 
   font-size: 12px;
-
-}
-
-
-.lang-item {
-
-  padding: 13px 16px;
-
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  cursor: pointer;
-
-  transition: all 0.2s;
-
-  border-bottom:
-    1px solid
-    rgba(255,255,255,0.04);
-
-}
-
-
-.lang-item:last-child {
-
-  border-bottom: none;
-
-}
-
-
-.lang-item:hover {
-
-  background:
-    rgba(255,255,255,0.04);
-
-}
-
-
-.lang-item.active {
-
-  background:
-    rgba(255,255,255,0.06);
-
-  color: #ffffff;
-
-}
-
-
-.lang-name {
-
-  font-size: 14px;
-
-  color: rgba(255,255,255,0.9);
-
-}
-
-
-.lang-badge {
-
-  font-size: 11px;
-
-  padding: 2px 10px;
-
-  background:
-    rgba(255,255,255,0.08);
-
-  border-radius: 12px;
-
-  color: rgba(255,255,255,0.5);
-
-  font-weight: 600;
 
 }
 
@@ -3603,7 +3007,7 @@ body {
 
   gap: 10px;
 
-  font-size: 18px;
+  font-size: 20px;
 
   font-weight: 700;
 
@@ -3651,6 +3055,8 @@ body {
 
   font-size: 14px;
 
+  white-space: pre-line;
+
 }
 
 
@@ -3685,204 +3091,6 @@ body {
   font-size: 18px;
 
   margin-top: 2px;
-
-}
-
-
-.offer-text h4 {
-
-  color: #ffffff;
-
-  margin:
-    18px 0 14px;
-
-  font-size: 16px;
-
-  font-weight: 700;
-
-}
-
-
-.rewards-table {
-
-  background: #222222;
-
-  border-radius: 12px;
-
-  overflow: hidden;
-
-  margin: 14px 0;
-
-  border:
-    1px solid
-    rgba(255,255,255,0.06);
-
-}
-
-
-.table-header {
-
-  display: flex;
-
-  background: rgba(255,255,255,0.04);
-
-  padding: 10px 14px;
-
-  font-weight: 700;
-
-  color: rgba(255,255,255,0.6);
-
-  border-bottom:
-    1px solid
-    rgba(255,255,255,0.06);
-
-}
-
-
-.col-members,
-.col-salary {
-
-  flex: 1;
-
-  text-align: center;
-
-  font-size: 13px;
-
-}
-
-
-.table-body {
-
-  max-height: 300px;
-
-  overflow-y: auto;
-
-}
-
-
-.table-row {
-
-  display: flex;
-
-  padding: 10px 14px;
-
-  border-bottom:
-    1px solid
-    rgba(255,255,255,0.04);
-
-}
-
-
-.table-row:last-child {
-
-  border-bottom: none;
-
-}
-
-
-.table-row .col-members,
-.table-row .col-salary {
-
-  flex: 1;
-
-  text-align: center;
-
-  color:
-    rgba(255,255,255,0.8);
-
-  font-size: 13px;
-
-}
-
-
-.table-row .col-salary {
-
-  color: rgba(255,255,255,0.6);
-
-  font-weight: 600;
-
-}
-
-
-.offer-notes {
-
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 8px;
-
-  margin: 14px 0;
-
-}
-
-
-.note-item {
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 10px;
-
-  color:
-    rgba(255,255,255,0.8);
-
-  font-size: 13px;
-
-}
-
-
-.note-item i {
-
-  color: rgba(255,255,255,0.3);
-
-  font-size: 16px;
-
-}
-
-
-.important-note {
-
-  background:
-    rgba(255,59,48,0.06);
-
-  border:
-    1px solid
-    rgba(255,59,48,0.12);
-
-  border-radius: 12px;
-
-  padding: 14px;
-
-  margin-top: 14px;
-
-}
-
-
-.important-note i {
-
-  color: #ff3b30;
-
-  margin-right: 6px;
-
-}
-
-
-.important-note strong {
-
-  color: #ff6b6b;
-
-}
-
-
-.important-note p {
-
-  margin-top: 8px;
-
-  font-size: 13px;
-
-  color: rgba(255,255,255,0.7);
 
 }
 
@@ -4634,27 +3842,9 @@ body {
   }
 
 
-  .lang-btn {
-
-    right: 10px;
-
-    bottom: 95px;
-
-  }
-
-
-  .offer-btn {
-
-    right: 62px;
-
-    bottom: 95px;
-
-  }
-
-
   .support-btn {
 
-    right: 114px;
+    right: 10px;
 
     bottom: 95px;
 
@@ -4663,7 +3853,7 @@ body {
 
   .x-btn {
 
-    right: 166px;
+    right: 62px;
 
     bottom: 95px;
 
@@ -4672,20 +3862,11 @@ body {
 
   .support-menu {
 
-    right: 62px;
+    right: 10px;
 
     bottom: 148px;
 
     min-width: 200px;
-
-  }
-
-
-  .lang-menu {
-
-    right: 10px;
-
-    bottom: 148px;
 
   }
 
@@ -4755,7 +3936,7 @@ body {
   }
 
 
-  .lang-btn {
+  .support-btn {
 
     right: 8px;
 
@@ -4764,27 +3945,9 @@ body {
   }
 
 
-  .offer-btn {
-
-    right: 56px;
-
-    bottom: 90px;
-
-  }
-
-
-  .support-btn {
-
-    right: 104px;
-
-    bottom: 90px;
-
-  }
-
-
   .x-btn {
 
-    right: 152px;
+    right: 56px;
 
     bottom: 90px;
 
@@ -4802,7 +3965,7 @@ body {
 
   .support-menu {
 
-    right: 56px;
+    right: 8px;
 
     bottom: 142px;
 
@@ -4811,17 +3974,7 @@ body {
   }
 
 
-  .lang-menu {
-
-    right: 8px;
-
-    bottom: 142px;
-
-  }
-
-
-  .support-menu-header,
-  .lang-menu-header {
+  .support-menu-header {
 
     padding: 14px 16px;
 
@@ -4838,20 +3991,6 @@ body {
 
 
   .support-name {
-
-    font-size: 13px;
-
-  }
-
-
-  .lang-item {
-
-    padding: 11px 14px;
-
-  }
-
-
-  .lang-name {
 
     font-size: 13px;
 
@@ -4876,7 +4015,7 @@ body {
 
   .offer-title {
 
-    font-size: 16px;
+    font-size: 17px;
 
   }
 
