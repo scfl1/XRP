@@ -9,12 +9,6 @@
 
       <p class="vip-subtitle">اختر مستواك المناسب واستمتع بالمميزات الحصرية</p>
 
-      <!-- تنبيه تجريبي -->
-      <div class="disclaimer-box">
-        <i class="fas fa-info-circle"></i>
-        <span>الأرقام المعروضة تجريبية وغير مضمونة، وهي لأغراض توضيحية فقط</span>
-      </div>
-
       <!-- إشعار الأرباح -->
       <transition name="slide-down">
         <div v-if="showNotification" class="profit-notification">
@@ -132,10 +126,10 @@
                 <span class="value" :class="{ 'elite-value': plan.level >= 8 }">{{ formatNumberEnglishWithCommas(plan.price) }} USDT</span>
               </div>
 
-              <!-- مؤشر العائد على الاستثمار ROI - تجريبي -->
+              <!-- مؤشر العائد على الاستثمار -->
               <div class="roi-display" :class="{ 'elite-roi': plan.level >= 8 }" v-if="plan.price > 0">
                 <i class="fas fa-chart-line"></i>
-                العائد السنوي التجريبي: {{ formatNumberEnglish(getROI(plan), 1) }}%
+                العائد اليومي: {{ formatNumberEnglish(plan.daily / plan.price * 100, 1) }}%
               </div>
 
               <div class="stats-grid-v2">
@@ -243,11 +237,6 @@
                 <h4>👥 نظام الفريق:</h4>
                 <p>يمكنك زيادة أرباحك من خلال دعوة الأصدقاء وتكوين فريق نشط، حيث تحصل على عمولات إضافية عند ترقية أعضاء فريقك.</p>
               </div>
-
-              <div class="disclaimer-text">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p>جميع الأرقام المعروضة تجريبية وغير مضمونة. يرجى قراءة الشروط والأحكام قبل الاشتراك.</p>
-              </div>
             </div>
           </div>
 
@@ -324,52 +313,52 @@ export default {
       lastDistributedCycle: null,
 
       plans: [
-        { level: 1, name: "VIP 1", price: 20, tasks: 1, daily: 0.15, durationSeconds: 365 * 86400 },
-        { level: 2, name: "VIP 2", price: 30, tasks: 1, daily: 0.35, durationSeconds: 365 * 86400 },
-        { level: 3, name: "VIP 3", price: 50, tasks: 1, daily: 0.60, durationSeconds: 365 * 86400 },
-        { level: 4, name: "VIP 4", price: 70, tasks: 1, daily: 0.85, durationSeconds: 365 * 86400 },
-        { level: 5, name: "VIP 5", price: 100, tasks: 1, daily: 1.20, durationSeconds: 365 * 86400 },
-        { level: 6, name: "VIP 6", price: 150, tasks: 1, daily: 1.80, durationSeconds: 365 * 86400 },
-        { level: 7, name: "VIP 7", price: 200, tasks: 1, daily: 2.40, durationSeconds: 365 * 86400 },
-        { level: 8, name: "VIP 8", price: 250, tasks: 1, daily: 3.00, durationSeconds: 365 * 86400 },
-        { level: 9, name: "VIP 9", price: 300, tasks: 1, daily: 3.60, durationSeconds: 365 * 86400 },
-        { level: 10, name: "VIP 10", price: 350, tasks: 1, daily: 4.20, durationSeconds: 365 * 86400 },
-        { level: 11, name: "VIP 11", price: 400, tasks: 1, daily: 4.80, durationSeconds: 365 * 86400 },
-        { level: 12, name: "VIP 12", price: 450, tasks: 1, daily: 5.40, durationSeconds: 365 * 86400 },
-        { level: 13, name: "VIP 13", price: 500, tasks: 1, daily: 6.00, durationSeconds: 365 * 86400 },
-        { level: 14, name: "VIP 14", price: 600, tasks: 1, daily: 7.20, durationSeconds: 365 * 86400 },
-        { level: 15, name: "VIP 15", price: 700, tasks: 1, daily: 8.40, durationSeconds: 365 * 86400 },
-        { level: 16, name: "VIP 16", price: 800, tasks: 1, daily: 9.60, durationSeconds: 365 * 86400 },
-        { level: 17, name: "VIP 17", price: 900, tasks: 1, daily: 10.80, durationSeconds: 365 * 86400 },
-        { level: 18, name: "VIP 18", price: 1000, tasks: 1, daily: 12.00, durationSeconds: 365 * 86400 },
-        { level: 19, name: "VIP 19", price: 1300, tasks: 1, daily: 15.60, durationSeconds: 365 * 86400 },
-        { level: 20, name: "VIP 20", price: 1500, tasks: 1, daily: 18.00, durationSeconds: 365 * 86400 },
-        { level: 21, name: "VIP 21", price: 2000, tasks: 1, daily: 24.00, durationSeconds: 365 * 86400 },
-        { level: 22, name: "VIP 22", price: 2500, tasks: 1, daily: 30.00, durationSeconds: 365 * 86400 },
-        { level: 23, name: "VIP 23", price: 3000, tasks: 1, daily: 36.00, durationSeconds: 365 * 86400 },
-        { level: 24, name: "VIP 24", price: 3500, tasks: 1, daily: 42.00, durationSeconds: 365 * 86400 },
-        { level: 25, name: "VIP 25", price: 4000, tasks: 1, daily: 48.00, durationSeconds: 365 * 86400 },
-        { level: 26, name: "VIP 26", price: 5000, tasks: 1, daily: 60.00, durationSeconds: 365 * 86400 },
-        { level: 27, name: "VIP 27", price: 6000, tasks: 1, daily: 72.00, durationSeconds: 365 * 86400 },
-        { level: 28, name: "VIP 28", price: 7000, tasks: 1, daily: 84.00, durationSeconds: 365 * 86400 },
-        { level: 29, name: "VIP 29", price: 8000, tasks: 1, daily: 96.00, durationSeconds: 365 * 86400 },
-        { level: 30, name: "VIP 30", price: 8500, tasks: 1, daily: 102.00, durationSeconds: 365 * 86400 },
-        { level: 31, name: "VIP 31", price: 9000, tasks: 1, daily: 108.00, durationSeconds: 365 * 86400 },
-        { level: 32, name: "VIP 32", price: 10500, tasks: 1, daily: 126.00, durationSeconds: 365 * 86400 },
-        { level: 33, name: "VIP 33", price: 11000, tasks: 1, daily: 132.00, durationSeconds: 365 * 86400 },
-        { level: 34, name: "VIP 34", price: 12000, tasks: 1, daily: 144.00, durationSeconds: 365 * 86400 },
-        { level: 35, name: "VIP 35", price: 15000, tasks: 1, daily: 180.00, durationSeconds: 365 * 86400 },
-        { level: 36, name: "VIP 36", price: 18000, tasks: 1, daily: 216.00, durationSeconds: 365 * 86400 },
-        { level: 37, name: "VIP 37", price: 20000, tasks: 1, daily: 240.00, durationSeconds: 365 * 86400 },
-        { level: 38, name: "VIP 38", price: 25000, tasks: 1, daily: 300.00, durationSeconds: 365 * 86400 },
-        { level: 39, name: "VIP 39", price: 30000, tasks: 1, daily: 360.00, durationSeconds: 365 * 86400 },
-        { level: 40, name: "VIP 40", price: 40000, tasks: 1, daily: 480.00, durationSeconds: 365 * 86400 },
-        { level: 41, name: "VIP 41", price: 50000, tasks: 1, daily: 600.00, durationSeconds: 365 * 86400 },
-        { level: 42, name: "VIP 42", price: 60000, tasks: 1, daily: 720.00, durationSeconds: 365 * 86400 },
-        { level: 43, name: "VIP 43", price: 70000, tasks: 1, daily: 840.00, durationSeconds: 365 * 86400 },
-        { level: 44, name: "VIP 44", price: 80000, tasks: 1, daily: 960.00, durationSeconds: 365 * 86400 },
-        { level: 45, name: "VIP 45", price: 90000, tasks: 1, daily: 1080.00, durationSeconds: 365 * 86400 },
-        { level: 46, name: "VIP 46", price: 100000, tasks: 1, daily: 1200.00, durationSeconds: 365 * 86400 },
+        { level: 1, name: "VIP 1", price: 20, tasks: 1, daily: 5.00, durationSeconds: 365 * 86400 },
+        { level: 2, name: "VIP 2", price: 40, tasks: 1, daily: 10.00, durationSeconds: 365 * 86400 },
+        { level: 3, name: "VIP 3", price: 50, tasks: 1, daily: 12.50, durationSeconds: 365 * 86400 },
+        { level: 4, name: "VIP 4", price: 70, tasks: 1, daily: 17.50, durationSeconds: 365 * 86400 },
+        { level: 5, name: "VIP 5", price: 100, tasks: 1, daily: 25.00, durationSeconds: 365 * 86400 },
+        { level: 6, name: "VIP 6", price: 150, tasks: 1, daily: 37.50, durationSeconds: 365 * 86400 },
+        { level: 7, name: "VIP 7", price: 200, tasks: 1, daily: 50.00, durationSeconds: 365 * 86400 },
+        { level: 8, name: "VIP 8", price: 250, tasks: 1, daily: 62.50, durationSeconds: 365 * 86400 },
+        { level: 9, name: "VIP 9", price: 300, tasks: 1, daily: 75.00, durationSeconds: 365 * 86400 },
+        { level: 10, name: "VIP 10", price: 350, tasks: 1, daily: 87.50, durationSeconds: 365 * 86400 },
+        { level: 11, name: "VIP 11", price: 400, tasks: 1, daily: 100.00, durationSeconds: 365 * 86400 },
+        { level: 12, name: "VIP 12", price: 450, tasks: 1, daily: 112.50, durationSeconds: 365 * 86400 },
+        { level: 13, name: "VIP 13", price: 500, tasks: 1, daily: 125.00, durationSeconds: 365 * 86400 },
+        { level: 14, name: "VIP 14", price: 600, tasks: 1, daily: 150.00, durationSeconds: 365 * 86400 },
+        { level: 15, name: "VIP 15", price: 700, tasks: 1, daily: 175.00, durationSeconds: 365 * 86400 },
+        { level: 16, name: "VIP 16", price: 800, tasks: 1, daily: 200.00, durationSeconds: 365 * 86400 },
+        { level: 17, name: "VIP 17", price: 900, tasks: 1, daily: 225.00, durationSeconds: 365 * 86400 },
+        { level: 18, name: "VIP 18", price: 1000, tasks: 1, daily: 250.00, durationSeconds: 365 * 86400 },
+        { level: 19, name: "VIP 19", price: 1300, tasks: 1, daily: 325.00, durationSeconds: 365 * 86400 },
+        { level: 20, name: "VIP 20", price: 1500, tasks: 1, daily: 375.00, durationSeconds: 365 * 86400 },
+        { level: 21, name: "VIP 21", price: 2000, tasks: 1, daily: 500.00, durationSeconds: 365 * 86400 },
+        { level: 22, name: "VIP 22", price: 2500, tasks: 1, daily: 625.00, durationSeconds: 365 * 86400 },
+        { level: 23, name: "VIP 23", price: 3000, tasks: 1, daily: 750.00, durationSeconds: 365 * 86400 },
+        { level: 24, name: "VIP 24", price: 3500, tasks: 1, daily: 875.00, durationSeconds: 365 * 86400 },
+        { level: 25, name: "VIP 25", price: 4000, tasks: 1, daily: 1000.00, durationSeconds: 365 * 86400 },
+        { level: 26, name: "VIP 26", price: 5000, tasks: 1, daily: 1250.00, durationSeconds: 365 * 86400 },
+        { level: 27, name: "VIP 27", price: 6000, tasks: 1, daily: 1500.00, durationSeconds: 365 * 86400 },
+        { level: 28, name: "VIP 28", price: 7000, tasks: 1, daily: 1750.00, durationSeconds: 365 * 86400 },
+        { level: 29, name: "VIP 29", price: 8000, tasks: 1, daily: 2000.00, durationSeconds: 365 * 86400 },
+        { level: 30, name: "VIP 30", price: 8500, tasks: 1, daily: 2125.00, durationSeconds: 365 * 86400 },
+        { level: 31, name: "VIP 31", price: 9000, tasks: 1, daily: 2250.00, durationSeconds: 365 * 86400 },
+        { level: 32, name: "VIP 32", price: 10500, tasks: 1, daily: 2625.00, durationSeconds: 365 * 86400 },
+        { level: 33, name: "VIP 33", price: 11000, tasks: 1, daily: 2750.00, durationSeconds: 365 * 86400 },
+        { level: 34, name: "VIP 34", price: 12000, tasks: 1, daily: 3000.00, durationSeconds: 365 * 86400 },
+        { level: 35, name: "VIP 35", price: 15000, tasks: 1, daily: 3750.00, durationSeconds: 365 * 86400 },
+        { level: 36, name: "VIP 36", price: 18000, tasks: 1, daily: 4500.00, durationSeconds: 365 * 86400 },
+        { level: 37, name: "VIP 37", price: 20000, tasks: 1, daily: 5000.00, durationSeconds: 365 * 86400 },
+        { level: 38, name: "VIP 38", price: 25000, tasks: 1, daily: 6250.00, durationSeconds: 365 * 86400 },
+        { level: 39, name: "VIP 39", price: 30000, tasks: 1, daily: 7500.00, durationSeconds: 365 * 86400 },
+        { level: 40, name: "VIP 40", price: 40000, tasks: 1, daily: 10000.00, durationSeconds: 365 * 86400 },
+        { level: 41, name: "VIP 41", price: 50000, tasks: 1, daily: 12500.00, durationSeconds: 365 * 86400 },
+        { level: 42, name: "VIP 42", price: 60000, tasks: 1, daily: 15000.00, durationSeconds: 365 * 86400 },
+        { level: 43, name: "VIP 43", price: 70000, tasks: 1, daily: 17500.00, durationSeconds: 365 * 86400 },
+        { level: 44, name: "VIP 44", price: 80000, tasks: 1, daily: 20000.00, durationSeconds: 365 * 86400 },
+        { level: 45, name: "VIP 45", price: 90000, tasks: 1, daily: 22500.00, durationSeconds: 365 * 86400 },
+        { level: 46, name: "VIP 46", price: 100000, tasks: 1, daily: 25000.00, durationSeconds: 365 * 86400 },
       ],
       
       globalCycleHourUTC: 3,
@@ -438,13 +427,6 @@ export default {
       let numValue = Number(value);
       if (isNaN(numValue)) return '0';
       return numValue.toLocaleString('en-US');
-    },
-
-    getROI(plan) {
-      if (plan.price === 0) return 0;
-      const yearlyProfit = plan.daily * 365;
-      const roi = ((yearlyProfit - plan.price) / plan.price) * 100;
-      return roi;
     },
 
     formatDate(timestamp) {
@@ -756,8 +738,8 @@ export default {
 <style scoped>
 .vip-page {
   min-height: 100vh;
-  background: #0a0e17;
-  color: #fff;
+  background: #f5f7fa;
+  color: #1a1a2e;
   direction: rtl;
   padding: 15px;
   font-family: 'Cairo', sans-serif;
@@ -769,7 +751,7 @@ export default {
   text-align: center;
   font-size: 26px;
   font-weight: 900;
-  color: #d4af37;
+  color: #1a1a2e;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -783,29 +765,9 @@ export default {
 
 .vip-subtitle {
   text-align: center;
-  color: rgba(255,255,255,0.6);
+  color: #6b7280;
   font-size: 14px;
   margin-bottom: 20px;
-}
-
-/* تنبيه تجريبي */
-.disclaimer-box {
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #d4af37;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.disclaimer-box i {
-  font-size: 16px;
-  flex-shrink: 0;
 }
 
 /* إشعار الأرباح */
@@ -814,13 +776,13 @@ export default {
   top: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(135deg, #d4af37, #f0d060);
-  color: #0a0e17;
+  background: #1a1a2e;
+  color: #ffffff;
   padding: 12px 24px;
   border-radius: 50px;
   font-weight: 700;
   z-index: 3000;
-  box-shadow: 0 5px 20px rgba(212, 175, 55, 0.4);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -838,24 +800,25 @@ export default {
 
 /* البطاقة النشطة */
 .current-vip-card {
-  background: #121926;
-  border: 1.5px solid #d4af37;
+  background: #ffffff;
+  border: 2px solid #1a1a2e;
   border-radius: 20px;
   padding: 20px 15px;
   margin-bottom: 25px;
   text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
 .current-vip-card.elite-user {
-  border: 2px solid #d4af37;
-  background: linear-gradient(135deg, #121926, #1a1420);
-  box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+  border: 2px solid #1a1a2e;
+  background: #ffffff;
+  box-shadow: 0 4px 20px rgba(26, 26, 46, 0.1);
 }
 
 .status-header { 
   font-size: 16px; 
   font-weight: 700; 
-  color: #fff; 
+  color: #1a1a2e; 
   margin-bottom: 5px;
   display: flex;
   align-items: center;
@@ -864,8 +827,8 @@ export default {
 }
 
 .elite-badge-header {
-  background: linear-gradient(135deg, #d4af37, #f0d060);
-  color: #0a0e17;
+  background: #1a1a2e;
+  color: #ffffff;
   padding: 2px 10px;
   border-radius: 50px;
   font-size: 12px;
@@ -874,9 +837,8 @@ export default {
 .vip-title { 
   font-size: 28px; 
   font-weight: 900; 
-  color: #d4af37; 
+  color: #1a1a2e; 
   margin-bottom: 15px;
-  text-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
 }
 
 .earnings-grid {
@@ -887,29 +849,28 @@ export default {
 }
 
 .earn-box {
-  background: #1a2230;
+  background: #f0f2f5;
   border-radius: 12px;
   padding: 12px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid rgba(212, 175, 55, 0.15);
 }
 
 .earn-label { 
   font-size: 11px; 
-  color: rgba(255,255,255,0.5); 
+  color: #6b7280; 
   margin-bottom: 3px; 
   display: flex; 
   align-items: center; 
   gap: 5px; 
 }
-.earn-label i { color: #d4af37; font-size: 12px; }
-.earn-value { font-size: 16px; color: #d4af37; font-weight: 700; }
-.earn-value small { font-size: 10px; color: rgba(255,255,255,0.5); }
+.earn-label i { color: #1a1a2e; font-size: 12px; }
+.earn-value { font-size: 16px; color: #1a1a2e; font-weight: 700; }
+.earn-value small { font-size: 10px; color: #6b7280; }
 
 .remaining-timer { 
-  color: #d4af37; 
+  color: #1a1a2e; 
   font-size: 15px; 
   font-weight: 600; 
   margin-bottom: 10px; 
@@ -917,7 +878,7 @@ export default {
 
 .last-reward-info {
   font-size: 12px;
-  color: rgba(255,255,255,0.5);
+  color: #6b7280;
   margin-bottom: 15px;
   display: flex;
   align-items: center;
@@ -925,12 +886,12 @@ export default {
   gap: 8px;
 }
 
-.last-reward-info i { color: #d4af37; }
+.last-reward-info i { color: #1a1a2e; }
 
 .details-btn-wrapper { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .btn-details-white {
-  background: #fff; 
-  color: #0a0e17; 
+  background: #1a1a2e; 
+  color: #ffffff; 
   border: none; 
   padding: 8px 18px;
   border-radius: 8px; 
@@ -945,12 +906,12 @@ export default {
 
 .btn-details-white:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255,255,255,0.15);
+  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.2);
 }
 
 .btn-upgrade-auto {
-  background: linear-gradient(135deg, #d4af37, #f0d060);
-  color: #0a0e17;
+  background: #1a1a2e;
+  color: #ffffff;
   border: none;
   padding: 8px 18px;
   border-radius: 8px;
@@ -965,7 +926,7 @@ export default {
 
 .btn-upgrade-auto:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 4px 15px rgba(26, 26, 46, 0.2);
 }
 
 /* فلترة الخطط */
@@ -978,9 +939,9 @@ export default {
 }
 
 .filter-btn {
-  background: #121926;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  color: rgba(255,255,255,0.6);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
   padding: 8px 16px;
   border-radius: 50px;
   font-size: 12px;
@@ -990,40 +951,42 @@ export default {
 }
 
 .filter-btn.active {
-  background: #d4af37;
-  color: #0a0e17;
-  border-color: #d4af37;
+  background: #1a1a2e;
+  color: #ffffff;
+  border-color: #1a1a2e;
 }
 
 .filter-btn.elite-filter.active {
-  background: linear-gradient(135deg, #d4af37, #f0d060);
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+  background: #1a1a2e;
+  color: #ffffff;
+  border-color: #1a1a2e;
 }
 
 .filter-btn:hover {
-  border-color: #d4af37;
-  color: #fff;
+  border-color: #1a1a2e;
+  color: #1a1a2e;
 }
 
 /* قائمة VIP */
 .vip-list { display: flex; flex-direction: column; gap: 15px; }
 .vip-card-item { 
-  background: #121926; 
+  background: #ffffff; 
   border-radius: 16px; 
-  border: 1px solid rgba(212, 175, 55, 0.2); 
+  border: 1px solid #e5e7eb; 
   overflow: hidden; 
   transition: all 0.3s ease; 
   position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .vip-card-item:hover { 
-  border-color: #d4af37; 
+  border-color: #1a1a2e; 
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
 }
-.vip-card-item.is-active { border: 2px solid #d4af37; }
+.vip-card-item.is-active { border: 2px solid #1a1a2e; }
 .vip-card-item.elite-card {
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  background: linear-gradient(135deg, #121926, #1a1420);
+  border: 1px solid #1a1a2e;
+  background: #ffffff;
   position: relative;
   overflow: hidden;
 }
@@ -1034,7 +997,7 @@ export default {
   right: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, #d4af37, #f0d060, #d4af37);
+  background: #1a1a2e;
 }
 
 /* شريط النخبة */
@@ -1042,13 +1005,13 @@ export default {
   position: absolute;
   top: 12px;
   left: -25px;
-  background: linear-gradient(135deg, #d4af37, #f0d060);
-  color: #0a0e17;
+  background: #1a1a2e;
+  color: #ffffff;
   padding: 4px 30px;
   transform: rotate(-45deg);
   font-size: 10px;
   font-weight: 800;
-  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
   z-index: 10;
   display: flex;
   align-items: center;
@@ -1060,28 +1023,26 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255,255,255,0.03);
-  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  background: #f8f9fa;
+  border-bottom: 1px solid #e5e7eb;
 }
 .item-header-row.elite-header {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(240, 208, 96, 0.05));
+  background: #f0f2f5;
 }
 .item-medal-right { font-size: 22px; }
 .elite-medal {
   font-size: 26px;
-  filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
 }
 .item-title-left { 
   font-size: 17px; 
   font-weight: 800; 
-  color: #d4af37;
+  color: #1a1a2e;
   display: flex;
   align-items: center;
   gap: 5px;
 }
 .item-title-left.elite-title {
   font-size: 19px;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
 }
 .star-icon {
   font-size: 14px;
@@ -1089,23 +1050,23 @@ export default {
 
 .item-body { padding: 12px 15px; }
 .subscription-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-.subscription-row .label { color: rgba(255,255,255,0.5); }
-.subscription-row .value { font-weight: 700; color: #fff; }
+.subscription-row .label { color: #6b7280; }
+.subscription-row .value { font-weight: 700; color: #1a1a2e; }
 .subscription-row .value.elite-value {
-  color: #d4af37;
+  color: #1a1a2e;
   font-size: 17px;
 }
 
-/* مؤشر ROI - تجريبي */
+/* مؤشر العائد اليومي */
 .roi-display {
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: #f0f2f5;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 6px 10px;
   margin-bottom: 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #d4af37;
+  color: #1a1a2e;
   text-align: center;
   display: flex;
   align-items: center;
@@ -1113,8 +1074,8 @@ export default {
   gap: 6px;
 }
 .roi-display.elite-roi {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(240, 208, 96, 0.08));
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: #f0f2f5;
+  border: 1px solid #1a1a2e;
 }
 
 .stats-grid-v2 {
@@ -1124,31 +1085,31 @@ export default {
   margin-bottom: 12px;
 }
 .mini-stat-v2 {
-  background: #1a2230;
+  background: #f8f9fa;
   border-radius: 8px;
   padding: 10px 5px;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 3px;
-  border: 1px solid rgba(212, 175, 55, 0.1);
+  border: 1px solid #e5e7eb;
 }
 .mini-stat-v2.elite-stat {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(240, 208, 96, 0.04));
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: #f8f9fa;
+  border: 1px solid #1a1a2e;
 }
 .full-width-stat { grid-column: span 2; }
-.stat-label-v2 { font-size: 10px; color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; gap: 4px; }
-.gold-icon { color: #d4af37; font-size: 11px; }
-.stat-value-v2 { font-size: 14px; font-weight: 700; color: #d4af37; }
+.stat-label-v2 { font-size: 10px; color: #6b7280; display: flex; align-items: center; justify-content: center; gap: 4px; }
+.gold-icon { color: #1a1a2e; font-size: 11px; }
+.stat-value-v2 { font-size: 14px; font-weight: 700; color: #1a1a2e; }
 
 .btn-action { 
   width: 100%; 
-  background: linear-gradient(135deg, #d4af37, #f0d060);
+  background: #1a1a2e;
   border: none; 
   padding: 10px; 
   border-radius: 10px; 
-  color: #0a0e17; 
+  color: #ffffff; 
   font-weight: 700; 
   cursor: pointer; 
   font-size: 14px;
@@ -1160,26 +1121,25 @@ export default {
 }
 .btn-action:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 5px 15px rgba(26, 26, 46, 0.2);
 }
 .btn-action:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 .btn-action.elite-btn {
-  background: linear-gradient(135deg, #d4af37, #f0d060);
-  box-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
+  background: #1a1a2e;
   font-size: 15px;
 }
 .btn-action.active { 
-  background: rgba(212, 175, 55, 0.12);
-  color: #d4af37;
-  border: 1px solid #d4af37;
+  background: #f0f2f5;
+  color: #1a1a2e;
+  border: 1px solid #1a1a2e;
 }
 .btn-action.elite-btn-active {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(240, 208, 96, 0.1));
-  border: 1px solid #d4af37;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+  background: #f0f2f5;
+  border: 1px solid #1a1a2e;
+  color: #1a1a2e;
 }
 
 /* علامة النشط */
@@ -1187,15 +1147,16 @@ export default {
   position: absolute;
   bottom: 10px;
   right: 10px;
-  background: rgba(212, 175, 55, 0.9);
-  color: #0a0e17;
+  background: #1a1a2e;
+  color: #ffffff;
   padding: 4px 12px;
   border-radius: 50px;
   font-size: 10px;
   font-weight: 700;
 }
 .active-ribbon.basic {
-  background: rgba(212, 175, 55, 0.8);
+  background: #1a1a2e;
+  color: #ffffff;
 }
 
 /* شارة النخبة في الأسفل */
@@ -1205,73 +1166,50 @@ export default {
 }
 
 .elite-info-box {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.08), rgba(240, 208, 96, 0.04));
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 15px;
   display: flex;
   align-items: center;
   gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .elite-info-box i {
   font-size: 32px;
-  color: #d4af37;
+  color: #1a1a2e;
 }
 
 .elite-info-content h4 {
-  color: #d4af37;
+  color: #1a1a2e;
   margin-bottom: 5px;
   font-size: 14px;
 }
 
 .elite-info-content p {
-  color: rgba(255, 255, 255, 0.6);
+  color: #6b7280;
   font-size: 12px;
   margin: 0;
 }
 
 /* Modal Styles */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
-.modal-content { background: #121926; width: 100%; max-width: 400px; border-radius: 20px; border: 1px solid rgba(212, 175, 55, 0.3); overflow: hidden; }
-.modal-header { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
-.modal-header h3 { color: #d4af37; font-size: 16px; margin: 0; }
-.close-btn { background: none; border: none; color: rgba(255,255,255,0.4); font-size: 24px; cursor: pointer; transition: all 0.3s; }
-.close-btn:hover { color: #fff; transform: rotate(90deg); }
-.modal-body { padding: 20px; line-height: 1.6; font-size: 13px; color: rgba(255,255,255,0.8); max-height: 60vh; overflow-y: auto; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.modal-content { background: #ffffff; width: 100%; max-width: 400px; border-radius: 20px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
+.modal-header { padding: 15px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { color: #1a1a2e; font-size: 16px; margin: 0; }
+.close-btn { background: none; border: none; color: #6b7280; font-size: 24px; cursor: pointer; transition: all 0.3s; }
+.close-btn:hover { color: #1a1a2e; transform: rotate(90deg); }
+.modal-body { padding: 20px; line-height: 1.6; font-size: 13px; color: #1a1a2e; max-height: 60vh; overflow-y: auto; }
 .investment-text p { margin-bottom: 15px; text-align: justify; }
 .section { margin-bottom: 15px; }
-.section h4 { color: #d4af37; margin-bottom: 5px; font-size: 14px; }
-.section.elite-section h4 { color: #d4af37; text-shadow: 0 0 10px rgba(212, 175, 55, 0.15); }
+.section h4 { color: #1a1a2e; margin-bottom: 5px; font-size: 14px; }
+.section.elite-section h4 { color: #1a1a2e; }
 .section ul { padding-right: 18px; margin: 0; }
-.section li { margin-bottom: 5px; }
-
-.disclaimer-text {
-  background: rgba(212, 175, 55, 0.06);
-  border: 1px solid rgba(212, 175, 55, 0.15);
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.disclaimer-text i {
-  color: #d4af37;
-  font-size: 16px;
-  margin-top: 2px;
-}
-
-.disclaimer-text p {
-  margin: 0;
-  font-size: 12px;
-  color: rgba(255,255,255,0.6);
-}
-
+.section li { margin-bottom: 5px; color: #374151; }
 .modal-footer { padding: 15px; text-align: center; }
-.btn-modal-close { background: #d4af37; color: #0a0e17; border: none; padding: 8px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
-.btn-modal-close:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3); }
+.btn-modal-close { background: #1a1a2e; color: #ffffff; border: none; padding: 8px 25px; border-radius: 8px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
+.btn-modal-close:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(26, 26, 46, 0.2); }
 
 /* Custom Confirm Modal */
 .confirm-modal-overlay {
@@ -1280,7 +1218,7 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -1290,33 +1228,33 @@ export default {
 }
 
 .confirm-modal-content {
-  background: #121926;
+  background: #ffffff;
   width: 100%;
   max-width: 340px;
   border-radius: 24px;
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid #e5e7eb;
   overflow: hidden;
-  box-shadow: 0 0 30px rgba(212, 175, 55, 0.1);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
   transform: scale(1);
   transition: transform 0.2s ease;
 }
 
 .confirm-modal-header {
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.12), rgba(240, 208, 96, 0.05));
+  background: #f8f9fa;
   padding: 18px 20px;
   text-align: center;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .confirm-modal-header i {
   font-size: 32px;
-  color: #d4af37;
+  color: #1a1a2e;
   margin-bottom: 8px;
   display: block;
 }
 
 .confirm-modal-header h3 {
-  color: #d4af37;
+  color: #1a1a2e;
   font-size: 18px;
   font-weight: 800;
   margin: 0;
@@ -1328,20 +1266,20 @@ export default {
 }
 
 .confirm-modal-body p {
-  color: rgba(255,255,255,0.8);
+  color: #374151;
   font-size: 15px;
   line-height: 1.6;
   margin: 0;
 }
 
 .highlight-level {
-  color: #d4af37;
+  color: #1a1a2e;
   font-size: 18px;
   font-weight: 800;
 }
 
 .highlight-price {
-  color: #d4af37;
+  color: #1a1a2e;
   font-size: 16px;
   font-weight: 700;
 }
@@ -1350,14 +1288,14 @@ export default {
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid rgba(212, 175, 55, 0.12);
+  border-top: 1px solid #e5e7eb;
 }
 
 .confirm-btn-cancel {
   flex: 1;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255,255,255,0.6);
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #374151;
   padding: 10px;
   border-radius: 10px;
   font-size: 14px;
@@ -1371,16 +1309,15 @@ export default {
 }
 
 .confirm-btn-cancel:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: #e5e7eb;
+  border-color: #d1d5db;
 }
 
 .confirm-btn-confirm {
   flex: 1;
-  background: linear-gradient(135deg, #d4af37, #f0d060);
+  background: #1a1a2e;
   border: none;
-  color: #0a0e17;
+  color: #ffffff;
   padding: 10px;
   border-radius: 10px;
   font-size: 14px;
@@ -1395,7 +1332,7 @@ export default {
 
 .confirm-btn-confirm:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 5px 15px rgba(26, 26, 46, 0.2);
 }
 
 .confirm-btn-confirm:disabled {
@@ -1421,10 +1358,10 @@ export default {
   transform: scale(1);
 }
 
-.gold-spinner { width: 30px; height: 30px; border: 3px solid rgba(212, 175, 55, 0.1); border-top: 3px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+.gold-spinner { width: 30px; height: 30px; border: 3px solid #e5e7eb; border-top: 3px solid #1a1a2e; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .center { text-align: center; padding: 50px 0; }
-.loading-text { color: rgba(255,255,255,0.4); font-size: 14px; }
+.loading-text { color: #6b7280; font-size: 14px; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
