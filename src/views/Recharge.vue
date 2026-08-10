@@ -1,347 +1,445 @@
 <template>
   <div class="recharge-page">
-    <!-- Header -->
-    <div class="top-nav">
-      <div class="nav-left" @click="$router.back()">
+    <!-- الرأس -->
+    <div class="page-header">
+      <button class="back-btn" @click="$router.push('/home')">
         <i class="fas fa-arrow-right"></i>
-      </div>
-      <div class="nav-center">إيداع USDT</div>
-      <div class="nav-right" @click="$router.push('/transactions')">
-        <i class="fas fa-history"></i>
+      </button>
+      <h1 class="page-title">إيداع</h1>
+      <div class="header-placeholder"></div>
+    </div>
+
+    <!-- الرصيد -->
+    <div class="balance-card">
+      <div class="balance-label">الرصيد المتاح</div>
+      <div class="balance-amount">
+        <span class="balance-number">{{ formatNumber(balance) }}</span>
+        <span class="balance-currency">USDT</span>
       </div>
     </div>
 
-    <div class="main-content">
-      <!-- Asset Display -->
-      <div class="asset-card">
-        <div class="asset-main">
-          <img src="https://assets.coingecko.com/coins/images/325/large/Tether.png" alt="USDT" class="coin-logo-real">
-          <div class="asset-text">
-            <span class="coin-symbol">USDT</span>
-            <span class="coin-name">TetherUS</span>
-          </div>
-        </div>
-        <div class="balance-info">
-          <span class="label">الرصيد الحالي</span>
-          <span class="value">{{ userBalance.toFixed(2) }} USDT</span>
-          <span class="user-identifier">{{ userIdentifier }}</span>
-        </div>
-      </div>
+    <!-- حالة التحميل -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>جاري التحميل...</p>
+    </div>
 
-      <!-- Network Selector Dropdown -->
-      <div class="input-section">
-        <label class="section-label">اختر الشبكة</label>
-        <div class="dropdown-container" @click="toggleDropdown" v-click-outside="closeDropdown">
-          <div class="dropdown-selected" :class="{ 'is-open': isDropdownOpen }">
-            <div class="selected-info">
-              <img :src="getNetworkIconUrl(network)" class="net-icon-real" alt="">
-              <span class="net-name">{{ network }}</span>
-            </div>
-            <i class="fas fa-chevron-down arrow-icon"></i>
-          </div>
-          
-          <transition name="slide-fade">
-            <div v-if="isDropdownOpen" class="dropdown-list">
-              <div 
-                v-for="(addr, net) in addresses" 
-                :key="net" 
-                class="dropdown-item"
-                :class="{ 'active': network === net }"
-                @click.stop="selectNetwork(net)"
-              >
-                <div class="item-left">
-                  <img :src="getNetworkIconUrl(net)" class="net-icon-real" alt="">
-                  <div class="item-text">
-                    <span class="net-title">{{ net }}</span>
-                    <span class="net-desc">{{ getNetworkDesc(net) }}</span>
-                  </div>
-                </div>
-                <i v-if="network === net" class="fas fa-check"></i>
-              </div>
-            </div>
-          </transition>
-        </div>
-      </div>
+    <div v-else>
+      <!-- نموذج الإيداع -->
+      <div class="deposit-form">
+        <h2 class="section-title">إيداع الأموال</h2>
 
-      <!-- Deposit Details Card -->
-      <div class="deposit-card">
-        <div class="qr-section">
-          <div class="qr-frame">
-            <img :src="getQr(network)" :alt="network" class="qr-code">
-            <div v-if="loading" class="qr-loader">
-              <i class="fas fa-spinner fa-spin"></i>
-            </div>
-          </div>
-          <p class="qr-tip">حفظ رمز QR</p>
-        </div>
-
-        <div class="address-section">
-          <div class="label-row">
-            <span class="addr-label">عنوان الإيداع</span>
-            <span class="network-tag">{{ network }}</span>
-          </div>
-          <div class="address-display">
-            <div class="address-text">{{ getAddress(network) }}</div>
-            <button class="copy-icon-btn" @click="copyAddress">
-              <i :class="copied ? 'fas fa-check' : 'far fa-copy'"></i>
+        <!-- اختيار الشبكة -->
+        <div class="form-group">
+          <label class="form-label">اختر الشبكة</label>
+          <div class="network-selector">
+            <button
+              v-for="network in networks"
+              :key="network.id"
+              class="network-btn"
+              :class="{ active: selectedNetwork === network.id }"
+              @click="selectNetwork(network.id)"
+            >
+              <img :src="network.icon" :alt="network.name" class="network-icon" />
+              <span class="network-name">{{ network.name }}</span>
             </button>
           </div>
-          <transition name="fade">
-            <div v-if="copied" class="copy-toast">تم النسخ بنجاح</div>
-          </transition>
         </div>
-      </div>
 
-      <!-- Warning Box - مباشرة بعد عنوان الإيداع -->
-      <div class="warning-box">
-        <div class="warning-icon-circle">
-          <span class="warning-icon">⚠️</span>
-        </div>
-        <div class="warning-content">
-          <span class="warning-title">تنبيه مهم</span>
-          <p class="warning-description">
-            لن يتم إضافة الرصيد تلقائيًا قبل إرسال طلب تأكيد الإيداع يرجى إدخال المبلغ المرسل ثم الضغط على زر "تأكيد الإيداع".
-          </p>
-        </div>
-        <span class="arrow-down">⬇️</span>
-      </div>
-
-      <!-- Form Inputs -->
-      <div class="form-section">
-        <div class="input-group">
-          <div class="input-field">
-            <input type="number" v-model.number="amount" placeholder="أدخل المبلغ الذي أرسلته إلى حسابك">
-            <span class="suffix">USDT</span>
+        <!-- مبلغ الإيداع -->
+        <div class="form-group">
+          <label class="form-label">المبلغ</label>
+          <div class="amount-input-wrapper">
+            <input
+              type="number"
+              v-model="amount"
+              placeholder="0.00"
+              class="amount-input"
+              min="0.01"
+              step="0.01"
+            />
+            <span class="currency-label">USDT</span>
+          </div>
+          <div class="amount-hint">
+            الحد الأدنى: <strong>{{ minDeposit }} USDT</strong>
           </div>
         </div>
 
-        <div class="input-group">
-          <label>ملاحظة (اختياري)</label>
-          <div class="input-field">
-            <input type="text" v-model="txid" placeholder="اكتب ملاحظة">
+        <!-- معلومات الإيداع -->
+        <div v-if="selectedNetwork" class="deposit-info">
+          <div class="info-card">
+            <div class="info-row">
+              <span class="info-label">الشبكة</span>
+              <span class="info-value">{{ getNetworkName(selectedNetwork) }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">العنوان</span>
+              <div class="address-wrapper">
+                <span class="address-value">{{ walletAddress }}</span>
+                <button class="copy-btn" @click="copyAddress">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR Code -->
+          <div class="qr-card">
+            <div class="qr-wrapper">
+              <qrcode-vue
+                v-if="walletAddress"
+                :value="walletAddress"
+                :size="180"
+                level="H"
+                class="qr-code"
+              />
+            </div>
+            <p class="qr-hint">امسح الرمز للإيداع</p>
+          </div>
+
+          <!-- رسالة التحذير -->
+          <div class="warning-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>تأكد من اختيار الشبكة الصحيحة قبل الإيداع</span>
           </div>
         </div>
 
-        <button class="main-btn" @click="submit" :disabled="loading">
-          <span v-if="!loading">تأكيد الإيداع</span>
-          <i v-else class="fas fa-circle-notch fa-spin"></i>
+        <!-- زر الإيداع -->
+        <button
+          class="deposit-btn"
+          @click="submitDeposit"
+          :disabled="!canSubmit || loadingSubmit"
+        >
+          <span v-if="!loadingSubmit">إرسال طلب الإيداع</span>
+          <span v-else class="btn-loader"></span>
         </button>
-
-        <transition name="fade">
-          <div v-if="message" :class="['alert', messageType]">
-            <i :class="messageType === 'error' ? 'fas fa-times-circle' : 'fas fa-check-circle'"></i>
-            {{ message }}
-          </div>
-        </transition>
       </div>
 
-      <!-- Instructions -->
-      <div class="tips-box">
-        <div class="tips-header">
-          <i class="fas fa-lightbulb"></i>
-          <span>نصائح هامة</span>
+      <!-- سجل المعاملات -->
+      <div class="transactions-section">
+        <div class="section-header">
+          <h2 class="section-title">سجل المعاملات</h2>
+          <button class="refresh-btn" @click="loadTransactions" :disabled="loadingTx">
+            <i :class="loadingTx ? 'fas fa-spinner fa-spin' : 'fas fa-sync-alt'"></i>
+          </button>
         </div>
-        <ul class="tips-list">
-          <li>يرجى التأكد من اختيار شبكة <strong>{{ network }}</strong> عند التحويل.</li>
-          <li>سيتم إضافة الرصيد بعد مراجعة وموافقة الأدمن على طلبك.</li>
-          <li>لا تقم بإيداع أي عملات أخرى غير USDT لهذا العنوان.</li>
-          <li>لا يوجد حد أدنى للإيداع - يمكنك إيداع أي مبلغ تريده.</li>
-        </ul>
+
+        <div v-if="loadingTx" class="loading-state small">
+          <div class="spinner small"></div>
+        </div>
+
+        <div v-else-if="transactions.length === 0" class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>لا توجد معاملات</p>
+        </div>
+
+        <div v-else class="transactions-list">
+          <div
+            v-for="tx in transactions"
+            :key="tx.id"
+            class="transaction-item"
+          >
+            <div class="tx-icon" :class="getTxIconClass(tx.status)">
+              <i :class="getTxIcon(tx.status)"></i>
+            </div>
+            <div class="tx-info">
+              <div class="tx-amount">{{ formatNumber(tx.amount) }} USDT</div>
+              <div class="tx-details">
+                <span class="tx-network">{{ tx.network || '—' }}</span>
+                <span class="tx-status" :class="getStatusClass(tx.status)">
+                  {{ getStatusText(tx.status) }}
+                </span>
+              </div>
+              <div class="tx-date">{{ formatDate(tx.createdAt) }}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { getAuth } from "firebase/auth";
-import { collection, addDoc, serverTimestamp, doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
+import { doc, getDoc, addDoc, collection, query, where, orderBy, getDocs, serverTimestamp } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+import QrcodeVue from "qrcode.vue";
+
+// صور الشبكات (SVG inline)
+const bitcoinIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 14.09v.58c0 .41-.34.75-.75.75h-.86v.83h-1.6v-.83h-.86c-.41 0-.75-.34-.75-.75v-4.11c0-.41.34-.75.75-.75h.86v-.83h1.6v.83h.86c.41 0 .75.34.75.75v.58zm-3.46-2.86h2.07v-1.66h-2.07v1.66zm0 3.08h2.07v-1.7h-2.07v1.7z"/></svg>';
 
 export default {
-  name: "Recharge",
-  directives: {
-    'click-outside': {
-      beforeMount(el, binding) {
-        el.clickOutsideEvent = (event) => {
-          if (!(el === event.target || el.contains(event.target))) {
-            binding.value();
-          }
-        };
-        document.addEventListener('click', el.clickOutsideEvent);
-      },
-      unmounted(el) {
-        document.removeEventListener('click', el.clickOutsideEvent);
-      }
-    }
+  name: "RechargePage",
+  components: {
+    QrcodeVue
   },
   data() {
     return {
-      network: "TRC20",
-      isDropdownOpen: false,
-      amount: null,
-      txid: "",
-      copied: false,
-      loading: false,
-      message: "",
-      messageType: "info",
-      addresses: {
-        TRC20: "TJKb61v5XW4kTRzRTzDYZm42H1UXQ9BpQy",
-        ERC20: "0x5B9Bc2f3cF994a4ffD74F8BbDE9160Eb131f124A",
-        BEP20: "0x5B9Bc2f3cF994a4ffD74F8BbDE9160Eb131f124A",
-        SOL: "7GfbAVrSfjBGbDSd74aGciVPUNbtuqduhg7NpztkEhw3",
-      },
+      balance: 0,
+      loading: true,
+      loadingTx: false,
+      loadingSubmit: false,
+      amount: "",
+      selectedNetwork: "trc20",
+      walletAddress: "",
+      userId: null,
       userEmail: "",
-      userId: "",
-      userBalance: 0,
       userPhone: "",
+      transactions: [],
+      minDeposit: 12,
+
+      networks: [
+        { id: "trc20", name: "TRC20 (USDT)", icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIgZmlsbD0iIzhCOEE4QiIvPjwvc3ZnPg==" },
+        { id: "bep20", name: "BEP20 (USDT)", icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIgZmlsbD0iIzhCOEE4QiIvPjwvc3ZnPg==" },
+        { id: "erc20", name: "ERC20 (USDT)", icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTQuNDEgMC04LTMuNTktOC04czMuNTktOCA4LTggOCAzLjU5IDggOC0zLjU5IDgtOCA4eiIgZmlsbD0iIzhCOEE4QiIvPjwvc3ZnPg==" }
+      ],
+
+      addresses: {
+        trc20: "TXYZ...TRC20",
+        bep20: "BXYZ...BEP20",
+        erc20: "EXYZ...ERC20"
+      }
     };
   },
+
   computed: {
-    userIdentifier() {
-      if (this.userPhone) {
-        return this.userPhone;
-      } else if (this.userEmail) {
-        return this.userEmail;
-      }
-      return "";
+    canSubmit() {
+      return this.selectedNetwork && 
+             this.amount && 
+             parseFloat(this.amount) >= this.minDeposit &&
+             this.walletAddress;
     }
   },
-  mounted() {
-    this.initializeUser();
-  },
-  methods: {
-    async fetchUserBalance() {
-      if (!this.userId) return;
-      try {
-        const userDoc = await getDoc(doc(db, "users", this.userId));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          
-          // ✅ قراءة ذكية للرصيد - تدعم النظام القديم والجديد
-          let vipBalance = 0;
-          let depositBalance = 0;
-          
-          if (typeof data.vipBalance === 'number') {
-            vipBalance = data.vipBalance;
-            depositBalance = typeof data.depositBalance === 'number' ? data.depositBalance : 0;
-          } else if (typeof data.balance === 'number') {
-            vipBalance = data.balance; // 🔥 الرصيد القديم ← vipBalance
-            depositBalance = 0;
-          }
-          
-          // عرض مجموع الرصيدين
-          this.userBalance = vipBalance + depositBalance;
 
-          // قراءة رقم الهاتف
-          if (data.phone) {
-            this.userPhone = data.phone;
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching balance:", error);
-      }
-    },
-    initializeUser() {
-      const auth = getAuth();
-      auth.onAuthStateChanged(async (user) => {
-        if (user) {
-          this.userEmail = user.email;
-          this.userId = user.uid;
-          await this.fetchUserBalance();
-        }
-      });
-    },
-    toggleDropdown() {
-      this.isDropdownOpen = !this.isDropdownOpen;
-    },
-    closeDropdown() {
-      this.isDropdownOpen = false;
-    },
-    selectNetwork(net) {
-      this.network = net;
-      this.isDropdownOpen = false;
-    },
-    getQr(net) {
-      return `/qr/${net}.png`;
-    },
-    getAddress(net) {
-      return this.addresses[net] || "";
-    },
-    getNetworkIconUrl(net) {
-      const icons = {
-        TRC20: "https://assets.coingecko.com/coins/images/1094/large/tron-logo.png",
-        ERC20: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
-        BEP20: "https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png",
-        SOL: "https://assets.coingecko.com/coins/images/4128/large/solana.png"
-      };
-      return icons[net] || "";
-    },
-    getNetworkDesc(net) {
-      const descs = {
-        TRC20: "Tron Network (TRX)",
-        ERC20: "Ethereum Network (ETH)",
-        BEP20: "BNB Smart Chain (BSC)",
-        SOL: "Solana Network"
-      };
-      return descs[net] || "";
-    },
-    handleImageError(e) {
-      e.target.style.display = 'none';
-    },
-    async copyAddress() {
-      const text = this.getAddress(this.network);
-      try {
-        await navigator.clipboard.writeText(text);
-        this.copied = true;
-        setTimeout(() => (this.copied = false), 2000);
-      } catch (err) {
-        console.error("Copy failed");
-      }
-    },
-    async submit() {
-      if (!this.amount || this.amount <= 0) {
-        this.message = "يرجى إدخال مبلغ صحيح";
-        this.messageType = "error";
+  created() {
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        this.$router.push("/login");
         return;
       }
-      this.loading = true;
+      this.userId = user.uid;
+      this.userEmail = user.email || "";
+      await this.loadUserData();
+      await this.loadTransactions();
+      this.loading = false;
+    });
+  },
+
+  methods: {
+    formatNumber(num) {
+      const value = Number(num);
+      if (isNaN(value)) return "0.00";
+      return value.toFixed(2);
+    },
+
+    formatDate(timestamp) {
+      if (!timestamp) return "—";
       try {
-        // ✅ فقط إنشاء طلب التعبئة بحالة pending - لا يتم إضافة أي رصيد هنا
-        await addDoc(collection(db, "payments"), {
-          userId: this.userId,
-          email: this.userEmail,
-          amount: this.amount,
-          txid: this.txid,
-          network: this.network,
-          status: "pending",
-          targetBalance: "depositBalance", // للإشارة إلى أن المبلغ سيضاف إلى depositBalance عند الموافقة
-          createdAt: serverTimestamp(),
-        });
+        if (timestamp.toMillis) timestamp = timestamp.toMillis();
+        return new Date(timestamp).toLocaleString("ar-EG");
+      } catch {
+        return "—";
+      }
+    },
+
+    async loadUserData() {
+      try {
+        if (!this.userId) return;
+        const userRef = doc(db, "users", this.userId);
+        const userSnap = await getDoc(userRef);
         
-        await addDoc(collection(db, "transactions"), {
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          // رصيد واحد فقط
+          this.balance = Number(data.balance ?? 0);
+          this.userPhone = data.phoneNumber || "";
+          
+          // الحصول على عنوان المحفظة بناءً على الشبكة المختارة
+          this.updateWalletAddress();
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    },
+
+    updateWalletAddress() {
+      // في الإنتاج، يجب جلب العنوان من Firestore بناءً على الشبكة
+      const addresses = {
+        trc20: "TXYZ...TRC20",
+        bep20: "BXYZ...BEP20",
+        erc20: "EXYZ...ERC20"
+      };
+      this.walletAddress = addresses[this.selectedNetwork] || "";
+    },
+
+    selectNetwork(networkId) {
+      this.selectedNetwork = networkId;
+      this.updateWalletAddress();
+    },
+
+    getNetworkName(networkId) {
+      const network = this.networks.find(n => n.id === networkId);
+      return network ? network.name : networkId;
+    },
+
+    async copyAddress() {
+      if (!this.walletAddress) return;
+      try {
+        await navigator.clipboard.writeText(this.walletAddress);
+        alert("تم نسخ العنوان بنجاح");
+      } catch {
+        alert("فشل النسخ، يرجى النسخ يدويًا");
+      }
+    },
+
+    async submitDeposit() {
+      if (!this.canSubmit) return;
+
+      this.loadingSubmit = true;
+
+      try {
+        const depositData = {
           userId: this.userId,
-          email: this.userEmail,
+          userEmail: this.userEmail,
+          userPhone: this.userPhone,
+          amount: parseFloat(this.amount),
+          network: this.selectedNetwork,
+          walletAddress: this.walletAddress,
+          status: "pending",
           type: "recharge",
-          amount: this.amount,
-          network: this.network,
-          txid: this.txid,
-          status: "pending",
-          targetBalance: "depositBalance",
           createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        // إضافة طلب الإيداع
+        await addDoc(collection(db, "payments"), depositData);
+
+        // إضافة إلى سجل التعبئة
+        await addDoc(collection(db, "recharge_logs"), {
+          userId: this.userId,
+          userEmail: this.userEmail,
+          userPhone: this.userPhone,
+          amount: parseFloat(this.amount),
+          network: this.selectedNetwork,
+          status: "pending",
+          createdAt: serverTimestamp()
         });
-        
-        // ✅ تم حذف كود إضافة الرصيد من هنا تماماً
-        // ✅ الرصيد يضاف فقط عند موافقة الأدمن في لوحة الإدارة
-        
-        this.message = "تم إرسال الطلب بنجاح، سيتم مراجعة طلبك من قبل الإدارة";
-        this.messageType = "success";
-        this.amount = null;
-        this.txid = "";
-      } catch (e) {
-        this.message = "حدث خطأ في الإرسال";
-        this.messageType = "error";
+
+        // إضافة إشعار للمستخدم
+        await addDoc(collection(db, "users", this.userId, "notifications"), {
+          title: "طلب إيداع جديد",
+          message: `تم إرسال طلب إيداع بقيمة ${this.amount} USDT عبر شبكة ${this.getNetworkName(this.selectedNetwork)}. سيتم مراجعة الطلب من قبل الإدارة.`,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        alert("✅ تم إرسال طلب الإيداع بنجاح، سيتم مراجعته من قبل الإدارة");
+        this.amount = "";
+        await this.loadTransactions();
+
+      } catch (error) {
+        console.error("Error submitting deposit:", error);
+        alert("❌ حدث خطأ أثناء إرسال الطلب، يرجى المحاولة مرة أخرى");
       } finally {
-        this.loading = false;
+        this.loadingSubmit = false;
+      }
+    },
+
+    async loadTransactions() {
+      if (!this.userId) return;
+      
+      this.loadingTx = true;
+      try {
+        // جلب طلبات الإيداع من payments
+        const paymentsQuery = query(
+          collection(db, "payments"),
+          where("userId", "==", this.userId),
+          orderBy("createdAt", "desc")
+        );
+        const paymentsSnap = await getDocs(paymentsQuery);
+        
+        const txList = [];
+        paymentsSnap.forEach(doc => {
+          const data = doc.data();
+          txList.push({
+            id: doc.id,
+            amount: data.amount || 0,
+            network: data.network || "",
+            status: data.status || "pending",
+            createdAt: data.createdAt,
+            type: "deposit"
+          });
+        });
+
+        // جلب سجل التعبئة أيضاً
+        const logsQuery = query(
+          collection(db, "recharge_logs"),
+          where("userId", "==", this.userId),
+          orderBy("createdAt", "desc")
+        );
+        const logsSnap = await getDocs(logsQuery);
+        
+        logsSnap.forEach(doc => {
+          const data = doc.data();
+          // تجنب التكرار
+          if (!txList.some(tx => tx.id === doc.id && tx.type === "deposit")) {
+            txList.push({
+              id: doc.id,
+              amount: data.amount || 0,
+              network: data.network || "",
+              status: data.status || "pending",
+              createdAt: data.createdAt,
+              type: "deposit"
+            });
+          }
+        });
+
+        // ترتيب حسب التاريخ
+        txList.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+
+        this.transactions = txList;
+
+      } catch (error) {
+        console.error("Error loading transactions:", error);
+        this.transactions = [];
+      } finally {
+        this.loadingTx = false;
+      }
+    },
+
+    getTxIcon(status) {
+      switch(status) {
+        case "approved": return "fas fa-check-circle";
+        case "rejected": return "fas fa-times-circle";
+        default: return "fas fa-clock";
+      }
+    },
+
+    getTxIconClass(status) {
+      switch(status) {
+        case "approved": return "tx-icon-approved";
+        case "rejected": return "tx-icon-rejected";
+        default: return "tx-icon-pending";
+      }
+    },
+
+    getStatusClass(status) {
+      switch(status) {
+        case "approved": return "status-approved";
+        case "rejected": return "status-rejected";
+        default: return "status-pending";
+      }
+    },
+
+    getStatusText(status) {
+      switch(status) {
+        case "approved": return "موافق";
+        case "rejected": return "مرفوض";
+        default: return "قيد المراجعة";
       }
     }
   }
@@ -351,514 +449,613 @@ export default {
 <style scoped>
 .recharge-page {
   min-height: 100vh;
-  background: #0b0e11;
-  color: #eaecef;
+  background: #f5f6f8;
+  color: #1a1a2e;
+  padding: 16px;
+  padding-bottom: 100px;
   direction: rtl;
-  font-family: 'Cairo', sans-serif;
+  font-family: 'Cairo', 'Montserrat', sans-serif;
 }
 
-/* Top Nav */
-.top-nav {
+/* ===== الرأس ===== */
+.page-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
-  background: #181a20;
-  border-bottom: 1px solid #2b2f36;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
+  margin-bottom: 20px;
 }
 
-.nav-center {
-  font-weight: 700;
-  font-size: 18px;
-}
-
-.nav-left, .nav-right {
+.back-btn {
+  background: none;
+  border: none;
+  color: #1a1a2e;
   font-size: 20px;
   cursor: pointer;
-  color: #848e9c;
-}
-
-.main-content {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 12px 16px;
-}
-
-/* Asset Card - مصغر */
-.asset-card {
-  background: #1e2329;
-  border-radius: 12px;
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.asset-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.coin-logo-real {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: contain;
-}
-
-.net-icon-real {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  object-fit: contain;
-}
-
-.coin-symbol {
-  display: block;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.coin-name {
-  font-size: 11px;
-  color: #848e9c;
-}
-
-.balance-info {
-  text-align: left;
-}
-
-.balance-info .label {
-  display: block;
-  font-size: 11px;
-  color: #848e9c;
-}
-
-.balance-info .value {
-  font-weight: 700;
-  color: #fcd535;
-  font-size: 14px;
-}
-
-.user-identifier {
-  display: block;
-  font-size: 10px;
-  color: #848e9c;
-  margin-top: 2px;
-  direction: ltr;
-  text-align: left;
-}
-
-/* Dropdown - مسافات أقل */
-.input-section {
-  margin-bottom: 10px;
-}
-
-.section-label {
-  display: block;
-  font-size: 13px;
-  color: #848e9c;
-  margin-bottom: 6px;
-}
-
-.dropdown-container {
-  position: relative;
-  cursor: pointer;
-}
-
-.dropdown-selected {
-  background: #2b2f36;
+  padding: 8px;
   border-radius: 10px;
-  padding: 10px 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border: 1px solid #fcd535;
   transition: all 0.2s;
 }
 
-.dropdown-selected.is-open {
-  border-color: #fcd535;
-  box-shadow: 0 0 5px rgba(252, 213, 53, 0.5);
+.back-btn:hover {
+  background: rgba(0,0,0,0.05);
 }
 
-.selected-info {
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.header-placeholder {
+  width: 40px;
+}
+
+/* ===== بطاقة الرصيد ===== */
+.balance-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+}
+
+.balance-label {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.balance-amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+
+.balance-number {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1a1a2e;
+}
+
+.balance-currency {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* ===== حالة التحميل ===== */
+.loading-state {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.loading-state.small {
+  padding: 20px 0;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1a1a2e;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 12px;
+}
+
+.spinner.small {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* ===== نموذج الإيداع ===== */
+.deposit-form {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 16px 0;
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+/* ===== اختيار الشبكة ===== */
+.network-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.network-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.network-btn:hover {
+  border-color: #9ca3af;
+}
+
+.network-btn.active {
+  border-color: #1a1a2e;
+  background: #f8f9fa;
+}
+
+.network-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.network-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+/* ===== حقل المبلغ ===== */
+.amount-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.amount-input {
+  width: 100%;
+  padding: 14px 16px;
+  padding-left: 70px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  background: #f8f9fa;
+  color: #1a1a2e;
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.amount-input:focus {
+  border-color: #1a1a2e;
+  background: #ffffff;
+}
+
+.amount-input::placeholder {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.currency-label {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.amount-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.amount-hint strong {
+  color: #1a1a2e;
+}
+
+/* ===== معلومات الإيداع ===== */
+.deposit-info {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.info-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.info-row:first-child {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.info-value {
+  font-size: 13px;
+  color: #1a1a2e;
+  font-weight: 500;
+}
+
+.address-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.net-icon {
-  width: 22px;
-  height: 22px;
+.address-value {
+  font-size: 13px;
+  color: #1a1a2e;
+  font-weight: 500;
+  font-family: 'Courier New', monospace;
 }
 
-.net-name {
-  font-weight: 600;
-  font-size: 14px;
+.copy-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-.dropdown-list {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  background: #2b2f36;
-  border-radius: 10px;
-  overflow: hidden;
-  z-index: 100;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  border: 1px solid #fcd535;
+.copy-btn:hover {
+  background: #e5e7eb;
+  color: #1a1a2e;
 }
 
-.dropdown-item {
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background 0.2s;
-}
-
-.dropdown-item:hover {
-  background: #3b3f46;
-}
-
-.dropdown-item.active {
-  background: rgba(252, 213, 53, 0.1);
-}
-
-.item-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.net-title {
-  display: block;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.net-desc {
-  font-size: 10px;
-  color: #848e9c;
-}
-
-.dropdown-item i {
-  color: #fcd535;
-}
-
-/* Deposit Card - مصغر */
-.deposit-card {
-  background: #181a20;
-  border-radius: 14px;
-  padding: 14px;
-  border: 1px solid #2b2f36;
-  margin-bottom: 10px;
-}
-
-.qr-section {
+/* ===== QR Code ===== */
+.qr-card {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
-  margin-bottom: 14px;
+  border: 1px solid #e5e7eb;
 }
 
-.qr-frame {
+.qr-wrapper {
   display: inline-block;
-  background: #fff;
-  padding: 6px;
-  border-radius: 10px;
-  position: relative;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
 .qr-code {
-  width: 100px;
-  height: 100px;
   display: block;
 }
 
-.qr-tip {
-  margin-top: 6px;
-  font-size: 11px;
-  color: #848e9c;
+.qr-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
 }
 
-.address-section {
-  background: #2b2f36;
-  border-radius: 10px;
-  padding: 10px 12px;
-  position: relative;
-  border: 1px solid #fcd535;
-}
-
-.label-row {
+/* ===== رسالة التحذير ===== */
+.warning-box {
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 6px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  color: #92400e;
+  font-size: 12px;
 }
 
-.addr-label {
-  font-size: 11px;
-  color: #848e9c;
+.warning-box i {
+  color: #fbbf24;
+  font-size: 16px;
 }
 
-.network-tag {
-  font-size: 9px;
-  background: rgba(252, 213, 53, 0.1);
-  color: #fcd535;
-  padding: 2px 6px;
-  border-radius: 4px;
+/* ===== زر الإيداع ===== */
+.deposit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #1a1a2e;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
   font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+  margin-top: 18px;
 }
 
-.address-display {
+.deposit-btn:hover:not(:disabled) {
+  background: #2a2a4e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(26, 26, 46, 0.15);
+}
+
+.deposit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-loader {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ===== سجل المعاملات ===== */
+.transactions-section {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+}
+
+.section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.address-text {
-  font-family: monospace;
-  font-size: 12px;
-  word-break: break-all;
-  color: #eaecef;
-  line-height: 1.3;
+.section-header .section-title {
+  margin: 0;
 }
 
-.copy-icon-btn {
+.refresh-btn {
   background: none;
   border: none;
-  color: #fcd535;
-  font-size: 16px;
+  color: #6b7280;
   cursor: pointer;
-  padding: 4px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 16px;
 }
 
-.copy-toast {
-  position: absolute;
-  bottom: -20px;
-  right: 12px;
-  font-size: 10px;
-  color: #0ecb81;
+.refresh-btn:hover:not(:disabled) {
+  background: #f0f2f5;
+  color: #1a1a2e;
 }
 
-/* Warning Box - أعلى الصفحة مباشرة */
-.warning-box {
-  background: rgba(252, 213, 53, 0.08);
-  border: 1px solid rgba(252, 213, 53, 0.3);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 10px;
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== قائمة المعاملات ===== */
+.empty-state {
+  text-align: center;
+  padding: 30px 0;
+  color: #6b7280;
+}
+
+.empty-state i {
+  font-size: 32px;
+  color: #d1d5db;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 14px;
+}
+
+.transactions-list {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 8px;
-  position: relative;
-  backdrop-filter: blur(5px);
+  max-height: 400px;
+  overflow-y: auto;
 }
 
-.warning-icon-circle {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  background: rgba(252, 213, 53, 0.15);
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.transaction-item:hover {
+  border-color: #d1d5db;
+}
+
+.tx-icon {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
-.warning-icon {
-  font-size: 14px;
+.tx-icon-approved {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
-.warning-content {
+.tx-icon-rejected {
+  background: #fce4ec;
+  color: #c62828;
+}
+
+.tx-icon-pending {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.tx-info {
   flex: 1;
   min-width: 0;
 }
 
-.warning-title {
-  color: #fcd535;
+.tx-amount {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.tx-details {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.tx-network {
   font-size: 12px;
-  font-weight: 700;
-  display: block;
-  margin-bottom: 2px;
+  color: #6b7280;
 }
 
-.warning-description {
-  color: #f6465d;
-  font-size: 11px;
-  line-height: 1.4;
-  margin: 0;
+.tx-status {
+  font-size: 12px;
+  font-weight: 600;
 }
 
-.arrow-down {
-  font-size: 16px;
-  min-width: 18px;
-  animation: bounce 2s infinite;
-  margin-top: 3px;
+.status-approved {
+  color: #2e7d32;
 }
 
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(5px);
-  }
+.status-rejected {
+  color: #c62828;
 }
 
-/* Form Section */
-.form-section {
-  margin-bottom: 16px;
+.status-pending {
+  color: #e65100;
 }
 
-.input-group {
-  margin-bottom: 8px;
+.tx-date {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
 }
 
-.input-group label {
-  display: block;
-  font-size: 13px;
-  margin-bottom: 6px;
-  color: #848e9c;
-}
-
-.input-field {
-  background: #2b2f36;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border: 1px solid #fcd535;
-}
-
-.input-field:focus-within {
-  border-color: #fcd535;
-  box-shadow: 0 0 5px rgba(252, 213, 53, 0.5);
-}
-
-.input-field input {
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 12px 0;
-  color: #fff;
-  font-size: 15px;
-  outline: none;
-}
-
-.suffix {
-  color: #848e9c;
-  font-weight: 700;
-  font-size: 13px;
-}
-
-.main-btn {
-  width: 100%;
-  background: #fcd535;
-  color: #0b0e11;
-  border: none;
-  padding: 14px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: opacity 0.2s;
-}
-
-.main-btn:disabled {
-  opacity: 0.5;
-}
-
-.alert {
-  margin-top: 10px;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.alert.success { background: rgba(14, 203, 129, 0.1); color: #0ecb81; }
-.alert.error { background: rgba(246, 70, 93, 0.1); color: #f6465d; }
-
-/* Tips */
-.tips-box {
-  background: rgba(252, 213, 53, 0.05);
-  border-radius: 10px;
-  padding: 12px;
-  border: 1px solid rgba(252, 213, 53, 0.1);
-}
-
-.tips-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #fcd535;
-  font-weight: 700;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-
-.tips-list {
-  margin: 0;
-  padding-right: 18px;
-  font-size: 11px;
-  color: #848e9c;
-  line-height: 1.7;
-}
-
-/* Responsive Warning Box */
+/* ===== تحسينات الجوال ===== */
 @media (max-width: 480px) {
-  .main-content {
-    padding: 10px 12px;
+  .recharge-page {
+    padding: 12px;
+    padding-bottom: 90px;
   }
-  
-  .warning-box {
-    padding: 8px;
-    gap: 6px;
+
+  .balance-number {
+    font-size: 30px;
   }
-  
-  .warning-icon-circle {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
+
+  .network-selector {
+    grid-template-columns: repeat(3, 1fr);
   }
-  
-  .warning-icon {
-    font-size: 12px;
+
+  .network-btn {
+    padding: 10px 6px;
   }
-  
-  .warning-title {
-    font-size: 11px;
-  }
-  
-  .warning-description {
+
+  .network-name {
     font-size: 10px;
   }
-  
-  .arrow-down {
-    font-size: 14px;
-    min-width: 16px;
+
+  .network-icon {
+    width: 28px;
+    height: 28px;
   }
-  
-  .qr-code {
-    width: 80px;
-    height: 80px;
+
+  .amount-input {
+    font-size: 16px;
+    padding: 12px 14px;
+    padding-left: 60px;
+  }
+
+  .deposit-form,
+  .transactions-section {
+    padding: 16px;
+  }
+
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .address-wrapper {
+    width: 100%;
+  }
+
+  .address-value {
+    font-size: 12px;
+    word-break: break-all;
   }
 }
 
-/* Animations */
-.slide-fade-enter-active { transition: all 0.2s ease-out; }
-.slide-fade-enter-from { transform: translateY(-10px); opacity: 0; }
+@media (max-width: 360px) {
+  .network-selector {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 
-.fade-enter-active { transition: opacity 0.3s; }
-.fade-enter-from { opacity: 0; }
+  .network-btn {
+    padding: 8px 4px;
+  }
+
+  .network-name {
+    font-size: 9px;
+  }
+
+  .balance-number {
+    font-size: 26px;
+  }
+}
 </style>
