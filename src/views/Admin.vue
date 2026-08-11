@@ -23,7 +23,7 @@
         الإشعارات
       </button>
       <button :class="['tab', activeTab === 'withdrawLogs' ? 'active' : '']" @click="switchTab('withdrawLogs')">
-        سجل السحوبات
+        سجل السحوبات ({{ withdrawLogs.length }})
       </button>
       <button :class="['tab', activeTab === 'rechargeLogs' ? 'active' : '']" @click="switchTab('rechargeLogs')">
         سجل التعبئة
@@ -57,11 +57,19 @@
             <p><strong>الشبكة:</strong> {{ req.network || '—' }}</p>
             <p><strong>المحفظة:</strong> {{ req.wallet || req.walletAddress || '—' }}</p>
             <p><strong>مستوى VIP:</strong> {{ req.vipLevel || '—' }}</p>
-            <p><strong>يوم السحب:</strong> {{ req.withdrawDay || '—' }}</p>
+            <p><strong>الحالة:</strong> 
+              <span :class="{
+                'status-approved': req.status === 'approved',
+                'status-rejected': req.status === 'rejected',
+                'status-pending': req.status === 'pending'
+              }">
+                {{ req.status === 'approved' ? 'موافق' : req.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' }}
+              </span>
+            </p>
             <p class="muted">تم الإنشاء: {{ formatDate(req.createdAt) }}</p>
             <div class="card-actions">
-              <button class="btn gold" type="button" @click.stop="openApproveModal(req, 'withdraw')" :disabled="processingId === req.id">موافقة</button>
-              <button class="btn red" type="button" @click.stop="openRejectModal(req, 'withdraw')" :disabled="processingId === req.id">رفض</button>
+              <button class="btn gold" type="button" @click.stop="openApproveModal(req, 'withdraw')" :disabled="processingId === req.id || req.status === 'approved'">موافقة</button>
+              <button class="btn red" type="button" @click.stop="openRejectModal(req, 'withdraw')" :disabled="processingId === req.id || req.status === 'rejected'">رفض</button>
               <button class="btn gold-outline" type="button" @click.stop="viewWithdrawDetails(req)">تفاصيل</button>
             </div>
           </div>
@@ -216,7 +224,7 @@
       <div class="panel-header">
         <h2>سجل السحوبات</h2>
         <div class="controls">
-          <input v-model="withdrawLogFilter" placeholder="بحث بالسعر أو البريد..." />
+          <input v-model="withdrawLogFilter" placeholder="بحث بالبريد أو المحفظة..." />
           <select v-model="withdrawLogSort">
             <option value="newest">الأحدث أولاً</option>
             <option value="oldest">الأقدم أولاً</option>
@@ -229,24 +237,36 @@
 
       <div v-if="loadingWithdrawLogs" class="loading">⏳ جاري تحميل السجلات...</div>
       <div v-else>
-        <div v-if="withdrawLogs.length === 0" class="empty">لا توجد سجلات.</div>
+        <div v-if="filteredWithdrawLogs.length === 0" class="empty">لا توجد سجلات.</div>
         <div class="cards">
           <div class="card log-card" v-for="l in filteredWithdrawLogs" :key="l.id">
-            <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ l.userPhone || l.phoneNumber || '—' }}</span></p>
-            <p><strong>البريد:</strong> <span class="gold-text">{{ l.email || l.userEmail || '—' }}</span></p>
+            <p><strong>معرف المعاملة:</strong> <span class="gold-text">{{ l.transactionId || l.id || '—' }}</span></p>
+            <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ l.userPhone || '—' }}</span></p>
+            <p><strong>البريد:</strong> <span class="gold-text">{{ l.userEmail || l.email || '—' }}</span></p>
             <p><strong>المبلغ:</strong> <span class="gold-text">{{ l.amount }} USDT</span></p>
-            <p><strong>المحفظة:</strong> <span class="gold-text">{{ l.wallet || l.walletAddress || '—' }}</span></p>
-            <p><strong>النوع:</strong> 
+            <p><strong>الشبكة:</strong> {{ l.network || '—' }}</p>
+            <p><strong>عنوان المحفظة:</strong> <span class="gold-text">{{ l.wallet || l.walletAddress || '—' }}</span></p>
+            <p><strong>مستوى VIP:</strong> {{ l.vipLevel || '—' }}</p>
+            <p><strong>المبلغ المحجوز:</strong> {{ l.lockedAmountAtWithdraw || '—' }} USDT</p>
+            <p><strong>الرصيد المتاح:</strong> {{ l.availableBalanceAtWithdraw || '—' }} USDT</p>
+            <p><strong>الحالة:</strong> 
               <span :class="{
-                'status-approved': l.type === 'approved',
-                'status-rejected': l.type === 'rejected'
+                'status-approved': l.status === 'approved' || l.type === 'approved',
+                'status-rejected': l.status === 'rejected' || l.type === 'rejected',
+                'status-pending': l.status === 'pending' || l.type === 'pending'
               }">
-                {{ l.type === 'approved' ? 'موافق' : l.type === 'rejected' ? 'مرفوض' : l.type }}
+                {{ l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
+                   l.status === 'rejected' || l.type === 'rejected' ? 'مرفوض' : 
+                   l.status || l.type || 'قيد المراجعة' }}
               </span>
             </p>
-            <p v-if="l.reason"><strong>السبب:</strong> {{ l.reason }}</p>
+            <p v-if="l.reason || l.rejectionReason"><strong>سبب الرفض:</strong> {{ l.reason || l.rejectionReason }}</p>
             <p v-if="l.adminMessage"><strong>رسالة الأدمن:</strong> {{ l.adminMessage }}</p>
-            <p class="muted">الوقت: {{ formatDate(l.createdAt) }}</p>
+            <p v-if="l.userMessage"><strong>رسالة المستخدم:</strong> {{ l.userMessage }}</p>
+            <p v-if="l.adminAction"><strong>إجراء الأدمن:</strong> {{ l.adminAction }}</p>
+            <p class="muted">تاريخ الطلب: {{ formatDate(l.createdAt) }}</p>
+            <p v-if="l.processedAt" class="muted">تاريخ المعالجة: {{ formatDate(l.processedAt) }}</p>
+            <p v-if="l.approvedAt" class="muted">تاريخ الموافقة: {{ formatDate(l.approvedAt) }}</p>
           </div>
         </div>
       </div>
@@ -355,17 +375,31 @@
       </div>
     </div>
 
-    <!-- Modal تفاصيل السحب/التعبئة -->
+    <!-- Modal تفاصيل الطلب -->
     <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
       <div class="modal">
         <h3>تفاصيل الطلب</h3>
+        <p v-if="modalType === 'withdraw'"><strong>معرف المعاملة:</strong> <span class="gold-text">{{ modalData.transactionId || modalData.id || '—' }}</span></p>
         <p v-if="modalType === 'withdraw'"><strong>رقم الهاتف:</strong> <span class="gold-text">{{ modalData.userPhone || modalData.phoneNumber || '—' }}</span></p>
         <p v-if="modalType === 'withdraw'"><strong>البريد:</strong> <span class="gold-text">{{ modalData.email || modalData.userEmail }}</span></p>
         <p v-if="modalType === 'withdraw'"><strong>المبلغ:</strong> <span class="gold-text">{{ modalData.amount }} USDT</span></p>
         <p v-if="modalType === 'withdraw'"><strong>الشبكة:</strong> {{ modalData.network }}</p>
         <p v-if="modalType === 'withdraw'"><strong>المحفظة:</strong> {{ modalData.wallet || modalData.walletAddress }}</p>
         <p v-if="modalType === 'withdraw'"><strong>مستوى VIP:</strong> {{ modalData.vipLevel || '—' }}</p>
-        <p v-if="modalType === 'withdraw'"><strong>يوم السحب:</strong> {{ modalData.withdrawDay || '—' }}</p>
+        <p v-if="modalType === 'withdraw'"><strong>المبلغ المحجوز:</strong> {{ modalData.lockedAmountAtWithdraw || '—' }} USDT</p>
+        <p v-if="modalType === 'withdraw'"><strong>الرصيد المتاح:</strong> {{ modalData.availableBalanceAtWithdraw || '—' }} USDT</p>
+        <p v-if="modalType === 'withdraw'"><strong>الحالة:</strong> 
+          <span :class="{
+            'status-approved': modalData.status === 'approved',
+            'status-rejected': modalData.status === 'rejected',
+            'status-pending': modalData.status === 'pending'
+          }">
+            {{ modalData.status === 'approved' ? 'موافق' : modalData.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' }}
+          </span>
+        </p>
+        <p v-if="modalData.reason"><strong>سبب الرفض:</strong> {{ modalData.reason }}</p>
+        <p v-if="modalData.adminMessage"><strong>رسالة الأدمن:</strong> {{ modalData.adminMessage }}</p>
+        <p v-if="modalData.userMessage"><strong>رسالة المستخدم:</strong> {{ modalData.userMessage }}</p>
         
         <p v-if="modalType === 'recharge'"><strong>رقم الهاتف:</strong> <span class="gold-text">{{ modalData.userPhone || modalData.phoneNumber || '—' }}</span></p>
         <p v-if="modalType === 'recharge'"><strong>البريد:</strong> <span class="gold-text">{{ modalData.email || modalData.userEmail }}</span></p>
@@ -375,8 +409,8 @@
         
         <p class="muted">تم الإنشاء: {{ formatDate(modalData.createdAt) }}</p>
         <div class="modal-actions">
-          <button v-if="modalType === 'withdraw'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'withdraw')" :disabled="processingId === modalData.id">موافقة</button>
-          <button v-if="modalType === 'withdraw'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'withdraw')" :disabled="processingId === modalData.id">رفض</button>
+          <button v-if="modalType === 'withdraw'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'withdraw')" :disabled="processingId === modalData.id || modalData.status === 'approved'">موافقة</button>
+          <button v-if="modalType === 'withdraw'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'withdraw')" :disabled="processingId === modalData.id || modalData.status === 'rejected'">رفض</button>
           <button v-if="modalType === 'recharge'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'recharge')" :disabled="processingId === modalData.id || modalData.status === 'approved'">موافقة</button>
           <button v-if="modalType === 'recharge'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'recharge')" :disabled="processingId === modalData.id || modalData.status === 'rejected'">رفض</button>
           <button class="btn gold-outline" type="button" @click="closeModal">إغلاق</button>
@@ -538,8 +572,12 @@
               <p><strong>الشبكة:</strong> {{ item.network || '—' }}</p>
               <p><strong>المحفظة:</strong> {{ item.wallet || item.walletAddress || '—' }}</p>
               <p><strong>الحالة:</strong> 
-                <span :class="item.type === 'approved' ? 'status-approved' : 'status-rejected'">
-                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type }}
+                <span :class="item.status === 'approved' || item.type === 'approved' ? 'status-approved' : 
+                               item.status === 'rejected' || item.type === 'rejected' ? 'status-rejected' : 
+                               'status-pending'">
+                  {{ item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
+                     item.status === 'rejected' || item.type === 'rejected' ? 'مرفوض' : 
+                     item.status || item.type || 'قيد المراجعة' }}
                 </span>
               </p>
               <p v-if="item.reason"><strong>السبب:</strong> {{ item.reason }}</p>
@@ -823,7 +861,8 @@ export default {
           (l) =>
             String(l.amount || "").includes(f) ||
             (l.userPhone || "").toLowerCase().includes(f) ||
-            (l.email || l.userEmail || "").toLowerCase().includes(f)
+            (l.userEmail || l.email || "").toLowerCase().includes(f) ||
+            (l.wallet || l.walletAddress || "").toLowerCase().includes(f)
         );
       }
       
@@ -1329,6 +1368,7 @@ export default {
     async loadWithdrawRequests() {
       try {
         this.loadingWithdraws = true;
+        // جلب جميع طلبات السحب من withdraw_requests
         const snap = await getDocs(collection(db, "withdraw_requests"));
         this.withdraws = snap.docs.map((d) => {
           const data = d.data() || {};
@@ -1339,22 +1379,33 @@ export default {
           }
           return {
             id: d.id,
+            transactionId: data.transactionId || null,
             userId: data.userId,
             userPhone: data.userPhone || null,
             userEmail: data.userEmail || data.email,
             email: data.userEmail || data.email,
-            amount: data.amount,
-            network: data.network,
-            wallet: data.wallet,
-            walletAddress: data.walletAddress || data.wallet,
-            vipLevel: data.vipLevel,
-            withdrawDay: data.withdrawDay,
-            oldBalance: data.oldBalance ?? null,
+            amount: data.amount || 0,
+            network: data.network || "",
+            wallet: data.wallet || data.walletAddress || "",
+            walletAddress: data.walletAddress || data.wallet || "",
+            status: data.status || "pending",
+            vipLevel: data.vipLevel || "",
+            withdrawDay: data.withdrawDay || "",
+            adminAction: data.adminAction || "",
+            adminMessage: data.adminMessage || "",
+            userMessage: data.userMessage || "",
+            reason: data.reason || "",
+            lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
+            availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
             createdAt,
+            processedAt: data.processedAt || null,
+            approvedAt: data.approvedAt || null
           };
         });
+        console.log(`✅ تم تحميل ${this.withdraws.length} طلب سحب من withdraw_requests`);
       } catch (e) {
-        alert("خطأ عند تحميل طلبات السحب");
+        console.error("خطأ عند تحميل طلبات السحب:", e);
+        alert("خطأ عند تحميل طلبات السحب: " + e.message);
       } finally {
         this.loadingWithdraws = false;
       }
@@ -1435,18 +1486,18 @@ export default {
       this.processingId = req.id;
       
       try {
-        // العملية الرئيسية: حذف طلب السحب
+        // تحديث حالة طلب السحب في withdraw_requests
         const r = doc(db, "withdraw_requests", req.id);
-        const ex = await getDoc(r);
-        if (ex.exists()) {
-          await deleteDoc(r);
-          console.log("✅ تم حذف طلب السحب بنجاح");
-        } else {
-          console.warn("⚠️ طلب السحب غير موجود، قد يكون تم معالجته مسبقاً");
-        }
+        await updateDoc(r, { 
+          status: "approved",
+          adminAction: "approved",
+          adminMessage: message || "",
+          processedAt: serverTimestamp(),
+          approvedAt: serverTimestamp()
+        });
+        console.log("✅ تم تحديث حالة طلب السحب إلى approved");
         
         // العمليات الفرعية - كل منها في try-catch منفصل
-        // حتى لا تؤثر فشل عملية على نجاح العملية الرئيسية
         
         // 1. إنشاء سجل في withdraw_logs
         try {
@@ -1519,7 +1570,7 @@ export default {
         
       } catch (e) {
         console.error("❌ خطأ في الموافقة:", e);
-        alert("خطأ في الموافقة");
+        alert("خطأ في الموافقة: " + e.message);
       } finally {
         this.processingId = null;
         this.closeModal();
@@ -1688,15 +1739,16 @@ export default {
       this.processingId = req.id;
       
       try {
-        // العملية الرئيسية: حذف طلب السحب
+        // تحديث حالة طلب السحب في withdraw_requests
         const r = doc(db, "withdraw_requests", req.id);
-        const ex = await getDoc(r);
-        if (ex.exists()) {
-          await deleteDoc(r);
-          console.log("✅ تم حذف طلب السحب بنجاح");
-        } else {
-          console.warn("⚠️ طلب السحب غير موجود، قد يكون تم معالجته مسبقاً");
-        }
+        await updateDoc(r, { 
+          status: "rejected",
+          adminAction: "rejected",
+          reason: reason,
+          adminMessage: reason,
+          processedAt: serverTimestamp()
+        });
+        console.log("✅ تم تحديث حالة طلب السحب إلى rejected");
         
         // العمليات الفرعية - كل منها في try-catch منفصل
         
@@ -1787,7 +1839,7 @@ export default {
         
       } catch (e) {
         console.error("❌ خطأ في رفض الطلب:", e);
-        alert("خطأ في رفض الطلب");
+        alert("خطأ في رفض الطلب: " + e.message);
       } finally {
         this.processingId = null;
         this.closeModal();
@@ -1831,20 +1883,44 @@ export default {
     async loadWithdrawLogs() {
       try {
         this.loadingWithdrawLogs = true;
-        const snap = await getDocs(collection(db, "withdraw_logs"));
+        // جلب جميع طلبات السحب من withdraw_requests لعرضها كسجل
+        const snap = await getDocs(collection(db, "withdraw_requests"));
         this.withdrawLogs = snap.docs.map((d) => {
           const data = d.data() || {};
+          let createdAt = Date.now();
+          if (data.createdAt) {
+            if (typeof data.createdAt === "number") createdAt = data.createdAt;
+            else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
+          }
           return {
             id: d.id,
-            ...data,
+            transactionId: data.transactionId || null,
+            userId: data.userId || null,
             userPhone: data.userPhone || null,
-            email: data.email || data.userEmail,
-            userEmail: data.userEmail || data.email,
-            wallet: data.wallet || data.walletAddress || null,
-            walletAddress: data.walletAddress || data.wallet || null,
+            userEmail: data.userEmail || data.email || null,
+            email: data.userEmail || data.email || null,
+            amount: data.amount || 0,
+            network: data.network || "",
+            wallet: data.wallet || data.walletAddress || "",
+            walletAddress: data.walletAddress || data.wallet || "",
+            status: data.status || "pending",
+            type: data.status || "pending",
+            vipLevel: data.vipLevel || "",
+            withdrawDay: data.withdrawDay || "",
+            adminAction: data.adminAction || "",
+            adminMessage: data.adminMessage || "",
+            userMessage: data.userMessage || "",
+            reason: data.reason || "",
+            lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
+            availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
+            createdAt,
+            processedAt: data.processedAt || null,
+            approvedAt: data.approvedAt || null
           };
         });
+        console.log(`✅ تم تحميل ${this.withdrawLogs.length} سجل سحب من withdraw_requests`);
       } catch (e) {
+        console.error("خطأ عند تحميل سجل السحوبات:", e);
         this.withdrawLogs = [];
       } finally {
         this.loadingWithdrawLogs = false;
@@ -2372,32 +2448,21 @@ export default {
     
     async loadUserWithdrawHistory(userId) {
       try {
-        const withdrawLogsQuery = query(
-          collection(db, "withdraw_logs"),
+        // جلب سجل السحوبات من withdraw_requests
+        const withdrawRequestsQuery = query(
+          collection(db, "withdraw_requests"),
           where("userId", "==", userId),
           orderBy("createdAt", "desc")
         );
-        const withdrawSnap = await getDocs(withdrawLogsQuery);
+        const withdrawSnap = await getDocs(withdrawRequestsQuery);
         
-        if (!withdrawSnap.empty) {
-          this.accountWithdrawHistory = withdrawSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-        } else {
-          const transactionsQuery = query(
-            collection(db, "transactions"),
-            where("userId", "==", userId),
-            where("type", "==", "withdraw"),
-            orderBy("createdAt", "desc")
-          );
-          const transSnap = await getDocs(transactionsQuery);
-          this.accountWithdrawHistory = transSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            type: doc.data().status
-          }));
-        }
+        this.accountWithdrawHistory = withdrawSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          status: doc.data().status || "pending"
+        }));
+        
+        console.log(`✅ تم تحميل ${this.accountWithdrawHistory.length} سجل سحب للمستخدم`);
       } catch (error) {
         console.error("خطأ في جلب سجل السحوبات:", error);
         this.accountWithdrawHistory = [];
