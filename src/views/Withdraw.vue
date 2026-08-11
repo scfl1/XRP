@@ -19,6 +19,18 @@
             <span class="balance-currency-badge">USDT</span>
           </div>
         </div>
+        
+        <!-- تفاصيل الرصيد المحجوز والمتاح -->
+        <div v-if="vipLockedAmount > 0" class="balance-details">
+          <div class="balance-detail-item">
+            <span class="detail-label">المبلغ المحجوز للـVIP:</span>
+            <span class="detail-value locked">{{ vipLockedAmount.toFixed(2) }} USDT</span>
+          </div>
+          <div class="balance-detail-item">
+            <span class="detail-label">المبلغ المتاح للسحب:</span>
+            <span class="detail-value available">{{ availableBalance.toFixed(2) }} USDT</span>
+          </div>
+        </div>
       </div>
 
       <!-- حالة VIP -->
@@ -39,6 +51,10 @@
         <div class="withdraw-condition">
           <i class="fas fa-info-circle"></i>
           <span>يمكنك السحب مرة واحدة كل 24 ساعة</span>
+        </div>
+        <div v-if="vipLockedAmount > 0" class="withdraw-condition locked-info">
+          <i class="fas fa-lock"></i>
+          <span>المبلغ المحجوز للـVIP: <strong>{{ vipLockedAmount.toFixed(2) }} USDT</strong> (غير قابل للسحب)</span>
         </div>
       </div>
 
@@ -66,6 +82,10 @@
           <span class="input-currency-badge">USDT</span>
         </div>
         <span v-if="amountError" class="input-error">{{ amountError }}</span>
+        <span v-if="vipLockedAmount > 0 && amount" class="input-hint">
+          <i class="fas fa-info-circle"></i>
+          المتاح للسحب: {{ availableBalance.toFixed(2) }} USDT
+        </span>
       </div>
 
       <!-- الشبكة -->
@@ -176,6 +196,11 @@
         </div>
         
         <div class="summary-item">
+          <span>المبلغ المتاح للسحب:</span>
+          <span class="summary-value">{{ availableBalance.toFixed(2) }} USDT</span>
+        </div>
+        
+        <div class="summary-item">
           <span>الشبكة:</span>
           <span class="summary-value">{{ network }}</span>
         </div>
@@ -257,6 +282,7 @@ export default {
   data() {
     return {
       balance: 0,
+      vipLockedAmount: 0,
       amount: "",
       network: "",
       wallet: "",
@@ -286,6 +312,10 @@ export default {
   },
 
   computed: {
+    availableBalance() {
+      return Math.max(0, this.balance - this.vipLockedAmount);
+    },
+
     isFormValid() {
       return (
         this.amount && 
@@ -297,7 +327,8 @@ export default {
         this.password &&
         this.userVipLevel &&
         this.balance >= Number(this.amount) &&
-        Number(this.amount) > 0
+        Number(this.amount) > 0 &&
+        Number(this.amount) <= this.availableBalance
       );
     },
 
@@ -376,6 +407,7 @@ export default {
 
     applyUserData(userData) {
       this.balance = userData.balance || 0;
+      this.vipLockedAmount = userData.vipLockedAmount || 0;
       this.userPhone = userData.phoneNumber || "";
       this.userEmail = userData.email || "";
       this.userVipLevel = userData.vipLevel || null;
@@ -406,6 +438,7 @@ export default {
           
           const cacheData = {
             balance: userData.balance || 0,
+            vipLockedAmount: userData.vipLockedAmount || 0,
             phoneNumber: userData.phoneNumber || "",
             email: userData.email || "",
             vipLevel: userData.vipLevel || null
@@ -437,6 +470,8 @@ export default {
         this.amountError = "الرجاء إدخال المبلغ";
       } else if (this.amount > this.balance) {
         this.amountError = "المبلغ أكبر من رصيدك";
+      } else if (this.amount > this.availableBalance) {
+        this.amountError = `المبلغ أكبر من الرصيد المتاح للسحب (${this.availableBalance.toFixed(2)} USDT)`;
       } else if (this.amount <= 0) {
         this.amountError = "الرجاء إدخال مبلغ أكبر من صفر";
       } else {
@@ -584,9 +619,17 @@ export default {
 
           const userData = userSnap.data();
           const currentBalance = userData.balance || 0;
+          const currentLockedAmount = userData.vipLockedAmount || 0;
+          const currentAvailableBalance = currentBalance - currentLockedAmount;
           
+          // التحقق من الرصيد الكافي للسحب
           if (currentBalance < withdrawAmount) {
             throw new Error("رصيد غير كافٍ للسحب");
+          }
+
+          // التحقق من أن المبلغ المطلوب لا يتجاوز الرصيد المتاح
+          if (withdrawAmount > currentAvailableBalance) {
+            throw new Error(`المبلغ المطلوب (${withdrawAmount.toFixed(2)} USDT) يتجاوز الرصيد المتاح للسحب (${currentAvailableBalance.toFixed(2)} USDT)`);
           }
 
           if (userData.blocked) {
@@ -615,7 +658,9 @@ export default {
             adminMessage: "",
             userMessage: "",
             reason: "",
-            withdrawFrom: "balance"
+            withdrawFrom: "balance",
+            lockedAmountAtWithdraw: currentLockedAmount,
+            availableBalanceAtWithdraw: currentAvailableBalance
           });
 
           // إنشاء سجل المعاملة
@@ -634,7 +679,9 @@ export default {
             vipLevel: this.userVipLevel,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-            withdrawFrom: "balance"
+            withdrawFrom: "balance",
+            lockedAmountAtWithdraw: currentLockedAmount,
+            availableBalanceAtWithdraw: currentAvailableBalance
           });
         });
 
@@ -762,6 +809,36 @@ export default {
   border-radius: 6px;
 }
 
+/* تفاصيل الرصيد */
+.balance-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.balance-detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.detail-label {
+  color: #6b7280;
+}
+
+.detail-value {
+  font-weight: 600;
+}
+
+.detail-value.locked {
+  color: #f59e0b;
+}
+
+.detail-value.available {
+  color: #22c55e;
+}
+
 /* حالة VIP */
 .vip-status-box {
   background: #f8f9fa;
@@ -815,6 +892,21 @@ export default {
 
 .withdraw-condition i {
   color: #6b7280;
+}
+
+.withdraw-condition.locked-info {
+  background: #fef3c7;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #fde68a;
+}
+
+.withdraw-condition.locked-info i {
+  color: #f59e0b;
+}
+
+.withdraw-condition.locked-info strong {
+  color: #1a1a2e;
 }
 
 /* رسائل */
@@ -908,6 +1000,17 @@ export default {
   color: #dc2626;
   font-size: 12px;
   margin-top: 6px;
+}
+
+.input-hint {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.input-hint i {
+  color: #1a1a2e;
 }
 
 /* زر إظهار/إخفاء كلمة المرور */
