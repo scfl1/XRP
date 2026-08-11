@@ -18,7 +18,7 @@
     <a
       class="circle-btn x-btn"
       ref="xBtn"
-      href="https://x.com/"
+      href="https://x.com/XRP_Avengers"
       target="_blank"
       rel="noopener noreferrer"
       @mousedown="startDrag"
@@ -52,27 +52,6 @@
 
         <div class="support-menu-body">
 
-          <div class="support-item" @click="openWhatsApp">
-
-            <div class="support-icon whatsapp">
-              <i class="fab fa-whatsapp"></i>
-            </div>
-
-            <div class="support-info">
-              <span class="support-name">
-                {{ t('whatsapp') }}
-              </span>
-
-              <span class="support-desc">
-                {{ t('quickContact') }}
-              </span>
-            </div>
-
-            <i class="fas fa-chevron-left support-arrow"></i>
-
-          </div>
-
-
           <div class="support-item" @click="openTelegram">
 
             <div class="support-icon telegram">
@@ -86,27 +65,6 @@
 
               <span class="support-desc">
                 {{ t('supportCommunity') }}
-              </span>
-            </div>
-
-            <i class="fas fa-chevron-left support-arrow"></i>
-
-          </div>
-
-
-          <div class="support-item" @click="openTelegramChannel">
-
-            <div class="support-icon telegram">
-              <i class="fab fa-telegram"></i>
-            </div>
-
-            <div class="support-info">
-              <span class="support-name">
-                {{ t('communityChannel') }}
-              </span>
-
-              <span class="support-desc">
-                XRP Community
               </span>
             </div>
 
@@ -745,7 +703,7 @@ export default {
 
       },
 
-      telegramLink: "",
+      telegramLink: "t.me/XRP1Ripple",
 
       telegramChannelLink: "",
 
