@@ -703,7 +703,7 @@ export default {
 
       },
 
-      telegramLink: "t.me/XRP1Ripple",
+      telegramLink: "https://t.me/XRP1Ripple",
 
       telegramChannelLink: "",
 
