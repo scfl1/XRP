@@ -145,7 +145,19 @@
           <div class="card user-card" v-for="u in filteredUsers" :key="u.id">
             <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ u.phoneNumber || '—' }}</span></p>
             <p><strong>البريد:</strong> <span class="gold-text">{{ u.email || '—' }}</span></p>
-            <p><strong>الرصيد:</strong> <span class="gold-text">{{ formatBalance(u.balance) }} USDT</span></p>
+            
+            <!-- معلومات الرصيد المحسنة -->
+            <p><strong>الرصيد الإجمالي:</strong> <span class="gold-text">{{ formatBalance(u.balance) }} USDT</span></p>
+            <p v-if="u.vipLockedAmount > 0">
+              <strong>مبلغ VIP المحجوز:</strong> 
+              <span class="gold-text" style="color: #fbbf24;">{{ formatBalance(u.vipLockedAmount) }} USDT</span>
+              <span style="font-size: 10px; color: rgba(255,255,255,0.5);">(غير قابل للسحب)</span>
+            </p>
+            <p v-if="u.vipLockedAmount > 0">
+              <strong>المتاح للسحب:</strong> 
+              <span class="gold-text" style="color: #34d399;">{{ formatBalance(u.availableBalance) }} USDT</span>
+            </p>
+            
             <p><strong>الحالة:</strong> {{ u.blocked ? 'محظور' : 'فعال' }}</p>
             <p><strong>طريقة التسجيل:</strong> 
               <span :class="{
@@ -471,8 +483,18 @@
           </div>
           
           <div class="detail-item">
-            <label>الرصيد:</label>
+            <label>الرصيد الإجمالي:</label>
             <div class="detail-value gold-text">{{ formatBalance(accountDetails.balance) }} USDT</div>
+          </div>
+          
+          <div class="detail-item" v-if="accountDetails.vipLockedAmount > 0">
+            <label>مبلغ VIP المحجوز:</label>
+            <div class="detail-value" style="color: #fbbf24;">{{ formatBalance(accountDetails.vipLockedAmount) }} USDT</div>
+          </div>
+          
+          <div class="detail-item" v-if="accountDetails.vipLockedAmount > 0">
+            <label>المتاح للسحب:</label>
+            <div class="detail-value" style="color: #34d399;">{{ formatBalance(accountDetails.availableBalance) }} USDT</div>
           </div>
           
           <div class="detail-item">
@@ -680,6 +702,8 @@ export default {
         vipExpiryDate: null,
         createdAt: null,
         balance: 0,
+        vipLockedAmount: 0,
+        availableBalance: 0,
         blocked: false,
         userId: null
       },
@@ -900,11 +924,16 @@ export default {
             balance = data.vipBalance + (data.depositBalance || 0);
           }
           
+          const vipLockedAmount = data.vipLockedAmount || 0;
+          const availableBalance = Math.max(0, balance - vipLockedAmount);
+          
           return {
             id: d.id,
             phoneNumber: data.phoneNumber || "",
             email: data.email || "",
             balance: balance,
+            vipLockedAmount: vipLockedAmount,
+            availableBalance: availableBalance,
             blocked: data.blocked ?? false,
             notificationsCount: data.notificationsCount ?? 0,
             registrationMethod: data.registrationMethod || (data.phoneNumber ? 'phone' : 'email'),
@@ -2316,6 +2345,9 @@ export default {
           }
         }
         
+        const vipLockedAmount = user.vipLockedAmount || 0;
+        const availableBalance = Math.max(0, user.balance - vipLockedAmount);
+        
         this.accountDetails = {
           email: user.email || "—",
           phoneNumber: user.phoneNumber || "—",
@@ -2323,6 +2355,8 @@ export default {
           vipExpiryDate: vipExpiryDate,
           createdAt: user.createdAt || null,
           balance: user.balance || 0,
+          vipLockedAmount: vipLockedAmount,
+          availableBalance: availableBalance,
           blocked: user.blocked || false,
           userId: user.id
         };
@@ -2423,6 +2457,8 @@ export default {
         vipExpiryDate: null,
         createdAt: null,
         balance: 0,
+        vipLockedAmount: 0,
+        availableBalance: 0,
         blocked: false,
         userId: null
       };
