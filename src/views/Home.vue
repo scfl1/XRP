@@ -102,6 +102,28 @@
 
         </div>
 
+        <!-- ================= BALANCE DETAILS (VIP Locked) ================= -->
+        <div v-if="vipLockedAmount > 0" class="balance-details">
+          <div class="balance-detail-item">
+            <span class="detail-label">
+              <i class="fas fa-lock"></i>
+              {{ t('vipLocked') }}
+            </span>
+            <span class="detail-value locked">
+              {{ balanceVisible ? formatNumber(vipLockedAmount) : '••••' }} USDT
+            </span>
+          </div>
+          <div class="balance-detail-item">
+            <span class="detail-label">
+              <i class="fas fa-arrow-up"></i>
+              {{ t('availableForWithdraw') }}
+            </span>
+            <span class="detail-value available">
+              {{ balanceVisible ? formatNumber(availableBalance) : '••••' }} USDT
+            </span>
+          </div>
+        </div>
+
 
         <!-- تم حذف رسالة "يمكنك استخدام هذا الرصيد في الترقية أو السحب" -->
 
@@ -461,6 +483,8 @@ export default {
 
       totalBalance: 0,
 
+      vipLockedAmount: 0,
+
       currentUserUid: null,
 
       joinDate: "",
@@ -547,7 +571,11 @@ export default {
 
           xrp: "XRP",
 
-          profile: "حسابي"
+          profile: "حسابي",
+
+          vipLocked: "مبلغ VIP المحجوز",
+
+          availableForWithdraw: "المتاح للسحب"
 
         },
 
@@ -590,7 +618,11 @@ export default {
 
           xrp: "XRP",
 
-          profile: "Account"
+          profile: "Account",
+
+          vipLocked: "VIP Locked Amount",
+
+          availableForWithdraw: "Available for Withdraw"
 
         }
 
@@ -604,6 +636,10 @@ export default {
 
     currentPath() {
       return this.$route.path;
+    },
+
+    availableBalance() {
+      return Math.max(0, this.totalBalance - this.vipLockedAmount);
     }
 
   },
@@ -652,6 +688,8 @@ export default {
 
           this.totalBalance = 0;
 
+          this.vipLockedAmount = 0;
+
           this.$router.push("/login");
 
           return;
@@ -681,6 +719,8 @@ export default {
 
           this.totalBalance = 0;
 
+          this.vipLockedAmount = 0;
+
           return;
 
         }
@@ -700,6 +740,13 @@ export default {
           Number(
             data.balance ??
             data.vipBalance ??
+            0
+          );
+
+        // قراءة المبلغ المحجوز للـVIP
+        this.vipLockedAmount =
+          Number(
+            data.vipLockedAmount ??
             0
           );
 
@@ -1282,6 +1329,94 @@ export default {
   font-size: 13px;
 
   font-weight: 700;
+
+}
+
+
+/* =========================================================
+   BALANCE DETAILS (VIP Locked)
+========================================================= */
+
+.balance-details {
+
+  position: relative;
+
+  z-index: 2;
+
+  margin-top: 16px;
+
+  padding: 12px 16px;
+
+  background: rgba(255,255,255,0.06);
+
+  border-radius: 14px;
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+}
+
+
+.balance-detail-item {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  padding: 4px 0;
+
+  font-size: 13px;
+
+}
+
+
+.balance-detail-item:first-child {
+
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+
+  padding-bottom: 6px;
+
+  margin-bottom: 4px;
+
+}
+
+
+.detail-label {
+
+  color: rgba(255,255,255,0.7);
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+}
+
+
+.detail-label i {
+
+  font-size: 12px;
+
+}
+
+
+.detail-value {
+
+  font-weight: 700;
+
+}
+
+
+.detail-value.locked {
+
+  color: #fbbf24;
+
+}
+
+
+.detail-value.available {
+
+  color: #34d399;
 
 }
 
@@ -2173,6 +2308,20 @@ export default {
   .hero-amount {
 
     font-size: 42px;
+
+  }
+
+
+  .balance-details {
+
+    padding: 10px 12px;
+
+  }
+
+
+  .balance-detail-item {
+
+    font-size: 12px;
 
   }
 
