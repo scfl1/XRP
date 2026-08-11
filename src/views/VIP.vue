@@ -658,22 +658,36 @@ export default {
             throw new Error("المستخدم غير موجود");
           }
           
-          const balance = userSnap.data().balance || 0;
+          const userData = userSnap.data();
+          const balance = userData.balance || 0;
+          
+          // التحقق من الرصيد الكافي
           if (balance < this.selectedPlan.price) {
             throw new Error("الرصيد غير كافٍ لشراء هذا المستوى");
           }
+
+          // حساب المبلغ المحجوز الجديد
+          let currentLockedAmount = userData.vipLockedAmount || 0;
+          const newLockedAmount = currentLockedAmount + this.selectedPlan.price;
 
           const now = new Date();
           const vipStart = Timestamp.now();
           const vipEnd = Timestamp.fromMillis(now.getTime() + this.selectedPlan.durationSeconds * 1000);
           const lastCycle = this.getLastCompletedCycle(now);
           
-          const newBalance = balance - this.selectedPlan.price;
+          // لا نخصم من الرصيد، بل نضيف المبلغ المحجوز فقط
+          // الرصيد يبقى كما هو (balance لم يتغير)
+          // نضيف المبلغ المحجوز إلى vipLockedAmount
           const firstReward = this.selectedPlan.daily;
-          const newBalanceAfterReward = newBalance + firstReward;
+          const newBalanceAfterReward = balance + firstReward;
           
-          transaction.update(userRef, { balance: newBalanceAfterReward });
+          // تحديث الرصيد (بإضافة المكافأة الأولى فقط، وليس خصم مبلغ الشراء)
+          transaction.update(userRef, { 
+            balance: newBalanceAfterReward,
+            vipLockedAmount: newLockedAmount 
+          });
           
+          // حفظ بيانات VIP
           transaction.set(vipDocRef, {
             level: this.selectedPlan.level,
             price: this.selectedPlan.price,
@@ -687,6 +701,7 @@ export default {
             firstRewardAt: Timestamp.now()
           });
 
+          // تسجيل المكافأة الأولى
           const firstRewardRef = doc(collection(db, "users", user.uid, "rewards_history"));
           transaction.set(firstRewardRef, {
             amount: firstReward,
@@ -697,12 +712,14 @@ export default {
             createdAt: Timestamp.now()
           });
 
+          // تسجيل المعاملة
           const logRef = doc(collection(db, "transactions"));
           transaction.set(logRef, {
             userId: user.uid,
             type: "vip_purchase",
             amount: this.selectedPlan.price,
             firstReward: firstReward,
+            lockedAmount: this.selectedPlan.price,
             createdAt: serverTimestamp(),
             status: "completed"
           });
