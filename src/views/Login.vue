@@ -383,8 +383,8 @@ import {
 
 // ✅ المسار الصحيح من مجلد public/brand
 // تم إزالة أي import قديم من ../assets/
-const logo = "/brand/lumarise-logo.svg";
-const logoBg = "/brand/lumarise-bg.svg";
+const logo = "/lumarise-logo.svg";
+const logoBg = "/lumarise-bg.svg";
 
 import router from "../router";
 
