@@ -19,8 +19,8 @@
 
       <!-- قائمة اللغات المنبثقة -->
       <div v-if="showLanguageMenu" class="language-dropdown" @click.stop>
-        <button
-          v-for="lang in languages"
+        <button 
+          v-for="lang in languages" 
           :key="lang.code"
           class="language-option"
           :class="{ active: currentLanguage === lang.code }"
@@ -68,11 +68,11 @@
         <div class="heading-section">
 
           <h1>
-            {{ translations[currentLanguage].loginTitle }}
+            {{ translations[ currentLanguage ].loginTitle }}
           </h1>
 
           <p>
-            {{ translations[currentLanguage].loginSubtitle }}
+            {{ translations[ currentLanguage ].loginSubtitle }}
           </p>
 
         </div>
@@ -101,7 +101,7 @@
           >
             <span>
               <i class="fas fa-envelope"></i>
-              {{ translations[currentLanguage].emailLabel }}
+              {{ translations[ currentLanguage ].emailLabel }}
             </span>
           </button>
 
@@ -113,7 +113,7 @@
           >
             <span>
               <i class="fas fa-phone"></i>
-              {{ translations[currentLanguage].phoneLabel }}
+              {{ translations[ currentLanguage ].phoneLabel }}
             </span>
           </button>
 
@@ -126,7 +126,7 @@
         <template v-if="loginType === 'email'">
 
           <label class="field-label">
-            {{ translations[currentLanguage].emailLabel }}
+            {{ translations[ currentLanguage ].emailLabel }}
             <i class="fas fa-envelope"></i>
           </label>
 
@@ -135,7 +135,7 @@
             <input
               type="email"
               v-model="email"
-              :placeholder="translations[currentLanguage].emailPlaceholder"
+              :placeholder="translations[ currentLanguage ].emailPlaceholder"
               class="input-field"
               :class="{
                 'input-error':
@@ -159,7 +159,7 @@
         <template v-if="loginType === 'phone'">
 
           <label class="field-label">
-            {{ translations[currentLanguage].phoneLabel }}
+            {{ translations[ currentLanguage ].phoneLabel }}
             <i class="fas fa-phone"></i>
           </label>
 
@@ -172,7 +172,7 @@
             >
 
               <option value="">
-                {{ translations[currentLanguage].selectCode }}
+                {{ translations[ currentLanguage ].selectCode }}
               </option>
 
               <option value="+964">🇮🇶 العراق (+964)</option>
@@ -246,7 +246,7 @@
             <input
               type="tel"
               v-model="phoneNumber"
-              :placeholder="translations[currentLanguage].phonePlaceholder"
+              :placeholder="translations[ currentLanguage ].phonePlaceholder"
               class="phone-input"
               :class="{
                 'input-error':
@@ -277,7 +277,7 @@
              كلمة المرور
              ========================= -->
         <label class="field-label">
-          {{ translations[currentLanguage].passwordLabel }}
+          {{ translations[ currentLanguage ].passwordLabel }}
           <i class="fas fa-lock"></i>
         </label>
 
@@ -286,7 +286,7 @@
           <input
             :type="showPassword ? 'text' : 'password'"
             v-model="password"
-            :placeholder="translations[currentLanguage].passwordPlaceholder"
+            :placeholder="translations[ currentLanguage ].passwordPlaceholder"
             class="input-field password-field"
             :class="{ 'input-error': errorMessage }"
             autocomplete="current-password"
@@ -324,7 +324,7 @@
         >
 
           <span v-if="!loading">
-            {{ translations[currentLanguage].loginButton }}
+            {{ translations[ currentLanguage ].loginButton }}
             <i class="fas fa-arrow-left"></i>
           </span>
 
@@ -333,7 +333,7 @@
             class="loading-content"
           >
             <span class="loader"></span>
-            {{ translations[currentLanguage].loadingText }}
+            {{ translations[ currentLanguage ].loadingText }}
           </span>
 
         </button>
@@ -343,11 +343,11 @@
         <div class="register-link">
 
           <span>
-            {{ translations[currentLanguage].noAccount }}
+            {{ translations[ currentLanguage ].noAccount }}
           </span>
 
           <router-link to="/register">
-            {{ translations[currentLanguage].createAccount }}
+            {{ translations[ currentLanguage ].createAccount }}
           </router-link>
 
         </div>
@@ -381,12 +381,8 @@ import {
   signOut
 } from "firebase/auth";
 
-/* =====================================================
-   إصلاح مسارات الصور فقط
-   الملفات موجودة داخل src/assets
-   ===================================================== */
-import logo from "../assets/lumarise-logo.svg";
-import logoBg from "../assets/lumarise-bg.svg";
+const logo = "/brand/lumarise-logo.svg";
+const logoBg = "/brand/lumarise-bg.svg";
 
 import router from "../router";
 
@@ -427,270 +423,97 @@ export default {
       showLanguageMenu: false,
 
       languages: [
-        {
-          code: "ar",
-          label: "العربية",
-          native: "العربية",
-          flag: "🇸🇦"
-        },
-        {
-          code: "en",
-          label: "English",
-          native: "English",
-          flag: "🇺🇸"
-        },
-        {
-          code: "ru",
-          label: "Русский",
-          native: "Русский",
-          flag: "🇷🇺"
-        }
+        { code: "ar", label: "العربية", native: "العربية", flag: "🇸🇦" },
+        { code: "en", label: "English", native: "English", flag: "🇺🇸" },
+        { code: "ru", label: "Русский", native: "Русский", flag: "🇷🇺" }
       ],
 
       translations: {
-
         ar: {
-
           loginTitle: "تسجيل الدخول",
-
-          loginSubtitle:
-            "مرحباً بك، قم بتسجيل الدخول إلى حسابك",
-
-          emailLabel:
-            "البريد الإلكتروني",
-
-          emailPlaceholder:
-            "أدخل البريد الإلكتروني",
-
-          phoneLabel:
-            "رقم الهاتف",
-
-          phonePlaceholder:
-            "رقم الهاتف",
-
-          selectCode:
-            "الرمز",
-
-          passwordLabel:
-            "كلمة المرور",
-
-          passwordPlaceholder:
-            "أدخل كلمة المرور",
-
-          loginButton:
-            "تسجيل الدخول",
-
-          loadingText:
-            "جارٍ تسجيل الدخول...",
-
-          noAccount:
-            "ليس لديك حساب؟",
-
-          createAccount:
-            "إنشاء حساب",
-
-          errorWrongEmail:
-            "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
-
-          errorWrongPhone:
-            "رقم الهاتف أو كلمة المرور غير صحيحة.",
-
-          errorBlocked:
-            "تم حظر حسابك، تواصل مع الدعم",
-
-          errorTooMany:
-            "تم تعليق الحساب مؤقتاً لكثرة المحاولات. يرجى المحاولة لاحقاً.",
-
-          errorNetwork:
-            "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.",
-
-          errorGeneral:
-            "حدث خطأ. يرجى المحاولة لاحقاً.",
-
-          errorPhoneCode:
-            "الرجاء اختيار رمز الدولة",
-
-          errorPhoneEmpty:
-            "الرجاء إدخال رقم الهاتف",
-
-          errorPhoneLength:
-            "رقم الهاتف يجب أن يكون بين 7 و 15 رقم",
-
-          errorPasswordLength:
-            "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
-
+          loginSubtitle: "مرحباً بك، قم بتسجيل الدخول إلى حسابك",
+          emailLabel: "البريد الإلكتروني",
+          emailPlaceholder: "أدخل البريد الإلكتروني",
+          phoneLabel: "رقم الهاتف",
+          phonePlaceholder: "رقم الهاتف",
+          selectCode: "الرمز",
+          passwordLabel: "كلمة المرور",
+          passwordPlaceholder: "أدخل كلمة المرور",
+          loginButton: "تسجيل الدخول",
+          loadingText: "جارٍ تسجيل الدخول...",
+          noAccount: "ليس لديك حساب؟",
+          createAccount: "إنشاء حساب",
+          errorWrongEmail: "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+          errorWrongPhone: "رقم الهاتف أو كلمة المرور غير صحيحة.",
+          errorBlocked: "تم حظر حسابك، تواصل مع الدعم",
+          errorTooMany: "تم تعليق الحساب مؤقتاً لكثرة المحاولات. يرجى المحاولة لاحقاً.",
+          errorNetwork: "حدث خطأ في الاتصال. يرجى التحقق من الإنترنت.",
+          errorGeneral: "حدث خطأ. يرجى المحاولة لاحقاً.",
+          errorPhoneCode: "الرجاء اختيار رمز الدولة",
+          errorPhoneEmpty: "الرجاء إدخال رقم الهاتف",
+          errorPhoneLength: "رقم الهاتف يجب أن يكون بين 7 و 15 رقم",
+          errorPasswordLength: "كلمة المرور يجب أن تكون 6 أحرف على الأقل"
         },
-
         en: {
-
-          loginTitle:
-            "Login",
-
-          loginSubtitle:
-            "Welcome, sign in to your account",
-
-          emailLabel:
-            "Email",
-
-          emailPlaceholder:
-            "Enter your email",
-
-          phoneLabel:
-            "Phone Number",
-
-          phonePlaceholder:
-            "Phone Number",
-
-          selectCode:
-            "Code",
-
-          passwordLabel:
-            "Password",
-
-          passwordPlaceholder:
-            "Enter your password",
-
-          loginButton:
-            "Login",
-
-          loadingText:
-            "Logging in...",
-
-          noAccount:
-            "Don't have an account?",
-
-          createAccount:
-            "Create Account",
-
-          errorWrongEmail:
-            "Email or password is incorrect.",
-
-          errorWrongPhone:
-            "Phone number or password is incorrect.",
-
-          errorBlocked:
-            "Your account has been blocked, contact support",
-
-          errorTooMany:
-            "Account temporarily suspended due to too many attempts. Please try again later.",
-
-          errorNetwork:
-            "Connection error. Please check your internet.",
-
-          errorGeneral:
-            "An error occurred. Please try again later.",
-
-          errorPhoneCode:
-            "Please select a country code",
-
-          errorPhoneEmpty:
-            "Please enter a phone number",
-
-          errorPhoneLength:
-            "Phone number must be between 7 and 15 digits",
-
-          errorPasswordLength:
-            "Password must be at least 6 characters"
-
+          loginTitle: "Login",
+          loginSubtitle: "Welcome, sign in to your account",
+          emailLabel: "Email",
+          emailPlaceholder: "Enter your email",
+          phoneLabel: "Phone Number",
+          phonePlaceholder: "Phone Number",
+          selectCode: "Code",
+          passwordLabel: "Password",
+          passwordPlaceholder: "Enter your password",
+          loginButton: "Login",
+          loadingText: "Logging in...",
+          noAccount: "Don't have an account?",
+          createAccount: "Create Account",
+          errorWrongEmail: "Email or password is incorrect.",
+          errorWrongPhone: "Phone number or password is incorrect.",
+          errorBlocked: "Your account has been blocked, contact support",
+          errorTooMany: "Account temporarily suspended due to too many attempts. Please try again later.",
+          errorNetwork: "Connection error. Please check your internet.",
+          errorGeneral: "An error occurred. Please try again later.",
+          errorPhoneCode: "Please select a country code",
+          errorPhoneEmpty: "Please enter a phone number",
+          errorPhoneLength: "Phone number must be between 7 and 15 digits",
+          errorPasswordLength: "Password must be at least 6 characters"
         },
-
         ru: {
-
-          loginTitle:
-            "Вход",
-
-          loginSubtitle:
-            "Добро пожаловать, войдите в свой аккаунт",
-
-          emailLabel:
-            "Электронная почта",
-
-          emailPlaceholder:
-            "Введите вашу электронную почту",
-
-          phoneLabel:
-            "Номер телефона",
-
-          phonePlaceholder:
-            "Номер телефона",
-
-          selectCode:
-            "Код",
-
-          passwordLabel:
-            "Пароль",
-
-          passwordPlaceholder:
-            "Введите ваш пароль",
-
-          loginButton:
-            "Войти",
-
-          loadingText:
-            "Вход...",
-
-          noAccount:
-            "Нет аккаунта?",
-
-          createAccount:
-            "Создать аккаунт",
-
-          errorWrongEmail:
-            "Неверный адрес электронной почты или пароль.",
-
-          errorWrongPhone:
-            "Неверный номер телефона или пароль.",
-
-          errorBlocked:
-            "Ваш аккаунт заблокирован, обратитесь в поддержку",
-
-          errorTooMany:
-            "Аккаунт временно приостановлен из-за слишком большого количества попыток. Пожалуйста, попробуйте позже.",
-
-          errorNetwork:
-            "Ошибка соединения. Проверьте интернет.",
-
-          errorGeneral:
-            "Произошла ошибка. Пожалуйста, попробуйте позже.",
-
-          errorPhoneCode:
-            "Пожалуйста, выберите код страны",
-
-          errorPhoneEmpty:
-            "Пожалуйста, введите номер телефона",
-
-          errorPhoneLength:
-            "Номер телефона должен содержать от 7 до 15 цифр",
-
-          errorPasswordLength:
-            "Пароль должен содержать не менее 6 символов"
-
+          loginTitle: "Вход",
+          loginSubtitle: "Добро пожаловать, войдите в свой аккаунт",
+          emailLabel: "Электронная почта",
+          emailPlaceholder: "Введите вашу электронную почту",
+          phoneLabel: "Номер телефона",
+          phonePlaceholder: "Номер телефона",
+          selectCode: "Код",
+          passwordLabel: "Пароль",
+          passwordPlaceholder: "Введите ваш пароль",
+          loginButton: "Войти",
+          loadingText: "Вход...",
+          noAccount: "Нет аккаунта?",
+          createAccount: "Создать аккаунт",
+          errorWrongEmail: "Неверный адрес электронной почты или пароль.",
+          errorWrongPhone: "Неверный номер телефона или пароль.",
+          errorBlocked: "Ваш аккаунт заблокирован, обратитесь в поддержку",
+          errorTooMany: "Аккаунт временно приостановлен из-за слишком большого количества попыток. Пожалуйста, попробуйте позже.",
+          errorNetwork: "Ошибка соединения. Проверьте интернет.",
+          errorGeneral: "Произошла ошибка. Пожалуйста, попробуйте позже.",
+          errorPhoneCode: "Пожалуйста, выберите код страны",
+          errorPhoneEmpty: "Пожалуйста, введите номер телефона",
+          errorPhoneLength: "Номер телефона должен содержать от 7 до 15 цифр",
+          errorPasswordLength: "Пароль должен содержать не менее 6 символов"
         }
-
       }
-
     };
-
   },
-
 
   computed: {
-
     currentLanguageLabel() {
-
-      const lang =
-        this.languages.find(
-          l => l.code === this.currentLanguage
-        );
-
-      return lang
-        ? lang.label
-        : "العربية";
-
+      const lang = this.languages.find(l => l.code === this.currentLanguage);
+      return lang ? lang.label : "العربية";
     }
-
   },
-
 
   mounted() {
 
@@ -699,10 +522,7 @@ export default {
       this.handleEscKey
     );
 
-    document.addEventListener(
-      "click",
-      this.closeLanguageMenuOutside
-    );
+    document.addEventListener("click", this.closeLanguageMenuOutside);
 
   },
 
@@ -714,10 +534,7 @@ export default {
       this.handleEscKey
     );
 
-    document.removeEventListener(
-      "click",
-      this.closeLanguageMenuOutside
-    );
+    document.removeEventListener("click", this.closeLanguageMenuOutside);
 
   },
 
@@ -756,9 +573,7 @@ export default {
       if (!this.countryCode) {
 
         this.phoneError =
-          this.translations[
-            this.currentLanguage
-          ].errorPhoneCode;
+          this.translations[ this.currentLanguage ].errorPhoneCode;
 
         return false;
 
@@ -768,9 +583,7 @@ export default {
       if (!this.phoneNumber) {
 
         this.phoneError =
-          this.translations[
-            this.currentLanguage
-          ].errorPhoneEmpty;
+          this.translations[ this.currentLanguage ].errorPhoneEmpty;
 
         return false;
 
@@ -790,9 +603,7 @@ export default {
       ) {
 
         this.phoneError =
-          this.translations[
-            this.currentLanguage
-          ].errorPhoneLength;
+          this.translations[ this.currentLanguage ].errorPhoneLength;
 
         return false;
 
@@ -826,11 +637,7 @@ export default {
 
     getErrorMessage(error) {
 
-      const t =
-        this.translations[
-          this.currentLanguage
-        ];
-
+      const t = this.translations[ this.currentLanguage ];
 
       if (
         error.code ===
@@ -898,68 +705,35 @@ export default {
     handleEscKey(event) {
 
       if (event.key === "Escape") {
-
         this.showLanguageMenu = false;
-
       }
 
     },
 
 
     closeLanguageMenuOutside(event) {
-
       if (this.showLanguageMenu) {
-
-        const dropdown =
-          document.querySelector(
-            ".language-dropdown"
-          );
-
-        const btn =
-          document.querySelector(
-            ".language-btn"
-          );
-
-
-        if (
-          dropdown &&
-          btn
-        ) {
-
-          if (
-            !dropdown.contains(event.target) &&
-            !btn.contains(event.target)
-          ) {
-
+        const dropdown = document.querySelector('.language-dropdown');
+        const btn = document.querySelector('.language-btn');
+        if (dropdown && btn) {
+          if (!dropdown.contains(event.target) && !btn.contains(event.target)) {
             this.showLanguageMenu = false;
-
           }
-
         }
-
       }
-
     },
 
 
     toggleLanguageMenu(event) {
-
       event.stopPropagation();
-
-      this.showLanguageMenu =
-        !this.showLanguageMenu;
-
+      this.showLanguageMenu = !this.showLanguageMenu;
     },
 
 
     setLanguage(code) {
-
       this.currentLanguage = code;
-
       this.showLanguageMenu = false;
-
       this.clearError();
-
     },
 
 
@@ -985,7 +759,6 @@ export default {
 
         }
 
-
         loginEmail =
           this.generatePhoneEmail(
             this.fullPhoneNumber
@@ -1004,9 +777,7 @@ export default {
         ) {
 
           this.errorMessage =
-            this.translations[
-              this.currentLanguage
-            ].errorWrongEmail;
+            this.translations[ this.currentLanguage ].errorWrongEmail;
 
           return;
 
@@ -1027,16 +798,12 @@ export default {
         ) {
 
           this.errorMessage =
-            this.translations[
-              this.currentLanguage
-            ].errorWrongPhone;
+            this.translations[ this.currentLanguage ].errorWrongPhone;
 
         } else {
 
           this.errorMessage =
-            this.translations[
-              this.currentLanguage
-            ].errorWrongEmail;
+            this.translations[ this.currentLanguage ].errorWrongEmail;
 
         }
 
@@ -1071,9 +838,7 @@ export default {
           await signOut(auth);
 
           this.errorMessage =
-            this.translations[
-              this.currentLanguage
-            ].errorBlocked;
+            this.translations[ this.currentLanguage ].errorBlocked;
 
           return;
 
@@ -1095,9 +860,7 @@ export default {
           await signOut(auth);
 
           this.errorMessage =
-            this.translations[
-              this.currentLanguage
-            ].errorBlocked;
+            this.translations[ this.currentLanguage ].errorBlocked;
 
           return;
 
@@ -1105,13 +868,9 @@ export default {
 
 
         const admins = [
-
           "azad.333388@gmail.com",
-
           "admin2@gmail.com",
-
           "owner@gmail.com"
-
         ];
 
 
@@ -1277,15 +1036,10 @@ export default {
   cursor: pointer;
 
   transition: all 0.3s ease;
-
 }
 
-
 .language-btn:hover {
-
-  background:
-    rgba(0,0,0,0.5);
-
+  background: rgba(0,0,0,0.5);
 }
 
 
@@ -1303,8 +1057,7 @@ export default {
 
   z-index: 7;
 
-  background:
-    rgba(20,20,30,0.95);
+  background: rgba(20, 20, 30, 0.95);
 
   backdrop-filter: blur(16px);
 
@@ -1312,8 +1065,7 @@ export default {
 
   border-radius: 16px;
 
-  border:
-    1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.12);
 
   padding: 8px;
 
@@ -1322,36 +1074,20 @@ export default {
   box-shadow:
     0 20px 60px rgba(0,0,0,0.5);
 
-  animation:
-    dropdownSlide 0.25s ease;
+  animation: dropdownSlide 0.25s ease;
 
 }
-
 
 @keyframes dropdownSlide {
-
   0% {
-
     opacity: 0;
-
-    transform:
-      translateY(-10px)
-      scale(0.95);
-
+    transform: translateY(-10px) scale(0.95);
   }
-
   100% {
-
     opacity: 1;
-
-    transform:
-      translateY(0)
-      scale(1);
-
+    transform: translateY(0) scale(1);
   }
-
 }
-
 
 .language-option {
 
@@ -1375,8 +1111,7 @@ export default {
 
   cursor: pointer;
 
-  transition:
-    all 0.25s ease;
+  transition: all 0.25s ease;
 
   font-size: 14px;
 
@@ -1384,25 +1119,19 @@ export default {
 
 }
 
-
 .language-option:hover {
 
-  background:
-    rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.08);
 
 }
-
 
 .language-option.active {
 
-  background:
-    rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.12);
 
-  border:
-    1px solid rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.15);
 
 }
-
 
 .language-option .lang-flag {
 
@@ -1410,18 +1139,15 @@ export default {
 
 }
 
-
 .language-option .lang-name {
 
   font-weight: 600;
 
 }
 
-
 .language-option .lang-native {
 
-  color:
-    rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.5);
 
   font-size: 12px;
 
@@ -1455,13 +1181,11 @@ export default {
 
   height: 170px;
 
-  margin:
-    0 auto 18px;
+  margin: 0 auto 18px;
 
   border-radius: 50%;
 
-  border:
-    2px solid rgba(255,255,255,0.55);
+  border: 2px solid rgba(255,255,255,0.55);
 
   display: flex;
 
@@ -1537,8 +1261,7 @@ export default {
 
 .future-title {
 
-  color:
-    rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.85);
 
   font-size: 11px;
 
@@ -1563,11 +1286,9 @@ export default {
 
   max-width: 850px;
 
-  margin:
-    -55px auto 0;
+  margin: -55px auto 0;
 
-  padding:
-    0 25px 40px;
+  padding: 0 25px 40px;
 
 }
 
@@ -1582,19 +1303,16 @@ export default {
 
   box-sizing: border-box;
 
-  background:
-    rgba(255,255,255,0.98);
+  background: rgba(255,255,255,0.98);
 
   border-radius: 38px;
 
-  padding:
-    45px 55px 35px;
+  padding: 45px 55px 35px;
 
   box-shadow:
     0 25px 70px rgba(0,0,0,0.15);
 
-  border:
-    1px solid rgba(255,255,255,0.9);
+  border: 1px solid rgba(255,255,255,0.9);
 
 }
 
@@ -1629,8 +1347,7 @@ export default {
 
 .heading-section p {
 
-  margin:
-    12px 0 0;
+  margin: 12px 0 0;
 
   color: #888;
 
@@ -1647,11 +1364,9 @@ export default {
 
   background: #f5f5f5;
 
-  border:
-    1px solid #ddd;
+  border: 1px solid #ddd;
 
-  border-right:
-    4px solid #111;
+  border-right: 4px solid #111;
 
   border-radius: 13px;
 
@@ -1697,8 +1412,7 @@ export default {
 
   background: #f2f2f2;
 
-  border:
-    1px solid #e3e3e3;
+  border: 1px solid #e3e3e3;
 
   margin-bottom: 25px;
 
@@ -1806,8 +1520,7 @@ export default {
 
   border-radius: 30px;
 
-  border:
-    1px solid #ddd;
+  border: 1px solid #ddd;
 
   background: #fff;
 
@@ -1862,8 +1575,7 @@ export default {
 
 .input-error {
 
-  border-color:
-    #222 !important;
+  border-color: #222 !important;
 
 }
 
@@ -1893,8 +1605,7 @@ export default {
 
   border-radius: 30px;
 
-  border:
-    1px solid #ddd;
+  border: 1px solid #ddd;
 
   background: #fff;
 
@@ -1921,8 +1632,7 @@ export default {
 
   border-radius: 30px;
 
-  border:
-    1px solid #ddd;
+  border: 1px solid #ddd;
 
   background: #fff;
 
@@ -2079,8 +1789,7 @@ export default {
 
 .login-button:hover:not(:disabled) {
 
-  transform:
-    translateY(-2px);
+  transform: translateY(-2px);
 
   box-shadow:
     0 15px 35px rgba(0,0,0,0.25);
@@ -2090,8 +1799,7 @@ export default {
 
 .login-button:active:not(:disabled) {
 
-  transform:
-    translateY(0);
+  transform: translateY(0);
 
 }
 
@@ -2145,8 +1853,7 @@ export default {
 
   to {
 
-    transform:
-      rotate(360deg);
+    transform: rotate(360deg);
 
   }
 
@@ -2241,8 +1948,7 @@ export default {
 
     height: 360px;
 
-    background-position:
-      center center;
+    background-position: center center;
 
   }
 
@@ -2261,24 +1967,15 @@ export default {
 
   }
 
-
   .language-dropdown {
-
     top: 70px;
-
     right: 15px;
-
     min-width: 170px;
-
   }
 
-
   .language-option {
-
     padding: 8px 14px;
-
     font-size: 13px;
-
   }
 
 
@@ -2521,22 +2218,14 @@ export default {
 
   }
 
-
   .phone-input {
-
     width: 100%;
-
   }
 
-
   .language-dropdown {
-
     right: 10px;
-
     min-width: 150px;
-
     top: 65px;
-
   }
 
 }
