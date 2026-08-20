@@ -201,7 +201,7 @@ import router from "../router";
 
 // ✅ المسار الصحيح من مجلد public/brand
 // تم إزالة import القديم من ../assets/palm-gold.png
-const logo = "/brand/lumarise-logo.svg";
+const logo = "/lumarise-logo.svg";
 
 import {
   doc,
