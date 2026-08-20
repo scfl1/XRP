@@ -381,6 +381,7 @@ import {
   signOut
 } from "firebase/auth";
 
+// استخدام المسار الصحيح من مجلد public/brand
 const logo = "/brand/lumarise-logo.svg";
 const logoBg = "/brand/lumarise-bg.svg";
 
