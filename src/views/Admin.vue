@@ -1957,87 +1957,95 @@ export default {
     async loadWithdrawLogs() {
       try {
         this.loadingWithdrawLogs = true;
-        // جلب جميع طلبات السحب من withdraw_requests لعرضها كسجل
-        const snap = await getDocs(collection(db, "withdraw_requests"));
-        this.withdrawLogs = snap.docs.map((d) => {
-          const data = d.data() || {};
-          let createdAt = Date.now();
-          if (data.createdAt) {
-            if (typeof data.createdAt === "number") createdAt = data.createdAt;
-            else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
-          }
-          return {
-            id: d.id,
-            transactionId: data.transactionId || null,
-            userId: data.userId || null,
-            userPhone: data.userPhone || null,
-            userEmail: data.userEmail || data.email || null,
-            email: data.userEmail || data.email || null,
-            amount: data.amount || 0,
-            network: data.network || "",
-            wallet: data.wallet || data.walletAddress || "",
-            walletAddress: data.walletAddress || data.wallet || "",
-            status: data.status || "pending",
-            type: data.status || "pending",
-            vipLevel: data.vipLevel || "",
-            withdrawDay: data.withdrawDay || "",
-            adminAction: data.adminAction || "",
-            adminMessage: data.adminMessage || "",
-            userMessage: data.userMessage || "",
-            reason: data.reason || "",
-            lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
-            availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
-            createdAt,
-            processedAt: data.processedAt || null,
-            approvedAt: data.approvedAt || null
-          };
-        });
+        let allLogs = [];
         
-        // جلب سجلات الحذف من withdraw_logs مع الحفاظ على الحالة الأصلية
+        // 1. جلب من withdraw_requests (الطلبات الموجودة)
         try {
-          const logsSnap = await getDocs(collection(db, "withdraw_logs"));
-          const deletedLogs = logsSnap.docs
-            .filter(d => d.data().deletedByAdmin === true)
-            .map((d) => {
-              const data = d.data() || {};
-              let createdAt = Date.now();
-              if (data.createdAt) {
-                if (typeof data.createdAt === "number") createdAt = data.createdAt;
-                else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
-              }
-              return {
-                id: d.id,
-                transactionId: data.transactionId || null,
-                userId: data.userId || null,
-                userPhone: data.userPhone || null,
-                userEmail: data.email || null,
-                email: data.email || null,
-                amount: data.amount || 0,
-                network: data.network || "",
-                wallet: data.wallet || "",
-                walletAddress: data.wallet || "",
-                status: data.status || data.type || "pending",
-                type: data.type || data.status || "pending",
-                vipLevel: data.vipLevel || "",
-                withdrawDay: data.withdrawDay || "",
-                adminAction: "deleted",
-                adminMessage: data.adminMessage || "تم حذف الطلب بواسطة الأدمن (تم الإلغاء من قبل الإدارة)",
-                userMessage: "",
-                reason: "",
-                lockedAmountAtWithdraw: 0,
-                availableBalanceAtWithdraw: 0,
-                createdAt,
-                processedAt: null,
-                approvedAt: null
-              };
-            });
-          
-          // دمج السجلات
-          this.withdrawLogs = [...this.withdrawLogs, ...deletedLogs];
+          const snap = await getDocs(collection(db, "withdraw_requests"));
+          const logs = snap.docs.map((d) => {
+            const data = d.data() || {};
+            let createdAt = Date.now();
+            if (data.createdAt) {
+              if (typeof data.createdAt === "number") createdAt = data.createdAt;
+              else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
+            }
+            return {
+              id: d.id,
+              transactionId: data.transactionId || null,
+              userId: data.userId || null,
+              userPhone: data.userPhone || null,
+              userEmail: data.userEmail || data.email || null,
+              email: data.userEmail || data.email || null,
+              amount: data.amount || 0,
+              network: data.network || "",
+              wallet: data.wallet || data.walletAddress || "",
+              walletAddress: data.walletAddress || data.wallet || "",
+              status: data.status || "pending",
+              type: data.status || "pending",
+              vipLevel: data.vipLevel || "",
+              withdrawDay: data.withdrawDay || "",
+              adminAction: data.adminAction || "",
+              adminMessage: data.adminMessage || "",
+              userMessage: data.userMessage || "",
+              reason: data.reason || "",
+              lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
+              availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
+              createdAt,
+              processedAt: data.processedAt || null,
+              approvedAt: data.approvedAt || null
+            };
+          });
+          allLogs = [...allLogs, ...logs];
         } catch (e) {
-          console.warn("⚠️ فشل جلب سجلات الحذف:", e);
+          console.warn("⚠️ فشل جلب من withdraw_requests:", e);
         }
         
+        // 2. جلب من withdraw_logs (بما فيها المحذوفة)
+        try {
+          const logsSnap = await getDocs(collection(db, "withdraw_logs"));
+          const logs = logsSnap.docs.map((d) => {
+            const data = d.data() || {};
+            let createdAt = Date.now();
+            if (data.createdAt) {
+              if (typeof data.createdAt === "number") createdAt = data.createdAt;
+              else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
+            }
+            return {
+              id: d.id,
+              transactionId: data.transactionId || null,
+              userId: data.userId || null,
+              userPhone: data.userPhone || null,
+              userEmail: data.email || data.userEmail || null,
+              email: data.email || data.userEmail || null,
+              amount: data.amount || 0,
+              network: data.network || "",
+              wallet: data.wallet || "",
+              walletAddress: data.wallet || "",
+              status: data.status || data.type || "pending",
+              type: data.type || data.status || "pending",
+              vipLevel: data.vipLevel || "",
+              withdrawDay: data.withdrawDay || "",
+              adminAction: data.adminAction || "",
+              adminMessage: data.adminMessage || "",
+              userMessage: data.userMessage || "",
+              reason: data.reason || "",
+              lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
+              availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
+              createdAt,
+              processedAt: data.processedAt || null,
+              approvedAt: data.approvedAt || null,
+              deletedByAdmin: data.deletedByAdmin || false
+            };
+          });
+          allLogs = [...allLogs, ...logs];
+        } catch (e) {
+          console.warn("⚠️ فشل جلب من withdraw_logs:", e);
+        }
+        
+        // ترتيب السجلات حسب التاريخ (الأحدث أولاً)
+        allLogs.sort((a, b) => this.getTimeFromDate(b.createdAt) - this.getTimeFromDate(a.createdAt));
+        
+        this.withdrawLogs = allLogs;
         console.log(`✅ تم تحميل ${this.withdrawLogs.length} سجل سحب`);
       } catch (e) {
         console.error("خطأ عند تحميل سجل السحوبات:", e);
@@ -2581,21 +2589,27 @@ export default {
     
     async loadUserWithdrawHistory(userId) {
       try {
+        let allLogs = [];
+        
         // جلب سجل السحوبات من withdraw_requests
-        const withdrawRequestsQuery = query(
-          collection(db, "withdraw_requests"),
-          where("userId", "==", userId),
-          orderBy("createdAt", "desc")
-        );
-        const withdrawSnap = await getDocs(withdrawRequestsQuery);
+        try {
+          const withdrawRequestsQuery = query(
+            collection(db, "withdraw_requests"),
+            where("userId", "==", userId),
+            orderBy("createdAt", "desc")
+          );
+          const withdrawSnap = await getDocs(withdrawRequestsQuery);
+          const logs = withdrawSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            status: doc.data().status || "pending"
+          }));
+          allLogs = [...allLogs, ...logs];
+        } catch (e) {
+          console.warn("⚠️ فشل جلب من withdraw_requests:", e);
+        }
         
-        this.accountWithdrawHistory = withdrawSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          status: doc.data().status || "pending"
-        }));
-        
-        // جلب سجلات الحذف من withdraw_logs مع الحفاظ على الحالة الأصلية
+        // جلب سجلات الحذف من withdraw_logs
         try {
           const logsSnap = await getDocs(query(
             collection(db, "withdraw_logs"),
@@ -2608,11 +2622,15 @@ export default {
             status: doc.data().status || doc.data().type || "pending",
             type: doc.data().type || doc.data().status || "pending"
           }));
-          this.accountWithdrawHistory = [...this.accountWithdrawHistory, ...deletedLogs];
+          allLogs = [...allLogs, ...deletedLogs];
         } catch (e) {
           console.warn("⚠️ فشل جلب سجلات الحذف:", e);
         }
         
+        // ترتيب حسب التاريخ
+        allLogs.sort((a, b) => this.getTimeFromDate(b.createdAt) - this.getTimeFromDate(a.createdAt));
+        
+        this.accountWithdrawHistory = allLogs;
         console.log(`✅ تم تحميل ${this.accountWithdrawHistory.length} سجل سحب للمستخدم`);
       } catch (error) {
         console.error("خطأ في جلب سجل السحوبات:", error);
