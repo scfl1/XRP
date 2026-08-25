@@ -254,9 +254,11 @@
               <span :class="{
                 'status-approved': l.status === 'approved' || l.type === 'approved',
                 'status-rejected': l.status === 'rejected' || l.type === 'rejected',
-                'status-pending': l.status === 'pending' || l.type === 'pending'
+                'status-pending': l.status === 'pending' || l.type === 'pending',
+                'status-deleted': l.type === 'deleted'
               }">
-                {{ l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
+                {{ l.type === 'deleted' ? 'محذوف' :
+                   l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
                    l.status === 'rejected' || l.type === 'rejected' ? 'مرفوض' : 
                    l.status || l.type || 'قيد المراجعة' }}
               </span>
@@ -301,9 +303,13 @@
               <span :class="{
                 'status-approved': log.type === 'approved' || log.status === 'approved',
                 'status-rejected': log.type === 'rejected' || log.status === 'rejected',
-                'status-pending': log.type === 'pending' || log.status === 'pending'
+                'status-pending': log.type === 'pending' || log.status === 'pending',
+                'status-deleted': log.type === 'deleted'
               }">
-                {{ log.type === 'approved' ? 'موافق' : log.type === 'rejected' ? 'مرفوض' : log.type || log.status || '—' }}
+                {{ log.type === 'deleted' ? 'محذوف' :
+                   log.type === 'approved' ? 'موافق' : 
+                   log.type === 'rejected' ? 'مرفوض' : 
+                   log.type || log.status || '—' }}
               </span>
             </p>
             <p v-if="log.reason"><strong>سبب الرفض:</strong> {{ log.reason }}</p>
@@ -577,8 +583,10 @@
               <p><strong>الحالة:</strong> 
                 <span :class="item.status === 'approved' || item.type === 'approved' ? 'status-approved' : 
                                item.status === 'rejected' || item.type === 'rejected' ? 'status-rejected' : 
+                               item.type === 'deleted' ? 'status-deleted' :
                                'status-pending'">
-                  {{ item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
+                  {{ item.type === 'deleted' ? 'محذوف' :
+                     item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
                      item.status === 'rejected' || item.type === 'rejected' ? 'مرفوض' : 
                      item.status || item.type || 'قيد المراجعة' }}
                 </span>
@@ -602,9 +610,13 @@
                 <span :class="{
                   'status-approved': item.type === 'approved' || item.status === 'approved',
                   'status-rejected': item.type === 'rejected' || item.status === 'rejected',
-                  'status-pending': item.type === 'pending' || item.status === 'pending'
+                  'status-pending': item.type === 'pending' || item.status === 'pending',
+                  'status-deleted': item.type === 'deleted'
                 }">
-                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type || item.status || 'قيد المراجعة' }}
+                  {{ item.type === 'deleted' ? 'محذوف' :
+                     item.type === 'approved' ? 'موافق' : 
+                     item.type === 'rejected' ? 'مرفوض' : 
+                     item.type || item.status || 'قيد المراجعة' }}
                 </span>
               </p>
               <p v-if="item.reason"><strong>سبب الرفض:</strong> {{ item.reason }}</p>
@@ -1857,9 +1869,10 @@ export default {
       if (!confirm(`هل أنت متأكد أنك تريد حذف طلب السحب بقيمة ${req.amount} USDT نهائياً؟`)) return;
       this.processingId = req.id;
       try {
+        // حذف طلب السحب من withdraw_requests
         await deleteDoc(doc(db, "withdraw_requests", req.id));
         
-        // إنشاء سجل في withdraw_logs
+        // إضافة سجل في withdraw_logs بحالة "deleted" بدلاً من حذفه
         await addDoc(collection(db, "withdraw_logs"), {
           userId: req.userId || null,
           userPhone: req.userPhone || null,
@@ -1872,7 +1885,26 @@ export default {
           withdrawDay: req.withdrawDay,
           adminMessage: "تم حذف الطلب بواسطة الأدمن",
           createdAt: serverTimestamp(),
+          originalStatus: req.status || "pending",
+          transactionId: req.transactionId || null,
         });
+        
+        // إضافة إشعار للمستخدم
+        if (req.userId) {
+          try {
+            await addDoc(
+              collection(db, "users", req.userId, "notifications"),
+              {
+                title: "⚠️ تم حذف طلب السحب",
+                message: `تم حذف طلب سحب ${req.amount} USDT بواسطة الإدارة.`,
+                read: false,
+                createdAt: serverTimestamp(),
+              }
+            );
+          } catch (e) {
+            console.warn("⚠️ فشل إرسال الإشعار:", e);
+          }
+        }
         
         alert("✅ تم حذف طلب السحب بنجاح");
         await this.loadWithdrawRequests();
@@ -1957,7 +1989,53 @@ export default {
             approvedAt: data.approvedAt || null
           };
         });
-        console.log(`✅ تم تحميل ${this.withdrawLogs.length} سجل سحب من withdraw_requests`);
+        
+        // جلب سجلات الحذف من withdraw_logs
+        try {
+          const logsSnap = await getDocs(collection(db, "withdraw_logs"));
+          const deletedLogs = logsSnap.docs
+            .filter(d => d.data().type === "deleted")
+            .map((d) => {
+              const data = d.data() || {};
+              let createdAt = Date.now();
+              if (data.createdAt) {
+                if (typeof data.createdAt === "number") createdAt = data.createdAt;
+                else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
+              }
+              return {
+                id: d.id,
+                transactionId: data.transactionId || null,
+                userId: data.userId || null,
+                userPhone: data.userPhone || null,
+                userEmail: data.email || null,
+                email: data.email || null,
+                amount: data.amount || 0,
+                network: data.network || "",
+                wallet: data.wallet || "",
+                walletAddress: data.wallet || "",
+                status: "deleted",
+                type: "deleted",
+                vipLevel: data.vipLevel || "",
+                withdrawDay: data.withdrawDay || "",
+                adminAction: "deleted",
+                adminMessage: data.adminMessage || "تم حذف الطلب",
+                userMessage: "",
+                reason: "",
+                lockedAmountAtWithdraw: 0,
+                availableBalanceAtWithdraw: 0,
+                createdAt,
+                processedAt: null,
+                approvedAt: null
+              };
+            });
+          
+          // دمج السجلات
+          this.withdrawLogs = [...this.withdrawLogs, ...deletedLogs];
+        } catch (e) {
+          console.warn("⚠️ فشل جلب سجلات الحذف:", e);
+        }
+        
+        console.log(`✅ تم تحميل ${this.withdrawLogs.length} سجل سحب`);
       } catch (e) {
         console.error("خطأ عند تحميل سجل السحوبات:", e);
         this.withdrawLogs = [];
@@ -2500,6 +2578,24 @@ export default {
           ...doc.data(),
           status: doc.data().status || "pending"
         }));
+        
+        // جلب سجلات الحذف من withdraw_logs
+        try {
+          const logsSnap = await getDocs(query(
+            collection(db, "withdraw_logs"),
+            where("userId", "==", userId),
+            where("type", "==", "deleted")
+          ));
+          const deletedLogs = logsSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            status: "deleted",
+            type: "deleted"
+          }));
+          this.accountWithdrawHistory = [...this.accountWithdrawHistory, ...deletedLogs];
+        } catch (e) {
+          console.warn("⚠️ فشل جلب سجلات الحذف:", e);
+        }
         
         console.log(`✅ تم تحميل ${this.accountWithdrawHistory.length} سجل سحب للمستخدم`);
       } catch (error) {
@@ -3361,6 +3457,11 @@ export default {
 
 .status-pending {
   color: #ffc107;
+  font-weight: bold;
+}
+
+.status-deleted {
+  color: #6c757d;
   font-weight: bold;
 }
 
