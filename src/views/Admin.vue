@@ -70,6 +70,7 @@
             <div class="card-actions">
               <button class="btn gold" type="button" @click.stop="openApproveModal(req, 'withdraw')" :disabled="processingId === req.id || req.status === 'approved'">موافقة</button>
               <button class="btn red" type="button" @click.stop="openRejectModal(req, 'withdraw')" :disabled="processingId === req.id || req.status === 'rejected'">رفض</button>
+              <button class="btn black" type="button" @click.stop="deleteWithdraw(req)" :disabled="processingId === req.id">حذف</button>
               <button class="btn gold-outline" type="button" @click.stop="viewWithdrawDetails(req)">تفاصيل</button>
             </div>
           </div>
@@ -411,8 +412,10 @@
         <div class="modal-actions">
           <button v-if="modalType === 'withdraw'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'withdraw')" :disabled="processingId === modalData.id || modalData.status === 'approved'">موافقة</button>
           <button v-if="modalType === 'withdraw'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'withdraw')" :disabled="processingId === modalData.id || modalData.status === 'rejected'">رفض</button>
+          <button v-if="modalType === 'withdraw'" class="btn black" type="button" @click.stop="deleteWithdraw(modalData)" :disabled="processingId === modalData.id">حذف</button>
           <button v-if="modalType === 'recharge'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'recharge')" :disabled="processingId === modalData.id || modalData.status === 'approved'">موافقة</button>
           <button v-if="modalType === 'recharge'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'recharge')" :disabled="processingId === modalData.id || modalData.status === 'rejected'">رفض</button>
+          <button v-if="modalType === 'recharge'" class="btn black" type="button" @click.stop="deleteRecharge(modalData)" :disabled="processingId === modalData.id">حذف</button>
           <button class="btn gold-outline" type="button" @click="closeModal">إغلاق</button>
         </div>
       </div>
@@ -1844,6 +1847,42 @@ export default {
         this.processingId = null;
         this.closeModal();
         this.closeRejectModal();
+      }
+    },
+    
+    async deleteWithdraw(req) {
+      if (!req || !req.id) return;
+      const allowed = await this.ensureAdmin();
+      if (!allowed) return alert("غير مصرح لك");
+      if (!confirm(`هل أنت متأكد أنك تريد حذف طلب السحب بقيمة ${req.amount} USDT نهائياً؟`)) return;
+      this.processingId = req.id;
+      try {
+        await deleteDoc(doc(db, "withdraw_requests", req.id));
+        
+        // إنشاء سجل في withdraw_logs
+        await addDoc(collection(db, "withdraw_logs"), {
+          userId: req.userId || null,
+          userPhone: req.userPhone || null,
+          email: req.userEmail || req.email || null,
+          amount: req.amount || 0,
+          type: "deleted",
+          network: req.network,
+          wallet: req.wallet || req.walletAddress,
+          vipLevel: req.vipLevel,
+          withdrawDay: req.withdrawDay,
+          adminMessage: "تم حذف الطلب بواسطة الأدمن",
+          createdAt: serverTimestamp(),
+        });
+        
+        alert("✅ تم حذف طلب السحب بنجاح");
+        await this.loadWithdrawRequests();
+        await this.loadWithdrawLogs();
+      } catch (e) {
+        console.error("deleteWithdraw error:", e);
+        alert("❌ خطأ أثناء حذف الطلب: " + e.message);
+      } finally {
+        this.processingId = null;
+        this.closeModal();
       }
     },
     
