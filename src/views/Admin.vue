@@ -254,17 +254,18 @@
               <span :class="{
                 'status-approved': l.status === 'approved' || l.type === 'approved',
                 'status-rejected': l.status === 'rejected' || l.type === 'rejected',
-                'status-pending': l.status === 'pending' || l.type === 'pending',
-                'status-deleted': l.type === 'deleted'
+                'status-pending': l.status === 'pending' || l.type === 'pending'
               }">
-                {{ l.type === 'deleted' ? 'محذوف' :
-                   l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
+                {{ l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
                    l.status === 'rejected' || l.type === 'rejected' ? 'مرفوض' : 
                    l.status || l.type || 'قيد المراجعة' }}
               </span>
             </p>
+            <p v-if="l.adminMessage && l.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
+              <strong>ملاحظة:</strong> {{ l.adminMessage }}
+            </p>
             <p v-if="l.reason || l.rejectionReason"><strong>سبب الرفض:</strong> {{ l.reason || l.rejectionReason }}</p>
-            <p v-if="l.adminMessage"><strong>رسالة الأدمن:</strong> {{ l.adminMessage }}</p>
+            <p v-if="l.adminMessage && !l.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ l.adminMessage }}</p>
             <p v-if="l.userMessage"><strong>رسالة المستخدم:</strong> {{ l.userMessage }}</p>
             <p v-if="l.adminAction"><strong>إجراء الأدمن:</strong> {{ l.adminAction }}</p>
             <p class="muted">تاريخ الطلب: {{ formatDate(l.createdAt) }}</p>
@@ -303,17 +304,16 @@
               <span :class="{
                 'status-approved': log.type === 'approved' || log.status === 'approved',
                 'status-rejected': log.type === 'rejected' || log.status === 'rejected',
-                'status-pending': log.type === 'pending' || log.status === 'pending',
-                'status-deleted': log.type === 'deleted'
+                'status-pending': log.type === 'pending' || log.status === 'pending'
               }">
-                {{ log.type === 'deleted' ? 'محذوف' :
-                   log.type === 'approved' ? 'موافق' : 
-                   log.type === 'rejected' ? 'مرفوض' : 
-                   log.type || log.status || '—' }}
+                {{ log.type === 'approved' ? 'موافق' : log.type === 'rejected' ? 'مرفوض' : log.type || log.status || '—' }}
               </span>
             </p>
+            <p v-if="log.adminMessage && log.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
+              <strong>ملاحظة:</strong> {{ log.adminMessage }}
+            </p>
             <p v-if="log.reason"><strong>سبب الرفض:</strong> {{ log.reason }}</p>
-            <p v-if="log.adminMessage"><strong>رسالة الأدمن:</strong> {{ log.adminMessage }}</p>
+            <p v-if="log.adminMessage && !log.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ log.adminMessage }}</p>
             <p class="muted">التاريخ: {{ formatDate(log.createdAt) }}</p>
           </div>
         </div>
@@ -583,16 +583,17 @@
               <p><strong>الحالة:</strong> 
                 <span :class="item.status === 'approved' || item.type === 'approved' ? 'status-approved' : 
                                item.status === 'rejected' || item.type === 'rejected' ? 'status-rejected' : 
-                               item.type === 'deleted' ? 'status-deleted' :
                                'status-pending'">
-                  {{ item.type === 'deleted' ? 'محذوف' :
-                     item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
+                  {{ item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
                      item.status === 'rejected' || item.type === 'rejected' ? 'مرفوض' : 
                      item.status || item.type || 'قيد المراجعة' }}
                 </span>
               </p>
+              <p v-if="item.adminMessage && item.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
+                <strong>ملاحظة:</strong> {{ item.adminMessage }}
+              </p>
               <p v-if="item.reason"><strong>السبب:</strong> {{ item.reason }}</p>
-              <p v-if="item.adminMessage"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
+              <p v-if="item.adminMessage && !item.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
               <p class="muted">التاريخ: {{ formatDate(item.createdAt) }}</p>
             </div>
           </div>
@@ -610,17 +611,16 @@
                 <span :class="{
                   'status-approved': item.type === 'approved' || item.status === 'approved',
                   'status-rejected': item.type === 'rejected' || item.status === 'rejected',
-                  'status-pending': item.type === 'pending' || item.status === 'pending',
-                  'status-deleted': item.type === 'deleted'
+                  'status-pending': item.type === 'pending' || item.status === 'pending'
                 }">
-                  {{ item.type === 'deleted' ? 'محذوف' :
-                     item.type === 'approved' ? 'موافق' : 
-                     item.type === 'rejected' ? 'مرفوض' : 
-                     item.type || item.status || 'قيد المراجعة' }}
+                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type || item.status || 'قيد المراجعة' }}
                 </span>
               </p>
+              <p v-if="item.adminMessage && item.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
+                <strong>ملاحظة:</strong> {{ item.adminMessage }}
+              </p>
               <p v-if="item.reason"><strong>سبب الرفض:</strong> {{ item.reason }}</p>
-              <p v-if="item.adminMessage"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
+              <p v-if="item.adminMessage && !item.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
               <p class="muted">التاريخ: {{ formatDate(item.createdAt) }}</p>
             </div>
           </div>
@@ -1872,21 +1872,24 @@ export default {
         // حذف طلب السحب من withdraw_requests
         await deleteDoc(doc(db, "withdraw_requests", req.id));
         
-        // إضافة سجل في withdraw_logs بحالة "deleted" بدلاً من حذفه
+        // إضافة سجل في withdraw_logs مع الحفاظ على الحالة الأصلية
         await addDoc(collection(db, "withdraw_logs"), {
           userId: req.userId || null,
           userPhone: req.userPhone || null,
           email: req.userEmail || req.email || null,
           amount: req.amount || 0,
-          type: "deleted",
+          type: req.status || "pending",
+          status: req.status || "pending",
           network: req.network,
           wallet: req.wallet || req.walletAddress,
           vipLevel: req.vipLevel,
           withdrawDay: req.withdrawDay,
-          adminMessage: "تم حذف الطلب بواسطة الأدمن",
+          adminMessage: "تم حذف الطلب بواسطة الأدمن (تم الإلغاء من قبل الإدارة)",
           createdAt: serverTimestamp(),
-          originalStatus: req.status || "pending",
           transactionId: req.transactionId || null,
+          originalStatus: req.status || "pending",
+          deletedByAdmin: true,
+          deletedAt: serverTimestamp()
         });
         
         // إضافة إشعار للمستخدم
@@ -1895,8 +1898,8 @@ export default {
             await addDoc(
               collection(db, "users", req.userId, "notifications"),
               {
-                title: "⚠️ تم حذف طلب السحب",
-                message: `تم حذف طلب سحب ${req.amount} USDT بواسطة الإدارة.`,
+                title: "⚠️ تم إلغاء طلب السحب",
+                message: `تم إلغاء طلب سحب ${req.amount} USDT بواسطة الإدارة.`,
                 read: false,
                 createdAt: serverTimestamp(),
               }
@@ -1990,11 +1993,11 @@ export default {
           };
         });
         
-        // جلب سجلات الحذف من withdraw_logs
+        // جلب سجلات الحذف من withdraw_logs مع الحفاظ على الحالة الأصلية
         try {
           const logsSnap = await getDocs(collection(db, "withdraw_logs"));
           const deletedLogs = logsSnap.docs
-            .filter(d => d.data().type === "deleted")
+            .filter(d => d.data().deletedByAdmin === true)
             .map((d) => {
               const data = d.data() || {};
               let createdAt = Date.now();
@@ -2013,12 +2016,12 @@ export default {
                 network: data.network || "",
                 wallet: data.wallet || "",
                 walletAddress: data.wallet || "",
-                status: "deleted",
-                type: "deleted",
+                status: data.status || data.type || "pending",
+                type: data.type || data.status || "pending",
                 vipLevel: data.vipLevel || "",
                 withdrawDay: data.withdrawDay || "",
                 adminAction: "deleted",
-                adminMessage: data.adminMessage || "تم حذف الطلب",
+                adminMessage: data.adminMessage || "تم حذف الطلب بواسطة الأدمن (تم الإلغاء من قبل الإدارة)",
                 userMessage: "",
                 reason: "",
                 lockedAmountAtWithdraw: 0,
@@ -2058,7 +2061,8 @@ export default {
             const data = d.data() || {};
             return {
               id: d.id,
-              type: data.type || '',
+              type: data.type || data.status || '',
+              status: data.status || data.type || '',
               amount: data.amount || 0,
               userPhone: data.userPhone || null,
               email: data.email || data.userEmail || '',
@@ -2068,6 +2072,7 @@ export default {
               network: data.network || '',
               txid: data.txid || '',
               createdAt: data.createdAt,
+              deletedByAdmin: data.deletedByAdmin || false
             };
           });
           
@@ -2101,6 +2106,7 @@ export default {
               network: data.network || '',
               txid: data.txid || '',
               createdAt: data.createdAt,
+              deletedByAdmin: false
             };
           });
           
@@ -2478,17 +2484,27 @@ export default {
       this.processingId = r.id;
       try {
         await deleteDoc(doc(db, "payments", r.id));
+        
+        // إضافة سجل في recharge_logs مع الحفاظ على الحالة الأصلية
         await addDoc(collection(db, "recharge_logs"), {
           userId: r.userId || null,
           userPhone: r.userPhone || r.phoneNumber || null,
           email: r.userEmail || r.email || null,
           amount: r.amount || 0,
-          type: "deleted",
+          type: r.status || "pending",
+          status: r.status || "pending",
           network: r.network,
           txid: r.txid,
+          adminMessage: "تم حذف الطلب بواسطة الأدمن (تم الإلغاء من قبل الإدارة)",
           createdAt: serverTimestamp(),
+          originalStatus: r.status || "pending",
+          deletedByAdmin: true,
+          deletedAt: serverTimestamp()
         });
+        
         alert("تم حذف الطلب");
+        await this.reloadRechargeRequests();
+        await this.loadRechargeLogs();
       } catch (e) {
         console.error("deleteRecharge error:", e);
         alert("خطأ أثناء حذف الطلب");
@@ -2579,18 +2595,18 @@ export default {
           status: doc.data().status || "pending"
         }));
         
-        // جلب سجلات الحذف من withdraw_logs
+        // جلب سجلات الحذف من withdraw_logs مع الحفاظ على الحالة الأصلية
         try {
           const logsSnap = await getDocs(query(
             collection(db, "withdraw_logs"),
             where("userId", "==", userId),
-            where("type", "==", "deleted")
+            where("deletedByAdmin", "==", true)
           ));
           const deletedLogs = logsSnap.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
-            status: "deleted",
-            type: "deleted"
+            status: doc.data().status || doc.data().type || "pending",
+            type: doc.data().type || doc.data().status || "pending"
           }));
           this.accountWithdrawHistory = [...this.accountWithdrawHistory, ...deletedLogs];
         } catch (e) {
@@ -3457,11 +3473,6 @@ export default {
 
 .status-pending {
   color: #ffc107;
-  font-weight: bold;
-}
-
-.status-deleted {
-  color: #6c757d;
   font-weight: bold;
 }
 
