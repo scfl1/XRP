@@ -11,7 +11,7 @@
     <!-- Tabs -->
     <div class="tabs">
       <button :class="['tab', activeTab === 'withdraws' ? 'active' : '']" @click="switchTab('withdraws')">
-        طلبات السحب ({{ withdraws.length }})
+        طلبات السحب ({{ pendingWithdraws.length }})
       </button>
       <button :class="['tab', activeTab === 'recharges' ? 'active' : '']" @click="switchTab('recharges')">
         طلبات التعبئة ({{ rechargeRequests.length }})
@@ -23,7 +23,7 @@
         الإشعارات
       </button>
       <button :class="['tab', activeTab === 'withdrawLogs' ? 'active' : '']" @click="switchTab('withdrawLogs')">
-        سجل السحوبات
+        سجل السحوبات ({{ withdrawLogs.length }})
       </button>
       <button :class="['tab', activeTab === 'rechargeLogs' ? 'active' : '']" @click="switchTab('rechargeLogs')">
         سجل التعبئة
@@ -33,10 +33,10 @@
       </button>
     </div>
 
-    <!-- طلبات السحب -->
+    <!-- طلبات السحب (العرض المعلق فقط) -->
     <div v-if="activeTab === 'withdraws'" class="panel">
       <div class="panel-header">
-        <h2>طلبات السحب</h2>
+        <h2>طلبات السحب المعلقة</h2>
         <div class="controls">
           <input v-model="withdrawFilter" placeholder="بحث عن بريد / محفظة..." />
           <select v-model="withdrawSort">
@@ -51,9 +51,9 @@
 
       <div v-if="loadingWithdraws" class="loading">⏳ جاري تحميل طلبات السحب...</div>
       <div v-else>
-        <div v-if="filteredWithdraws.length === 0" class="empty">لا توجد طلبات سحب حالياً.</div>
+        <div v-if="pendingWithdraws.length === 0" class="empty">لا توجد طلبات سحب معلقة حالياً.</div>
         <div class="cards">
-          <div class="card withdraw-card" v-for="req in filteredWithdraws" :key="req.id">
+          <div class="card withdraw-card" v-for="req in filteredPendingWithdraws" :key="req.id">
             <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ req.userPhone || '—' }}</span></p>
             <p><strong>البريد:</strong> <span class="gold-text">{{ req.userEmail || req.email || '—' }}</span></p>
             <p><strong>المبلغ:</strong> <span class="gold-text">{{ req.amount }} USDT</span></p>
@@ -233,25 +233,33 @@
 
       <div v-if="loadingWithdrawLogs" class="loading">⏳ جاري تحميل السجلات...</div>
       <div v-else>
-        <div v-if="withdrawLogs.length === 0" class="empty">لا توجد سجلات.</div>
+        <div v-if="filteredWithdrawLogs.length === 0" class="empty">لا توجد سجلات.</div>
         <div class="cards">
           <div class="card log-card" v-for="l in filteredWithdrawLogs" :key="l.id">
             <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ l.userPhone || l.phoneNumber || '—' }}</span></p>
             <p><strong>البريد:</strong> <span class="gold-text">{{ l.email || l.userEmail || '—' }}</span></p>
             <p><strong>المبلغ:</strong> <span class="gold-text">{{ l.amount }} USDT</span></p>
+            <p><strong>الشبكة:</strong> {{ l.network || '—' }}</p>
             <p><strong>المحفظة:</strong> <span class="gold-text">{{ l.wallet || l.walletAddress || '—' }}</span></p>
-            <p><strong>النوع:</strong> 
+            <p><strong>مستوى VIP:</strong> {{ l.vipLevel || '—' }}</p>
+            <p><strong>يوم السحب:</strong> {{ l.withdrawDay || '—' }}</p>
+            <p><strong>الحالة:</strong> 
               <span :class="{
-                'status-approved': l.type === 'approved',
-                'status-rejected': l.type === 'rejected'
+                'status-approved': l.status === 'approved' || l.type === 'approved',
+                'status-rejected': l.status === 'rejected' || l.type === 'rejected',
+                'status-pending': l.status === 'pending' || l.type === 'pending'
               }">
-                {{ l.type === 'approved' ? 'موافق' : l.type === 'rejected' ? 'مرفوض' : l.type }}
+                {{ l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
+                   l.status === 'rejected' || l.type === 'rejected' ? 'مرفوض' : 
+                   l.status || l.type || 'قيد المراجعة' }}
               </span>
             </p>
-            <p v-if="l.reason"><strong>السبب:</strong> {{ l.reason }}</p>
+            <p v-if="l.reason || l.rejectionReason"><strong>سبب الرفض:</strong> {{ l.reason || l.rejectionReason }}</p>
             <p v-if="l.adminMessage"><strong>رسالة الأدمن:</strong> {{ l.adminMessage }}</p>
             <p><strong>مصدر السحب:</strong> <span class="gold-text">{{ l.withdrawFrom || 'vipBalance' }}</span></p>
-            <p class="muted">الوقت: {{ formatDate(l.createdAt) }}</p>
+            <p class="muted">تاريخ الطلب: {{ formatDate(l.createdAt) }}</p>
+            <p v-if="l.processedAt" class="muted">تاريخ المعالجة: {{ formatDate(l.processedAt) }}</p>
+            <p v-if="l.approvedAt" class="muted">تاريخ الموافقة: {{ formatDate(l.approvedAt) }}</p>
           </div>
         </div>
       </div>
@@ -590,7 +598,6 @@
         <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ userDetails.phoneNumber || '—' }}</span></p>
         <p><strong>البريد:</strong> <span class="gold-text">{{ userDetails.email || '—' }}</span></p>
         
-        <!-- معلومات الحساب الداعي -->
         <div class="invited-by-info" v-if="userDetails.invitedBy">
           <h4>🔗 تمت الدعوة بواسطة</h4>
           <p><strong>البريد:</strong> <span class="gold-text">{{ userDetails.invitedByEmail || '—' }}</span></p>
@@ -601,7 +608,6 @@
           <p class="empty-text">لم تتم دعوته من قبل أي مستخدم (حساب مباشر)</p>
         </div>
 
-        <!-- المستوى 1 -->
         <div class="referral-level">
           <h4>📊 المستوى الأول</h4>
           <p><strong>عدد الإحالات:</strong> <span class="gold-text">{{ userDetails.level1Count || 0 }}</span></p>
@@ -620,7 +626,6 @@
           <div v-else class="empty-text">لا توجد إحالات في هذا المستوى</div>
         </div>
 
-        <!-- المستوى 2 -->
         <div class="referral-level">
           <h4>📊 المستوى الثاني</h4>
           <p><strong>عدد الإحالات:</strong> <span class="gold-text">{{ userDetails.level2Count || 0 }}</span></p>
@@ -639,7 +644,6 @@
           <div v-else class="empty-text">لا توجد إحالات في هذا المستوى</div>
         </div>
 
-        <!-- المستوى 3 -->
         <div class="referral-level">
           <h4>📊 المستوى الثالث</h4>
           <p><strong>عدد الإحالات:</strong> <span class="gold-text">{{ userDetails.level3Count || 0 }}</span></p>
@@ -732,7 +736,6 @@
           </button>
         </div>
         
-        <!-- زر حذف سجل المستخدم بالكامل -->
         <div class="danger-zone">
           <h4 style="color: #dc3545; margin: 15px 0 10px 0; border-top: 2px solid #dc3545; padding-top: 15px;">
             ⚠️ منطقة الخطر - حذف سجل المستخدم
@@ -755,8 +758,14 @@
               <p><strong>الشبكة:</strong> {{ item.network || '—' }}</p>
               <p><strong>المحفظة:</strong> {{ item.wallet || item.walletAddress || '—' }}</p>
               <p><strong>الحالة:</strong> 
-                <span :class="item.type === 'approved' ? 'status-approved' : 'status-rejected'">
-                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type }}
+                <span :class="{
+                  'status-approved': item.status === 'approved' || item.type === 'approved',
+                  'status-rejected': item.status === 'rejected' || item.type === 'rejected',
+                  'status-pending': item.status === 'pending' || item.type === 'pending'
+                }">
+                  {{ item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
+                     item.status === 'rejected' || item.type === 'rejected' ? 'مرفوض' : 
+                     item.status || item.type || 'قيد المراجعة' }}
                 </span>
               </p>
               <p v-if="item.reason"><strong>السبب:</strong> {{ item.reason }}</p>
@@ -960,7 +969,6 @@ export default {
       userWheelSettingsMessage: "",
       userWheelSettingsMessageType: "",
 
-      // Modal تعديل الرصيد
       showBalanceModal: false,
       balanceModalType: 'add',
       balanceModalUser: {},
@@ -968,6 +976,31 @@ export default {
     };
   },
   computed: {
+    // عرض الطلبات المعلقة فقط (pending)
+    pendingWithdraws() {
+      return this.withdraws.filter(w => w.status === 'pending' || !w.status);
+    },
+    filteredPendingWithdraws() {
+      let list = [...this.pendingWithdraws];
+      if (this.withdrawFilter) {
+        const f = this.withdrawFilter.toLowerCase();
+        list = list.filter(
+          (r) =>
+            (r.userPhone || "").toLowerCase().includes(f) ||
+            (r.userEmail || r.email || "").toLowerCase().includes(f) ||
+            (r.wallet || r.walletAddress || "").toLowerCase().includes(f)
+        );
+      }
+      if (this.withdrawSort === "newest")
+        list.sort((a, b) => this.getTimeFromDate(b.createdAt) - this.getTimeFromDate(a.createdAt));
+      else if (this.withdrawSort === "oldest")
+        list.sort((a, b) => this.getTimeFromDate(a.createdAt) - this.getTimeFromDate(b.createdAt));
+      else if (this.withdrawSort === "amount_desc")
+        list.sort((a, b) => (b.amount || 0) - (a.amount || 0));
+      else if (this.withdrawSort === "amount_asc")
+        list.sort((a, b) => (a.amount || 0) - (b.amount || 0));
+      return list;
+    },
     filteredUsers() {
       let list = [...this.users];
       if (this.userFilter) {
@@ -1003,25 +1036,8 @@ export default {
       return list;
     },
     filteredWithdraws() {
-      let list = [...this.withdraws];
-      if (this.withdrawFilter) {
-        const f = this.withdrawFilter.toLowerCase();
-        list = list.filter(
-          (r) =>
-            (r.userPhone || "").toLowerCase().includes(f) ||
-            (r.userEmail || r.email || "").toLowerCase().includes(f) ||
-            (r.wallet || r.walletAddress || "").toLowerCase().includes(f)
-        );
-      }
-      if (this.withdrawSort === "newest")
-        list.sort((a, b) => this.getTimeFromDate(b.createdAt) - this.getTimeFromDate(a.createdAt));
-      else if (this.withdrawSort === "oldest")
-        list.sort((a, b) => this.getTimeFromDate(a.createdAt) - this.getTimeFromDate(b.createdAt));
-      else if (this.withdrawSort === "amount_desc")
-        list.sort((a, b) => (b.amount || 0) - (a.amount || 0));
-      else if (this.withdrawSort === "amount_asc")
-        list.sort((a, b) => (a.amount || 0) - (b.amount || 0));
-      return list;
+      // هذا للتوافق مع الكود القديم
+      return this.pendingWithdraws;
     },
     filteredRechargeRequests() {
       let list = [...this.rechargeRequests];
@@ -1776,8 +1792,6 @@ export default {
       return true;
     },
 
-    // ========== دوال الموافقة والرفض المعدلة ==========
-    
     async confirmApprove() {
       if (!this.validateApproveMessage()) return;
       
@@ -1875,13 +1889,14 @@ export default {
           }
         }
 
-        // 2. إنشاء سجل في withdraw_logs
+        // 2. إنشاء سجل في withdraw_logs (مع جميع بيانات الطلب)
         try {
           await addDoc(collection(db, "withdraw_logs"), {
             userId: req.userId || null,
             userPhone: req.userPhone || null,
             email: req.userEmail || req.email || null,
             amount: req.amount || 0,
+            status: "approved",
             type: "approved",
             adminMessage: message || "",
             network: req.network,
@@ -1889,7 +1904,9 @@ export default {
             vipLevel: req.vipLevel,
             withdrawDay: req.withdrawDay,
             withdrawFrom: req.withdrawFrom || 'balance',
-            createdAt: serverTimestamp(),
+            createdAt: req.createdAt || serverTimestamp(),
+            processedAt: serverTimestamp(),
+            approvedAt: serverTimestamp()
           });
           console.log("✅ تم إنشاء سجل في withdraw_logs");
         } catch (e) {
@@ -1942,10 +1959,12 @@ export default {
           }
         }
 
-        alert("✔ تمت الموافقة بنجاح");
+        // ===== تحديث القوائم =====
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
         await this.loadUsers();
+        
+        alert("✔ تمت الموافقة بنجاح");
         
       } catch (e) {
         console.error("❌ خطأ في الموافقة:", e);
@@ -2007,21 +2026,24 @@ export default {
           }
         }
 
-        // 2. إنشاء سجل في withdraw_logs
+        // 2. إنشاء سجل في withdraw_logs مع جميع البيانات والسبب
         try {
           await addDoc(collection(db, "withdraw_logs"), {
             userId: req.userId || null,
             userPhone: req.userPhone || null,
             email: req.userEmail || req.email || null,
             amount: req.amount || 0,
+            status: "rejected",
             type: "rejected",
             reason: reason,
+            adminMessage: "تم رفض طلب السحب",
             network: req.network,
             wallet: req.wallet || req.walletAddress,
             vipLevel: req.vipLevel,
             withdrawDay: req.withdrawDay,
             withdrawFrom: req.withdrawFrom || 'balance',
-            createdAt: serverTimestamp(),
+            createdAt: req.createdAt || serverTimestamp(),
+            processedAt: serverTimestamp()
           });
           console.log("✅ تم إنشاء سجل في withdraw_logs");
         } catch (e) {
@@ -2070,10 +2092,12 @@ export default {
           }
         }
 
-        alert("❌ تم الرفض وإرجاع الرصيد");
+        // ===== تحديث القوائم =====
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
         await this.loadUsers();
+        
+        alert("❌ تم الرفض وإرجاع الرصيد");
         
       } catch (e) {
         console.error("❌ خطأ في رفض الطلب:", e);
@@ -2097,7 +2121,6 @@ export default {
       this.processingId = r.id;
       
       try {
-        // ===== العملية الرئيسية: تحديث طلب التعبئة =====
         const pRef = doc(db, "payments", r.id);
         await updateDoc(pRef, {
           status: "approved",
@@ -2107,9 +2130,6 @@ export default {
         });
         console.log("✅ تم تحديث حالة الدفع إلى approved");
 
-        // ===== العمليات الثانوية =====
-        
-        // 1. إضافة الرصيد إلى balance
         if (r.userId && r.amount) {
           try {
             await runTransaction(db, async (transaction) => {
@@ -2129,7 +2149,6 @@ export default {
           }
         }
 
-        // 2. إنشاء سجل في recharge_logs
         try {
           let userPhone = r.userPhone || r.phoneNumber;
           if (!userPhone && r.userId) {
@@ -2149,6 +2168,7 @@ export default {
             email: r.userEmail || r.email || null,
             amount: r.amount || 0,
             type: "approved",
+            status: "approved",
             adminMessage: message || "",
             network: r.network,
             txid: r.txid,
@@ -2160,7 +2180,6 @@ export default {
           console.warn("⚠️ فشل إنشاء سجل في recharge_logs:", e);
         }
 
-        // 3. إنشاء معاملة
         if (r.userId) {
           try {
             let userPhone = r.userPhone || r.phoneNumber;
@@ -2194,7 +2213,6 @@ export default {
           }
         }
 
-        // 4. حساب أرباح الإحالة
         if (r.userId) {
           try {
             await this.calculateAndAddReferralEarnings(r.userId, r.amount, r.id);
@@ -2204,7 +2222,6 @@ export default {
           }
         }
 
-        // 5. إرسال إشعار للمستخدم
         if (r.userId) {
           try {
             const notificationMessage = message 
@@ -2255,7 +2272,6 @@ export default {
       this.processingId = r.id;
       
       try {
-        // ===== العملية الرئيسية: تحديث طلب التعبئة =====
         const pRef = doc(db, "payments", r.id);
         await updateDoc(pRef, {
           status: "rejected",
@@ -2263,9 +2279,6 @@ export default {
         });
         console.log("✅ تم تحديث حالة الدفع إلى rejected");
 
-        // ===== العمليات الثانوية =====
-        
-        // 1. إنشاء سجل في recharge_logs
         try {
           let userPhone = r.userPhone || r.phoneNumber;
           if (!userPhone && r.userId) {
@@ -2285,6 +2298,7 @@ export default {
             email: r.userEmail || r.email || null,
             amount: r.amount || 0,
             type: "rejected",
+            status: "rejected",
             reason: reason,
             network: r.network,
             txid: r.txid,
@@ -2296,7 +2310,6 @@ export default {
           console.warn("⚠️ فشل إنشاء سجل في recharge_logs:", e);
         }
 
-        // 2. إنشاء معاملة
         if (r.userId) {
           try {
             let userPhone = r.userPhone || r.phoneNumber;
@@ -2330,7 +2343,6 @@ export default {
           }
         }
 
-        // 3. إرسال إشعار للمستخدم
         if (r.userId) {
           try {
             await addDoc(collection(db, "users", r.userId, "notifications"), {
@@ -2555,6 +2567,7 @@ export default {
     async loadWithdrawRequests() {
       try {
         this.loadingWithdraws = true;
+        // جلب جميع طلبات السحب من withdraw_requests
         const snap = await getDocs(collection(db, "withdraw_requests"));
         this.withdraws = snap.docs.map((d) => {
           const data = d.data() || {};
@@ -2569,19 +2582,22 @@ export default {
             userPhone: data.userPhone || null,
             userEmail: data.userEmail || data.email,
             email: data.userEmail || data.email,
-            amount: data.amount,
-            network: data.network,
-            wallet: data.wallet,
-            walletAddress: data.walletAddress || data.wallet,
-            vipLevel: data.vipLevel,
-            withdrawDay: data.withdrawDay,
+            amount: data.amount || 0,
+            network: data.network || "",
+            wallet: data.wallet || "",
+            walletAddress: data.walletAddress || data.wallet || "",
+            status: data.status || "pending",
+            vipLevel: data.vipLevel || "",
+            withdrawDay: data.withdrawDay || "",
             withdrawFrom: data.withdrawFrom || 'vipBalance',
             oldBalance: data.oldBalance ?? null,
             createdAt,
           };
         });
+        console.log(`✅ تم تحميل ${this.withdraws.length} طلب سحب (${this.pendingWithdraws.length} معلق)`);
       } catch (e) {
-        alert("خطأ عند تحميل طلبات السحب");
+        console.error("خطأ عند تحميل طلبات السحب:", e);
+        alert("خطأ عند تحميل طلبات السحب: " + e.message);
       } finally {
         this.loadingWithdraws = false;
       }
@@ -2691,6 +2707,7 @@ export default {
     async loadWithdrawLogs() {
       try {
         this.loadingWithdrawLogs = true;
+        // جلب جميع سجلات السحوبات من withdraw_logs
         const snap = await getDocs(collection(db, "withdraw_logs"));
         this.withdrawLogs = snap.docs.map((d) => {
           const data = d.data() || {};
@@ -2703,9 +2720,13 @@ export default {
             wallet: data.wallet || data.walletAddress || null,
             walletAddress: data.walletAddress || data.wallet || null,
             withdrawFrom: data.withdrawFrom || 'balance',
+            status: data.status || data.type || 'pending',
+            type: data.type || data.status || 'pending',
           };
         });
+        console.log(`✅ تم تحميل ${this.withdrawLogs.length} سجل سحب`);
       } catch (e) {
+        console.error("خطأ عند تحميل سجل السحوبات:", e);
         this.withdrawLogs = [];
       } finally {
         this.loadingWithdrawLogs = false;
@@ -2726,7 +2747,8 @@ export default {
             const data = d.data() || {};
             return {
               id: d.id,
-              type: data.type || '',
+              type: data.type || data.status || '',
+              status: data.status || data.type || '',
               amount: data.amount || 0,
               userPhone: data.userPhone || null,
               email: data.email || data.userEmail || '',
@@ -3072,6 +3094,7 @@ export default {
           email: r.userEmail || r.email || null,
           amount: r.amount || 0,
           type: "deleted",
+          status: "deleted",
           network: r.network,
           txid: r.txid,
           targetBalance: "balance",
