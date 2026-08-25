@@ -23,10 +23,13 @@
         الإشعارات
       </button>
       <button :class="['tab', activeTab === 'withdrawLogs' ? 'active' : '']" @click="switchTab('withdrawLogs')">
-        سجل السحوبات ({{ withdrawLogs.length }})
+        سجل السحوبات
       </button>
       <button :class="['tab', activeTab === 'rechargeLogs' ? 'active' : '']" @click="switchTab('rechargeLogs')">
         سجل التعبئة
+      </button>
+      <button :class="['tab', activeTab === 'wheelSettings' ? 'active' : '']" @click="switchTab('wheelSettings')">
+        🎡 إعدادات العجلة
       </button>
     </div>
 
@@ -57,20 +60,12 @@
             <p><strong>الشبكة:</strong> {{ req.network || '—' }}</p>
             <p><strong>المحفظة:</strong> {{ req.wallet || req.walletAddress || '—' }}</p>
             <p><strong>مستوى VIP:</strong> {{ req.vipLevel || '—' }}</p>
-            <p><strong>الحالة:</strong> 
-              <span :class="{
-                'status-approved': req.status === 'approved',
-                'status-rejected': req.status === 'rejected',
-                'status-pending': req.status === 'pending'
-              }">
-                {{ req.status === 'approved' ? 'موافق' : req.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' }}
-              </span>
-            </p>
+            <p><strong>يوم السحب:</strong> {{ req.withdrawDay || '—' }}</p>
+            <p><strong>مصدر السحب:</strong> <span class="gold-text">{{ req.withdrawFrom || 'vipBalance' }}</span></p>
             <p class="muted">تم الإنشاء: {{ formatDate(req.createdAt) }}</p>
             <div class="card-actions">
-              <button class="btn gold" type="button" @click.stop="openApproveModal(req, 'withdraw')" :disabled="processingId === req.id || req.status === 'approved'">موافقة</button>
-              <button class="btn red" type="button" @click.stop="openRejectModal(req, 'withdraw')" :disabled="processingId === req.id || req.status === 'rejected'">رفض</button>
-              <button class="btn black" type="button" @click.stop="deleteWithdraw(req)" :disabled="processingId === req.id">حذف</button>
+              <button class="btn gold" type="button" @click.stop="openApproveModal(req, 'withdraw')" :disabled="processingId === req.id">موافقة</button>
+              <button class="btn red" type="button" @click.stop="openRejectModal(req, 'withdraw')" :disabled="processingId === req.id">رفض</button>
               <button class="btn gold-outline" type="button" @click.stop="viewWithdrawDetails(req)">تفاصيل</button>
             </div>
           </div>
@@ -154,8 +149,6 @@
           <div class="card user-card" v-for="u in filteredUsers" :key="u.id">
             <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ u.phoneNumber || '—' }}</span></p>
             <p><strong>البريد:</strong> <span class="gold-text">{{ u.email || '—' }}</span></p>
-            
-            <!-- معلومات الرصيد المحسنة -->
             <p><strong>الرصيد الإجمالي:</strong> <span class="gold-text">{{ formatBalance(u.balance) }} USDT</span></p>
             <p v-if="u.vipLockedAmount > 0">
               <strong>مبلغ VIP المحجوز:</strong> 
@@ -166,7 +159,6 @@
               <strong>المتاح للسحب:</strong> 
               <span class="gold-text" style="color: #34d399;">{{ formatBalance(u.availableBalance) }} USDT</span>
             </p>
-            
             <p><strong>الحالة:</strong> {{ u.blocked ? 'محظور' : 'فعال' }}</p>
             <p><strong>طريقة التسجيل:</strong> 
               <span :class="{
@@ -189,6 +181,9 @@
               </button>
               <button class="btn gold-outline" type="button" @click="viewUserNotifications(u)">
                 الإشعارات ({{ u.notificationsCount || 0 }})
+              </button>
+              <button class="btn wheel-settings-btn" type="button" @click="openUserWheelSettings(u)">
+                🎡 إعدادات العجلة
               </button>
             </div>
           </div>
@@ -225,7 +220,7 @@
       <div class="panel-header">
         <h2>سجل السحوبات</h2>
         <div class="controls">
-          <input v-model="withdrawLogFilter" placeholder="بحث بالبريد أو المحفظة..." />
+          <input v-model="withdrawLogFilter" placeholder="بحث بالسعر أو البريد..." />
           <select v-model="withdrawLogSort">
             <option value="newest">الأحدث أولاً</option>
             <option value="oldest">الأقدم أولاً</option>
@@ -238,39 +233,25 @@
 
       <div v-if="loadingWithdrawLogs" class="loading">⏳ جاري تحميل السجلات...</div>
       <div v-else>
-        <div v-if="filteredWithdrawLogs.length === 0" class="empty">لا توجد سجلات.</div>
+        <div v-if="withdrawLogs.length === 0" class="empty">لا توجد سجلات.</div>
         <div class="cards">
           <div class="card log-card" v-for="l in filteredWithdrawLogs" :key="l.id">
-            <p><strong>معرف المعاملة:</strong> <span class="gold-text">{{ l.transactionId || l.id || '—' }}</span></p>
-            <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ l.userPhone || '—' }}</span></p>
-            <p><strong>البريد:</strong> <span class="gold-text">{{ l.userEmail || l.email || '—' }}</span></p>
+            <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ l.userPhone || l.phoneNumber || '—' }}</span></p>
+            <p><strong>البريد:</strong> <span class="gold-text">{{ l.email || l.userEmail || '—' }}</span></p>
             <p><strong>المبلغ:</strong> <span class="gold-text">{{ l.amount }} USDT</span></p>
-            <p><strong>الشبكة:</strong> {{ l.network || '—' }}</p>
-            <p><strong>عنوان المحفظة:</strong> <span class="gold-text">{{ l.wallet || l.walletAddress || '—' }}</span></p>
-            <p><strong>مستوى VIP:</strong> {{ l.vipLevel || '—' }}</p>
-            <p><strong>المبلغ المحجوز:</strong> {{ l.lockedAmountAtWithdraw || '—' }} USDT</p>
-            <p><strong>الرصيد المتاح:</strong> {{ l.availableBalanceAtWithdraw || '—' }} USDT</p>
-            <p><strong>الحالة:</strong> 
+            <p><strong>المحفظة:</strong> <span class="gold-text">{{ l.wallet || l.walletAddress || '—' }}</span></p>
+            <p><strong>النوع:</strong> 
               <span :class="{
-                'status-approved': l.status === 'approved' || l.type === 'approved',
-                'status-rejected': l.status === 'rejected' || l.type === 'rejected',
-                'status-pending': l.status === 'pending' || l.type === 'pending'
+                'status-approved': l.type === 'approved',
+                'status-rejected': l.type === 'rejected'
               }">
-                {{ l.status === 'approved' || l.type === 'approved' ? 'موافق' : 
-                   l.status === 'rejected' || l.type === 'rejected' ? 'مرفوض' : 
-                   l.status || l.type || 'قيد المراجعة' }}
+                {{ l.type === 'approved' ? 'موافق' : l.type === 'rejected' ? 'مرفوض' : l.type }}
               </span>
             </p>
-            <p v-if="l.adminMessage && l.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
-              <strong>ملاحظة:</strong> {{ l.adminMessage }}
-            </p>
-            <p v-if="l.reason || l.rejectionReason"><strong>سبب الرفض:</strong> {{ l.reason || l.rejectionReason }}</p>
-            <p v-if="l.adminMessage && !l.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ l.adminMessage }}</p>
-            <p v-if="l.userMessage"><strong>رسالة المستخدم:</strong> {{ l.userMessage }}</p>
-            <p v-if="l.adminAction"><strong>إجراء الأدمن:</strong> {{ l.adminAction }}</p>
-            <p class="muted">تاريخ الطلب: {{ formatDate(l.createdAt) }}</p>
-            <p v-if="l.processedAt" class="muted">تاريخ المعالجة: {{ formatDate(l.processedAt) }}</p>
-            <p v-if="l.approvedAt" class="muted">تاريخ الموافقة: {{ formatDate(l.approvedAt) }}</p>
+            <p v-if="l.reason"><strong>السبب:</strong> {{ l.reason }}</p>
+            <p v-if="l.adminMessage"><strong>رسالة الأدمن:</strong> {{ l.adminMessage }}</p>
+            <p><strong>مصدر السحب:</strong> <span class="gold-text">{{ l.withdrawFrom || 'vipBalance' }}</span></p>
+            <p class="muted">الوقت: {{ formatDate(l.createdAt) }}</p>
           </div>
         </div>
       </div>
@@ -309,12 +290,107 @@
                 {{ log.type === 'approved' ? 'موافق' : log.type === 'rejected' ? 'مرفوض' : log.type || log.status || '—' }}
               </span>
             </p>
-            <p v-if="log.adminMessage && log.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
-              <strong>ملاحظة:</strong> {{ log.adminMessage }}
-            </p>
             <p v-if="log.reason"><strong>سبب الرفض:</strong> {{ log.reason }}</p>
-            <p v-if="log.adminMessage && !log.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ log.adminMessage }}</p>
+            <p v-if="log.adminMessage"><strong>رسالة الأدمن:</strong> {{ log.adminMessage }}</p>
+            <p><strong>الرصيد المستهدف:</strong> <span class="gold-text">{{ log.targetBalance || 'depositBalance' }}</span></p>
             <p class="muted">التاريخ: {{ formatDate(log.createdAt) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- إعدادات عجلة الحظ العامة -->
+    <div v-if="activeTab === 'wheelSettings'" class="panel">
+      <div class="panel-header">
+        <h2>🎡 إعدادات عجلة الحظ (العامة)</h2>
+        <div class="controls">
+          <button @click="loadWheelSettings" type="button">تحديث</button>
+          <button @click="resetToDefaultSettings" type="button">استعادة الإعدادات الافتراضية</button>
+        </div>
+      </div>
+
+      <div v-if="loadingWheelSettings" class="loading">⏳ جاري تحميل إعدادات العجلة...</div>
+      <div v-else>
+        <div class="wheel-settings-form">
+          <div class="form-group">
+            <label>نسبة الخسارة (%)</label>
+            <input 
+              type="number" 
+              v-model.number="wheelSettings.lossRate" 
+              @input="validateWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ wheelSettings.lossRate }}%</span>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الصغير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="wheelSettings.smallWinRate" 
+              @input="validateWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ wheelSettings.smallWinRate }}%</span>
+            <small class="hint">(مضاعف 0.5x)</small>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الكبير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="wheelSettings.bigWinRate" 
+              @input="validateWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ wheelSettings.bigWinRate }}%</span>
+            <small class="hint">(مضاعف 1.5x)</small>
+          </div>
+          
+          <div class="total-info" :class="{ 'error': wheelSettingsTotal !== 100 }">
+            <strong>المجموع: {{ wheelSettingsTotal }}%</strong>
+            <span v-if="wheelSettingsTotal !== 100" class="error-message">
+              يجب أن يكون المجموع 100% (الفرق: {{ (100 - wheelSettingsTotal).toFixed(1) }}%)
+            </span>
+            <span v-else class="success-message">
+              ✓ النسب صحيحة
+            </span>
+          </div>
+          
+          <div class="preview">
+            <h3>معاينة النسب الحالية</h3>
+            <div class="preview-bars">
+              <div class="bar loss" :style="{ width: wheelSettings.lossRate + '%' }">
+                خسارة: {{ wheelSettings.lossRate }}%
+              </div>
+              <div class="bar small-win" :style="{ width: wheelSettings.smallWinRate + '%' }">
+                ربح صغير: {{ wheelSettings.smallWinRate }}%
+              </div>
+              <div class="bar big-win" :style="{ width: wheelSettings.bigWinRate + '%' }">
+                ربح كبير: {{ wheelSettings.bigWinRate }}%
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            @click="saveWheelSettings" 
+            :disabled="!wheelSettingsValid || savingWheelSettings"
+            class="save-btn"
+          >
+            {{ savingWheelSettings ? 'جاري الحفظ...' : '💾 حفظ الإعدادات العامة' }}
+          </button>
+          
+          <div v-if="wheelSettingsMessage" class="save-message" :class="wheelSettingsMessageType">
+            {{ wheelSettingsMessage }}
           </div>
         </div>
       </div>
@@ -359,6 +435,8 @@
         <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ approveModalData.userPhone || approveModalData.phoneNumber || '—' }}</span></p>
         <p><strong>البريد:</strong> <span class="gold-text">{{ approveModalData.email || approveModalData.userEmail || '—' }}</span></p>
         <p><strong>النوع:</strong> {{ approveType === 'recharge' ? 'تعبئة' : 'سحب' }}</p>
+        <p v-if="approveType === 'recharge'"><strong>سيتم الإضافة إلى:</strong> <span class="gold-text">balance (الرصيد الإجمالي)</span></p>
+        <p v-if="approveType === 'withdraw'"><strong>سيتم الخصم من:</strong> <span class="gold-text">balance (الرصيد الإجمالي)</span></p>
         
         <div class="input-box" style="margin-top: 15px;">
           <label>رسالة للمستخدم (اختياري - 0-500 حرف)</label>
@@ -374,7 +452,7 @@
         </div>
         
         <div class="modal-actions">
-          <button class="btn white-btn" type="button" @click="confirmApprove" :disabled="processingId === approveModalData.id">
+          <button class="btn gold" type="button" @click="confirmApprove" :disabled="processingId === approveModalData.id">
             تأكيد الموافقة
           </button>
           <button class="btn gold-outline" type="button" @click="closeApproveModal">إلغاء</button>
@@ -382,46 +460,124 @@
       </div>
     </div>
 
-    <!-- Modal تفاصيل الطلب -->
+    <!-- Modal إعدادات العجلة للمستخدم -->
+    <div v-if="showUserWheelModal" class="modal-backdrop" @click.self="closeUserWheelModal">
+      <div class="modal user-wheel-modal">
+        <h3>🎡 إعدادات عجلة الحظ للمستخدم</h3>
+        <p><strong>المستخدم:</strong> <span class="gold-text">{{ selectedUser.email || selectedUser.phoneNumber || '—' }}</span></p>
+        <p class="muted">تحديد "استخدام الإعدادات العامة" يعني أن اللعبة ستستخدم إعدادات العجلة العامة</p>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="useGlobalSettingsForUser" @change="onUseGlobalSettingsChange" />
+            <span>استخدام الإعدادات العامة</span>
+          </label>
+        </div>
+        
+        <div v-if="!useGlobalSettingsForUser" class="user-settings-form">
+          <div class="form-group">
+            <label>نسبة الخسارة (%)</label>
+            <input 
+              type="number" 
+              v-model.number="userWheelSettings.lossRate" 
+              @input="validateUserWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ userWheelSettings.lossRate }}%</span>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الصغير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="userWheelSettings.smallWinRate" 
+              @input="validateUserWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ userWheelSettings.smallWinRate }}%</span>
+            <small class="hint">(مضاعف 0.5x)</small>
+          </div>
+          
+          <div class="form-group">
+            <label>نسبة الربح الكبير (%)</label>
+            <input 
+              type="number" 
+              v-model.number="userWheelSettings.bigWinRate" 
+              @input="validateUserWheelRates"
+              min="0" 
+              max="100"
+              step="0.1"
+              class="settings-input"
+            />
+            <span class="value-display">{{ userWheelSettings.bigWinRate }}%</span>
+            <small class="hint">(مضاعف 1.5x)</small>
+          </div>
+          
+          <div class="total-info" :class="{ 'error': userWheelSettingsTotal !== 100 }">
+            <strong>المجموع: {{ userWheelSettingsTotal }}%</strong>
+            <span v-if="userWheelSettingsTotal !== 100" class="error-message">
+              يجب أن يكون المجموع 100% (الفرق: {{ (100 - userWheelSettingsTotal).toFixed(1) }}%)
+            </span>
+            <span v-else class="success-message">
+              ✓ النسب صحيحة
+            </span>
+          </div>
+        </div>
+        
+        <div v-else class="global-settings-info">
+          <p>سيتم استخدام الإعدادات العامة التالية:</p>
+          <div class="global-preview">
+            <div class="preview-item">خسارة: {{ globalWheelSettings.lossRate }}%</div>
+            <div class="preview-item">ربح صغير: {{ globalWheelSettings.smallWinRate }}%</div>
+            <div class="preview-item">ربح كبير: {{ globalWheelSettings.bigWinRate }}%</div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button class="btn gold" type="button" @click="saveUserWheelSettings" :disabled="savingUserWheelSettings">
+            {{ savingUserWheelSettings ? 'جاري الحفظ...' : '💾 حفظ الإعدادات' }}
+          </button>
+          <button class="btn gold-outline" type="button" @click="closeUserWheelModal">إلغاء</button>
+        </div>
+        
+        <div v-if="userWheelSettingsMessage" class="save-message" :class="userWheelSettingsMessageType">
+          {{ userWheelSettingsMessage }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal تفاصيل السحب/التعبئة -->
     <div v-if="showModal" class="modal-backdrop" @click.self="closeModal">
       <div class="modal">
         <h3>تفاصيل الطلب</h3>
-        <p v-if="modalType === 'withdraw'"><strong>معرف المعاملة:</strong> <span class="gold-text">{{ modalData.transactionId || modalData.id || '—' }}</span></p>
         <p v-if="modalType === 'withdraw'"><strong>رقم الهاتف:</strong> <span class="gold-text">{{ modalData.userPhone || modalData.phoneNumber || '—' }}</span></p>
         <p v-if="modalType === 'withdraw'"><strong>البريد:</strong> <span class="gold-text">{{ modalData.email || modalData.userEmail }}</span></p>
         <p v-if="modalType === 'withdraw'"><strong>المبلغ:</strong> <span class="gold-text">{{ modalData.amount }} USDT</span></p>
         <p v-if="modalType === 'withdraw'"><strong>الشبكة:</strong> {{ modalData.network }}</p>
         <p v-if="modalType === 'withdraw'"><strong>المحفظة:</strong> {{ modalData.wallet || modalData.walletAddress }}</p>
         <p v-if="modalType === 'withdraw'"><strong>مستوى VIP:</strong> {{ modalData.vipLevel || '—' }}</p>
-        <p v-if="modalType === 'withdraw'"><strong>المبلغ المحجوز:</strong> {{ modalData.lockedAmountAtWithdraw || '—' }} USDT</p>
-        <p v-if="modalType === 'withdraw'"><strong>الرصيد المتاح:</strong> {{ modalData.availableBalanceAtWithdraw || '—' }} USDT</p>
-        <p v-if="modalType === 'withdraw'"><strong>الحالة:</strong> 
-          <span :class="{
-            'status-approved': modalData.status === 'approved',
-            'status-rejected': modalData.status === 'rejected',
-            'status-pending': modalData.status === 'pending'
-          }">
-            {{ modalData.status === 'approved' ? 'موافق' : modalData.status === 'rejected' ? 'مرفوض' : 'قيد المراجعة' }}
-          </span>
-        </p>
-        <p v-if="modalData.reason"><strong>سبب الرفض:</strong> {{ modalData.reason }}</p>
-        <p v-if="modalData.adminMessage"><strong>رسالة الأدمن:</strong> {{ modalData.adminMessage }}</p>
-        <p v-if="modalData.userMessage"><strong>رسالة المستخدم:</strong> {{ modalData.userMessage }}</p>
+        <p v-if="modalType === 'withdraw'"><strong>يوم السحب:</strong> {{ modalData.withdrawDay || '—' }}</p>
+        <p v-if="modalType === 'withdraw'"><strong>مصدر السحب:</strong> <span class="gold-text">{{ modalData.withdrawFrom || 'vipBalance' }}</span></p>
         
         <p v-if="modalType === 'recharge'"><strong>رقم الهاتف:</strong> <span class="gold-text">{{ modalData.userPhone || modalData.phoneNumber || '—' }}</span></p>
         <p v-if="modalType === 'recharge'"><strong>البريد:</strong> <span class="gold-text">{{ modalData.email || modalData.userEmail }}</span></p>
         <p v-if="modalType === 'recharge'"><strong>المبلغ:</strong> <span class="gold-text">{{ modalData.amount }} USDT</span></p>
         <p v-if="modalType === 'recharge'"><strong>الشبكة:</strong> {{ modalData.network }}</p>
         <p v-if="modalType === 'recharge' && modalData.txid"><strong>TxID:</strong> <span class="gold-text">{{ modalData.txid }}</span></p>
+        <p v-if="modalType === 'recharge'"><strong>الرصيد المستهدف:</strong> <span class="gold-text">balance (الرصيد الإجمالي)</span></p>
         
         <p class="muted">تم الإنشاء: {{ formatDate(modalData.createdAt) }}</p>
         <div class="modal-actions">
-          <button v-if="modalType === 'withdraw'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'withdraw')" :disabled="processingId === modalData.id || modalData.status === 'approved'">موافقة</button>
-          <button v-if="modalType === 'withdraw'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'withdraw')" :disabled="processingId === modalData.id || modalData.status === 'rejected'">رفض</button>
-          <button v-if="modalType === 'withdraw'" class="btn black" type="button" @click.stop="deleteWithdraw(modalData)" :disabled="processingId === modalData.id">حذف</button>
+          <button v-if="modalType === 'withdraw'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'withdraw')" :disabled="processingId === modalData.id">موافقة</button>
+          <button v-if="modalType === 'withdraw'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'withdraw')" :disabled="processingId === modalData.id">رفض</button>
           <button v-if="modalType === 'recharge'" class="btn gold" type="button" @click.stop="openApproveModal(modalData, 'recharge')" :disabled="processingId === modalData.id || modalData.status === 'approved'">موافقة</button>
           <button v-if="modalType === 'recharge'" class="btn red" type="button" @click.stop="openRejectModal(modalData, 'recharge')" :disabled="processingId === modalData.id || modalData.status === 'rejected'">رفض</button>
-          <button v-if="modalType === 'recharge'" class="btn black" type="button" @click.stop="deleteRecharge(modalData)" :disabled="processingId === modalData.id">حذف</button>
           <button class="btn gold-outline" type="button" @click="closeModal">إغلاق</button>
         </div>
       </div>
@@ -434,6 +590,7 @@
         <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ userDetails.phoneNumber || '—' }}</span></p>
         <p><strong>البريد:</strong> <span class="gold-text">{{ userDetails.email || '—' }}</span></p>
         
+        <!-- معلومات الحساب الداعي -->
         <div class="invited-by-info" v-if="userDetails.invitedBy">
           <h4>🔗 تمت الدعوة بواسطة</h4>
           <p><strong>البريد:</strong> <span class="gold-text">{{ userDetails.invitedByEmail || '—' }}</span></p>
@@ -444,43 +601,58 @@
           <p class="empty-text">لم تتم دعوته من قبل أي مستخدم (حساب مباشر)</p>
         </div>
 
+        <!-- المستوى 1 -->
         <div class="referral-level">
           <h4>📊 المستوى الأول</h4>
           <p><strong>عدد الإحالات:</strong> <span class="gold-text">{{ userDetails.level1Count || 0 }}</span></p>
-          <p><strong>العمولة:</strong> <span class="gold-text">15%</span></p>
-          <p><strong>الدخل:</strong> <span class="gold-text">{{ userDetails.level1Earnings?.toFixed(2) || '0.00' }} USDT</span></p>
+          <p><strong>نسبة العمولة:</strong> <span class="gold-text">15%</span></p>
+          <p><strong>إجمالي العمولات:</strong> <span class="gold-text">{{ formatBalance(userDetails.level1Earnings || 0) }} USDT</span></p>
+          <p><strong>مبلغ الشحن الكلي:</strong> <span class="gold-text">{{ formatBalance(userDetails.level1RechargeTotal || 0) }} USDT</span></p>
           <div v-if="userDetails.level1Users && userDetails.level1Users.length > 0" class="users-list">
             <div class="user-item" v-for="refUser in userDetails.level1Users" :key="refUser.id">
               <p><strong>البريد:</strong> <span class="gold-text">{{ refUser.email || '—' }}</span></p>
               <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ refUser.phoneNumber || '—' }}</span></p>
+              <p><strong>تاريخ التسجيل:</strong> {{ formatDate(refUser.createdAt) }}</p>
+              <p><strong>إجمالي الشحن:</strong> <span class="gold-text">{{ formatBalance(refUser.totalRecharge || 0) }} USDT</span></p>
+              <p><strong>العمولة:</strong> <span class="gold-text">{{ formatBalance((refUser.totalRecharge || 0) * 0.15) }} USDT</span></p>
             </div>
           </div>
           <div v-else class="empty-text">لا توجد إحالات في هذا المستوى</div>
         </div>
 
+        <!-- المستوى 2 -->
         <div class="referral-level">
           <h4>📊 المستوى الثاني</h4>
           <p><strong>عدد الإحالات:</strong> <span class="gold-text">{{ userDetails.level2Count || 0 }}</span></p>
-          <p><strong>العمولة:</strong> <span class="gold-text">10%</span></p>
-          <p><strong>الدخل:</strong> <span class="gold-text">{{ userDetails.level2Earnings?.toFixed(2) || '0.00' }} USDT</span></p>
+          <p><strong>نسبة العمولة:</strong> <span class="gold-text">10%</span></p>
+          <p><strong>إجمالي العمولات:</strong> <span class="gold-text">{{ formatBalance(userDetails.level2Earnings || 0) }} USDT</span></p>
+          <p><strong>مبلغ الشحن الكلي:</strong> <span class="gold-text">{{ formatBalance(userDetails.level2RechargeTotal || 0) }} USDT</span></p>
           <div v-if="userDetails.level2Users && userDetails.level2Users.length > 0" class="users-list">
             <div class="user-item" v-for="refUser in userDetails.level2Users" :key="refUser.id">
               <p><strong>البريد:</strong> <span class="gold-text">{{ refUser.email || '—' }}</span></p>
               <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ refUser.phoneNumber || '—' }}</span></p>
+              <p><strong>تاريخ التسجيل:</strong> {{ formatDate(refUser.createdAt) }}</p>
+              <p><strong>إجمالي الشحن:</strong> <span class="gold-text">{{ formatBalance(refUser.totalRecharge || 0) }} USDT</span></p>
+              <p><strong>العمولة:</strong> <span class="gold-text">{{ formatBalance((refUser.totalRecharge || 0) * 0.10) }} USDT</span></p>
             </div>
           </div>
           <div v-else class="empty-text">لا توجد إحالات في هذا المستوى</div>
         </div>
 
+        <!-- المستوى 3 -->
         <div class="referral-level">
           <h4>📊 المستوى الثالث</h4>
           <p><strong>عدد الإحالات:</strong> <span class="gold-text">{{ userDetails.level3Count || 0 }}</span></p>
-          <p><strong>العمولة:</strong> <span class="gold-text">5%</span></p>
-          <p><strong>الدخل:</strong> <span class="gold-text">{{ userDetails.level3Earnings?.toFixed(2) || '0.00' }} USDT</span></p>
+          <p><strong>نسبة العمولة:</strong> <span class="gold-text">5%</span></p>
+          <p><strong>إجمالي العمولات:</strong> <span class="gold-text">{{ formatBalance(userDetails.level3Earnings || 0) }} USDT</span></p>
+          <p><strong>مبلغ الشحن الكلي:</strong> <span class="gold-text">{{ formatBalance(userDetails.level3RechargeTotal || 0) }} USDT</span></p>
           <div v-if="userDetails.level3Users && userDetails.level3Users.length > 0" class="users-list">
             <div class="user-item" v-for="refUser in userDetails.level3Users" :key="refUser.id">
               <p><strong>البريد:</strong> <span class="gold-text">{{ refUser.email || '—' }}</span></p>
               <p><strong>رقم الهاتف:</strong> <span class="gold-text">{{ refUser.phoneNumber || '—' }}</span></p>
+              <p><strong>تاريخ التسجيل:</strong> {{ formatDate(refUser.createdAt) }}</p>
+              <p><strong>إجمالي الشحن:</strong> <span class="gold-text">{{ formatBalance(refUser.totalRecharge || 0) }} USDT</span></p>
+              <p><strong>العمولة:</strong> <span class="gold-text">{{ formatBalance((refUser.totalRecharge || 0) * 0.05) }} USDT</span></p>
             </div>
           </div>
           <div v-else class="empty-text">لا توجد إحالات في هذا المستوى</div>
@@ -533,6 +705,7 @@
           <div class="detail-item" v-if="accountDetails.vipLockedAmount > 0">
             <label>مبلغ VIP المحجوز:</label>
             <div class="detail-value" style="color: #fbbf24;">{{ formatBalance(accountDetails.vipLockedAmount) }} USDT</div>
+            <small class="vip-expiry">غير قابل للسحب</small>
           </div>
           
           <div class="detail-item" v-if="accountDetails.vipLockedAmount > 0">
@@ -559,6 +732,7 @@
           </button>
         </div>
         
+        <!-- زر حذف سجل المستخدم بالكامل -->
         <div class="danger-zone">
           <h4 style="color: #dc3545; margin: 15px 0 10px 0; border-top: 2px solid #dc3545; padding-top: 15px;">
             ⚠️ منطقة الخطر - حذف سجل المستخدم
@@ -581,19 +755,12 @@
               <p><strong>الشبكة:</strong> {{ item.network || '—' }}</p>
               <p><strong>المحفظة:</strong> {{ item.wallet || item.walletAddress || '—' }}</p>
               <p><strong>الحالة:</strong> 
-                <span :class="item.status === 'approved' || item.type === 'approved' ? 'status-approved' : 
-                               item.status === 'rejected' || item.type === 'rejected' ? 'status-rejected' : 
-                               'status-pending'">
-                  {{ item.status === 'approved' || item.type === 'approved' ? 'موافق' : 
-                     item.status === 'rejected' || item.type === 'rejected' ? 'مرفوض' : 
-                     item.status || item.type || 'قيد المراجعة' }}
+                <span :class="item.type === 'approved' ? 'status-approved' : 'status-rejected'">
+                  {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type }}
                 </span>
               </p>
-              <p v-if="item.adminMessage && item.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
-                <strong>ملاحظة:</strong> {{ item.adminMessage }}
-              </p>
               <p v-if="item.reason"><strong>السبب:</strong> {{ item.reason }}</p>
-              <p v-if="item.adminMessage && !item.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
+              <p v-if="item.adminMessage"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
               <p class="muted">التاريخ: {{ formatDate(item.createdAt) }}</p>
             </div>
           </div>
@@ -616,11 +783,8 @@
                   {{ item.type === 'approved' ? 'موافق' : item.type === 'rejected' ? 'مرفوض' : item.type || item.status || 'قيد المراجعة' }}
                 </span>
               </p>
-              <p v-if="item.adminMessage && item.adminMessage.includes('تم حذف الطلب')" style="color: #6c757d;">
-                <strong>ملاحظة:</strong> {{ item.adminMessage }}
-              </p>
               <p v-if="item.reason"><strong>سبب الرفض:</strong> {{ item.reason }}</p>
-              <p v-if="item.adminMessage && !item.adminMessage.includes('تم حذف الطلب')"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
+              <p v-if="item.adminMessage"><strong>رسالة الأدمن:</strong> {{ item.adminMessage }}</p>
               <p class="muted">التاريخ: {{ formatDate(item.createdAt) }}</p>
             </div>
           </div>
@@ -640,7 +804,7 @@
         <p><strong>المبلغ:</strong> <span class="gold-text">{{ balanceModalAmount }} USDT</span></p>
         
         <div class="modal-actions">
-          <button class="btn white-btn" type="button" @click="confirmBalanceChange">
+          <button class="btn gold" type="button" @click="confirmBalanceChange">
             تأكيد {{ balanceModalType === 'add' ? 'التعبئة' : 'الخصم' }}
           </button>
           <button class="btn gold-outline" type="button" @click="closeBalanceModal">إلغاء</button>
@@ -668,6 +832,7 @@ import {
   query,
   orderBy,
   where,
+  increment,
   limit,
   setDoc,
   runTransaction
@@ -737,12 +902,15 @@ export default {
         invitedByEmail: "",
         invitedByPhone: "",
         level1Count: 0,
+        level1RechargeTotal: 0,
         level1Earnings: 0,
         level1Users: [],
         level2Count: 0,
+        level2RechargeTotal: 0,
         level2Earnings: 0,
         level2Users: [],
         level3Count: 0,
+        level3RechargeTotal: 0,
         level3Earnings: 0,
         level3Users: []
       },
@@ -764,6 +932,33 @@ export default {
       accountRechargeHistory: [],
       showWithdrawHistory: false,
       showRechargeHistory: false,
+      
+      wheelSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      globalWheelSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      loadingWheelSettings: false,
+      savingWheelSettings: false,
+      wheelSettingsMessage: "",
+      wheelSettingsMessageType: "",
+      
+      showUserWheelModal: false,
+      selectedUser: null,
+      useGlobalSettingsForUser: true,
+      userWheelSettings: {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      },
+      savingUserWheelSettings: false,
+      userWheelSettingsMessage: "",
+      userWheelSettingsMessageType: "",
 
       // Modal تعديل الرصيد
       showBalanceModal: false,
@@ -876,8 +1071,7 @@ export default {
           (l) =>
             String(l.amount || "").includes(f) ||
             (l.userPhone || "").toLowerCase().includes(f) ||
-            (l.userEmail || l.email || "").toLowerCase().includes(f) ||
-            (l.wallet || l.walletAddress || "").toLowerCase().includes(f)
+            (l.email || l.userEmail || "").toLowerCase().includes(f)
         );
       }
       
@@ -916,6 +1110,24 @@ export default {
         list.sort((a, b) => (a.amount || 0) - (b.amount || 0));
       
       return list;
+    },
+    wheelSettingsTotal() {
+      return this.wheelSettings.lossRate + this.wheelSettings.smallWinRate + this.wheelSettings.bigWinRate;
+    },
+    wheelSettingsValid() {
+      return Math.abs(this.wheelSettingsTotal - 100) < 0.01 &&
+             this.wheelSettings.lossRate >= 0 && 
+             this.wheelSettings.smallWinRate >= 0 && 
+             this.wheelSettings.bigWinRate >= 0;
+    },
+    userWheelSettingsTotal() {
+      return this.userWheelSettings.lossRate + this.userWheelSettings.smallWinRate + this.userWheelSettings.bigWinRate;
+    },
+    userWheelSettingsValid() {
+      return Math.abs(this.userWheelSettingsTotal - 100) < 0.01 &&
+             this.userWheelSettings.lossRate >= 0 && 
+             this.userWheelSettings.smallWinRate >= 0 && 
+             this.userWheelSettings.bigWinRate >= 0;
     }
   },
   created() {
@@ -958,129 +1170,362 @@ export default {
         this.loadWithdrawRequests(),
         this.loadUsers(),
         this.loadWithdrawLogs(),
+        this.loadWheelSettings(),
         this.loadRechargeRequests(),
         this.loadRechargeLogs()
       ]);
     },
     
-    async loadUsers() {
+    async loadWheelSettings() {
+      this.loadingWheelSettings = true;
       try {
-        this.loadingUsers = true;
-        const snap = await getDocs(collection(db, "users"));
-        this.users = snap.docs.map((d) => {
-          const data = d.data() || {};
-          const createdAt = data.createdAt || data.registeredAt || null;
-          
-          let balance = 0;
-          if (typeof data.balance === 'number') {
-            balance = data.balance;
-          } else if (typeof data.vipBalance === 'number') {
-            balance = data.vipBalance + (data.depositBalance || 0);
-          }
-          
-          const vipLockedAmount = data.vipLockedAmount || 0;
-          const availableBalance = Math.max(0, balance - vipLockedAmount);
-          
-          return {
-            id: d.id,
-            phoneNumber: data.phoneNumber || "",
-            email: data.email || "",
-            balance: balance,
-            vipLockedAmount: vipLockedAmount,
-            availableBalance: availableBalance,
-            blocked: data.blocked ?? false,
-            notificationsCount: data.notificationsCount ?? 0,
-            registrationMethod: data.registrationMethod || (data.phoneNumber ? 'phone' : 'email'),
-            createdAt: createdAt,
-            vipLevel: data.vipLevel || "عادي",
-            vipExpiryDate: data.vipExpiryDate || null
-          };
-        });
-      } catch (e) {
-        alert("خطأ عند تحميل المستخدمين");
+        const settingsRef = doc(db, "settings", "wheel");
+        const settingsDoc = await getDoc(settingsRef);
+        
+        if (settingsDoc.exists()) {
+          this.wheelSettings = settingsDoc.data();
+          this.globalWheelSettings = { ...this.wheelSettings };
+        } else {
+          await this.createDefaultWheelSettings();
+        }
+      } catch (error) {
+        console.error("خطأ في تحميل إعدادات العجلة:", error);
+        this.wheelSettingsMessage = "حدث خطأ في تحميل الإعدادات";
+        this.wheelSettingsMessageType = "error";
       } finally {
-        this.loadingUsers = false;
+        this.loadingWheelSettings = false;
       }
     },
     
-    promptRecharge(user) {
-      const a = prompt("أدخل مبلغ التعبئة:");
-      if (!a || isNaN(a)) return;
-      this.balanceModalType = 'add';
-      this.balanceModalUser = user;
-      this.balanceModalAmount = Number(a);
-      this.showBalanceModal = true;
+    async createDefaultWheelSettings() {
+      try {
+        const defaultSettings = {
+          lossRate: 40,
+          smallWinRate: 35,
+          bigWinRate: 25
+        };
+        const settingsRef = doc(db, "settings", "wheel");
+        await setDoc(settingsRef, defaultSettings);
+        this.wheelSettings = defaultSettings;
+        this.globalWheelSettings = { ...defaultSettings };
+      } catch (error) {
+        console.error("خطأ في إنشاء الإعدادات الافتراضية:", error);
+      }
     },
     
-    promptDeduct(user) {
-      const a = prompt("أدخل مبلغ الخصم:");
-      if (!a || isNaN(a)) return;
-      this.balanceModalType = 'deduct';
-      this.balanceModalUser = user;
-      this.balanceModalAmount = Number(a);
-      this.showBalanceModal = true;
+    validateWheelRates() {
+      this.wheelSettings.lossRate = Math.min(100, Math.max(0, this.wheelSettings.lossRate || 0));
+      this.wheelSettings.smallWinRate = Math.min(100, Math.max(0, this.wheelSettings.smallWinRate || 0));
+      this.wheelSettings.bigWinRate = Math.min(100, Math.max(0, this.wheelSettings.bigWinRate || 0));
+      this.wheelSettingsMessage = "";
     },
     
-    closeBalanceModal() {
-      this.showBalanceModal = false;
-      this.balanceModalUser = {};
-      this.balanceModalAmount = 0;
-    },
-    
-    async confirmBalanceChange() {
-      if (!this.balanceModalAmount || this.balanceModalAmount <= 0) {
-        alert("الرجاء إدخال مبلغ صحيح");
+    async saveWheelSettings() {
+      if (!this.wheelSettingsValid) {
+        this.wheelSettingsMessage = "الرجاء التأكد من أن مجموع النسب يساوي 100%";
+        this.wheelSettingsMessageType = "error";
         return;
       }
       
-      const userId = this.balanceModalUser.id;
-      const amount = this.balanceModalAmount;
-      const isAdd = this.balanceModalType === 'add';
+      this.savingWheelSettings = true;
+      this.wheelSettingsMessage = "";
       
       try {
-        await runTransaction(db, async (transaction) => {
-          const userRef = doc(db, "users", userId);
-          const userSnap = await transaction.get(userRef);
-          
-          if (!userSnap.exists()) {
-            throw new Error("المستخدم غير موجود");
-          }
-          
-          const userData = userSnap.data();
-          const currentBalance = userData.balance || 0;
-          
-          let newBalance;
-          if (isAdd) {
-            newBalance = currentBalance + amount;
-          } else {
-            if (currentBalance < amount) {
-              throw new Error(`الرصيد غير كافٍ`);
-            }
-            newBalance = Math.max(0, currentBalance - amount);
-          }
-          
-          transaction.update(userRef, { balance: newBalance });
+        const settingsRef = doc(db, "settings", "wheel");
+        await updateDoc(settingsRef, {
+          lossRate: this.wheelSettings.lossRate,
+          smallWinRate: this.wheelSettings.smallWinRate,
+          bigWinRate: this.wheelSettings.bigWinRate
         });
         
-        await addDoc(collection(db, "transactions"), {
-          userId: userId,
-          userEmail: this.balanceModalUser.email || null,
-          userPhone: this.balanceModalUser.phoneNumber || null,
-          type: isAdd ? 'admin_recharge' : 'admin_deduct',
-          amount: amount,
-          currency: "USDT",
-          status: "completed",
-          adminEmail: this.currentUser?.email || "admin",
-          createdAt: serverTimestamp()
-        });
+        this.globalWheelSettings = { ...this.wheelSettings };
+        this.wheelSettingsMessage = "تم حفظ الإعدادات العامة بنجاح!";
+        this.wheelSettingsMessageType = "success";
         
-        alert(`✔ تم ${isAdd ? 'تعبئة' : 'خصم'} ${amount} USDT`);
-        this.closeBalanceModal();
-        this.loadUsers();
-      } catch (e) {
-        console.error("خطأ في تعديل الرصيد:", e);
-        alert(e.message || "خطأ أثناء تعديل الرصيد");
+        setTimeout(() => {
+          this.wheelSettingsMessage = "";
+        }, 3000);
+      } catch (error) {
+        console.error("خطأ في حفظ الإعدادات:", error);
+        this.wheelSettingsMessage = "حدث خطأ أثناء حفظ الإعدادات";
+        this.wheelSettingsMessageType = "error";
+      } finally {
+        this.savingWheelSettings = false;
       }
+    },
+    
+    async resetToDefaultSettings() {
+      if (!confirm("هل أنت متأكد من استعادة الإعدادات الافتراضية؟")) return;
+      
+      this.wheelSettings = {
+        lossRate: 40,
+        smallWinRate: 35,
+        bigWinRate: 25
+      };
+      
+      await this.saveWheelSettings();
+    },
+    
+    async openUserWheelSettings(user) {
+      this.selectedUser = user;
+      this.userWheelSettingsMessage = "";
+      this.savingUserWheelSettings = false;
+      
+      try {
+        const userSettingsRef = doc(db, "user_wheel_settings", user.id);
+        const userSettingsDoc = await getDoc(userSettingsRef);
+        
+        if (userSettingsDoc.exists()) {
+          const data = userSettingsDoc.data();
+          this.useGlobalSettingsForUser = data.useGlobalSettings !== false;
+          
+          if (!this.useGlobalSettingsForUser && data.settings) {
+            this.userWheelSettings = {
+              lossRate: data.settings.lossRate || 40,
+              smallWinRate: data.settings.smallWinRate || 35,
+              bigWinRate: data.settings.bigWinRate || 25
+            };
+          } else {
+            this.userWheelSettings = { ...this.globalWheelSettings };
+          }
+        } else {
+          this.useGlobalSettingsForUser = true;
+          this.userWheelSettings = { ...this.globalWheelSettings };
+        }
+        
+        this.showUserWheelModal = true;
+      } catch (error) {
+        console.error("خطأ في تحميل إعدادات المستخدم:", error);
+        alert("حدث خطأ في تحميل الإعدادات");
+      }
+    },
+    
+    closeUserWheelModal() {
+      this.showUserWheelModal = false;
+      this.selectedUser = null;
+      this.userWheelSettingsMessage = "";
+    },
+    
+    validateUserWheelRates() {
+      this.userWheelSettings.lossRate = Math.min(100, Math.max(0, this.userWheelSettings.lossRate || 0));
+      this.userWheelSettings.smallWinRate = Math.min(100, Math.max(0, this.userWheelSettings.smallWinRate || 0));
+      this.userWheelSettings.bigWinRate = Math.min(100, Math.max(0, this.userWheelSettings.bigWinRate || 0));
+      this.userWheelSettingsMessage = "";
+    },
+    
+    onUseGlobalSettingsChange() {
+      if (this.useGlobalSettingsForUser) {
+        this.userWheelSettings = { ...this.globalWheelSettings };
+      }
+    },
+    
+    async saveUserWheelSettings() {
+      if (!this.useGlobalSettingsForUser && !this.userWheelSettingsValid) {
+        this.userWheelSettingsMessage = "الرجاء التأكد من أن مجموع النسب يساوي 100%";
+        this.userWheelSettingsMessageType = "error";
+        return;
+      }
+      
+      this.savingUserWheelSettings = true;
+      this.userWheelSettingsMessage = "";
+      
+      try {
+        const userSettingsRef = doc(db, "user_wheel_settings", this.selectedUser.id);
+        
+        const dataToSave = {
+          userId: this.selectedUser.id,
+          userEmail: this.selectedUser.email,
+          userPhone: this.selectedUser.phoneNumber,
+          useGlobalSettings: this.useGlobalSettingsForUser,
+          updatedAt: serverTimestamp(),
+          updatedBy: this.currentUser?.email || "admin"
+        };
+        
+        if (!this.useGlobalSettingsForUser) {
+          dataToSave.settings = {
+            lossRate: this.userWheelSettings.lossRate,
+            smallWinRate: this.userWheelSettings.smallWinRate,
+            bigWinRate: this.userWheelSettings.bigWinRate
+          };
+        }
+        
+        await setDoc(userSettingsRef, dataToSave, { merge: true });
+        
+        this.userWheelSettingsMessage = "تم حفظ إعدادات المستخدم بنجاح!";
+        this.userWheelSettingsMessageType = "success";
+        
+        setTimeout(() => {
+          this.userWheelSettingsMessage = "";
+        }, 2000);
+        
+        setTimeout(() => {
+          this.closeUserWheelModal();
+        }, 1500);
+      } catch (error) {
+        console.error("خطأ في حفظ إعدادات المستخدم:", error);
+        this.userWheelSettingsMessage = "حدث خطأ أثناء حفظ الإعدادات";
+        this.userWheelSettingsMessageType = "error";
+      } finally {
+        this.savingUserWheelSettings = false;
+      }
+    },
+    
+    async openAccountDetailsModal(user) {
+      try {
+        this.showAccountDetailsModal = true;
+        this.showWithdrawHistory = false;
+        this.showRechargeHistory = false;
+        
+        let vipLevel = "عادي";
+        let vipExpiryDate = null;
+        
+        try {
+          const vipPurchasesQuery = query(
+            collection(db, "vip_purchases"),
+            where("userId", "==", user.id),
+            where("status", "==", "active"),
+            orderBy("expiryDate", "desc"),
+            limit(1)
+          );
+          const vipSnap = await getDocs(vipPurchasesQuery);
+          
+          if (!vipSnap.empty) {
+            const vipData = vipSnap.docs[0].data();
+            vipLevel = vipData.vipLevel || "عادي";
+            vipExpiryDate = vipData.expiryDate;
+          } else if (user.vipLevel && user.vipLevel !== "عادي") {
+            vipLevel = user.vipLevel;
+            vipExpiryDate = user.vipExpiryDate || null;
+          }
+        } catch (err) {
+          console.warn("Failed to fetch VIP data:", err);
+          if (user.vipLevel) {
+            vipLevel = user.vipLevel;
+          }
+        }
+        
+        // حساب الرصيد القابل للسحب
+        const vipLockedAmount = user.vipLockedAmount || 0;
+        const availableBalance = Math.max(0, (user.balance || 0) - vipLockedAmount);
+        
+        this.accountDetails = {
+          email: user.email || "—",
+          phoneNumber: user.phoneNumber || "—",
+          vipLevel: vipLevel,
+          vipExpiryDate: vipExpiryDate,
+          createdAt: user.createdAt || null,
+          balance: user.balance || 0,
+          vipLockedAmount: vipLockedAmount,
+          availableBalance: availableBalance,
+          blocked: user.blocked || false,
+          userId: user.id
+        };
+        
+        await this.loadUserWithdrawHistory(user.id);
+        await this.loadUserRechargeHistory(user.id);
+        
+      } catch (error) {
+        console.error("خطأ في جلب تفاصيل الحساب:", error);
+        alert("حدث خطأ في جلب تفاصيل الحساب");
+      }
+    },
+    
+    async loadUserWithdrawHistory(userId) {
+      try {
+        const withdrawLogsQuery = query(
+          collection(db, "withdraw_logs"),
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        const withdrawSnap = await getDocs(withdrawLogsQuery);
+        
+        if (!withdrawSnap.empty) {
+          this.accountWithdrawHistory = withdrawSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        } else {
+          const transactionsQuery = query(
+            collection(db, "transactions"),
+            where("userId", "==", userId),
+            where("type", "==", "withdraw"),
+            orderBy("createdAt", "desc")
+          );
+          const transSnap = await getDocs(transactionsQuery);
+          this.accountWithdrawHistory = transSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            type: doc.data().status
+          }));
+        }
+      } catch (error) {
+        console.error("خطأ في جلب سجل السحوبات:", error);
+        this.accountWithdrawHistory = [];
+      }
+    },
+    
+    async loadUserRechargeHistory(userId) {
+      try {
+        const rechargeLogsQuery = query(
+          collection(db, "recharge_logs"),
+          where("userId", "==", userId),
+          orderBy("createdAt", "desc")
+        );
+        const rechargeSnap = await getDocs(rechargeLogsQuery);
+        
+        if (!rechargeSnap.empty) {
+          this.accountRechargeHistory = rechargeSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        } else {
+          const transactionsQuery = query(
+            collection(db, "transactions"),
+            where("userId", "==", userId),
+            where("type", "==", "recharge"),
+            orderBy("createdAt", "desc")
+          );
+          const transSnap = await getDocs(transactionsQuery);
+          this.accountRechargeHistory = transSnap.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            type: doc.data().status
+          }));
+        }
+      } catch (error) {
+        console.error("خطأ في جلب سجل التعبئة:", error);
+        this.accountRechargeHistory = [];
+      }
+    },
+    
+    showUserWithdrawHistory() {
+      this.showWithdrawHistory = !this.showWithdrawHistory;
+      this.showRechargeHistory = false;
+    },
+    
+    showUserRechargeHistory() {
+      this.showRechargeHistory = !this.showRechargeHistory;
+      this.showWithdrawHistory = false;
+    },
+    
+    closeAccountDetailsModal() {
+      this.showAccountDetailsModal = false;
+      this.accountDetails = {
+        email: "",
+        phoneNumber: "",
+        vipLevel: "عادي",
+        vipExpiryDate: null,
+        createdAt: null,
+        balance: 0,
+        vipLockedAmount: 0,
+        availableBalance: 0,
+        blocked: false,
+        userId: null
+      };
+      this.accountWithdrawHistory = [];
+      this.accountRechargeHistory = [];
+      this.showWithdrawHistory = false;
+      this.showRechargeHistory = false;
     },
     
     formatBalance(balance) {
@@ -1088,6 +1533,63 @@ export default {
       return parseFloat(balance).toFixed(2);
     },
     
+    getVipText(vipLevel) {
+      if (!vipLevel || vipLevel === "عادي" || vipLevel === "normal") {
+        return "عادي";
+      }
+      const vipMap = {
+        "bronze": "برونزي",
+        "silver": "فضي",
+        "gold": "ذهبي",
+        "platinum": "بلاتيني",
+        "diamond": "ألماس",
+        "vip1": "VIP 1",
+        "vip2": "VIP 2",
+        "vip3": "VIP 3",
+        "vip4": "VIP 4",
+        "vip5": "VIP 5"
+      };
+      return vipMap[vipLevel.toLowerCase()] || vipLevel;
+    },
+    
+    getVipClass(vipLevel) {
+      if (!vipLevel || vipLevel === "عادي" || vipLevel === "normal") {
+        return "vip-normal";
+      }
+      const lowerLevel = vipLevel.toLowerCase();
+      if (lowerLevel === "bronze" || lowerLevel === "vip1") return "vip-bronze";
+      if (lowerLevel === "silver" || lowerLevel === "vip2") return "vip-silver";
+      if (lowerLevel === "gold" || lowerLevel === "vip3") return "vip-gold";
+      if (lowerLevel === "platinum" || lowerLevel === "vip4") return "vip-platinum";
+      if (lowerLevel === "diamond" || lowerLevel === "vip5") return "vip-diamond";
+      return "vip-normal";
+    },
+    
+    async getUserTotalRecharge(userId) {
+      try {
+        let totalRecharge = 0;
+        try {
+          const transactionsQuery = query(
+            collection(db, "transactions"),
+            where("userId", "==", userId),
+            where("type", "in", ["recharge", "approved_recharge"]),
+            where("status", "in", ["approved", "completed", "success"])
+          );
+          const transactionsSnap = await getDocs(transactionsQuery);
+          transactionsSnap.docs.forEach(transactionDoc => {
+            const transactionData = transactionDoc.data();
+            totalRecharge += Number(transactionData.amount || 0);
+          });
+        } catch (error) {
+          console.error("Error calculating total recharge:", error);
+        }
+        return totalRecharge;
+      } catch (error) {
+        console.error("Error in getUserTotalRecharge:", error);
+        return 0;
+      }
+    },
+
     async viewUserDetails(user) {
       try {
         this.showUserDetailsModal = true;
@@ -1098,12 +1600,15 @@ export default {
           invitedByEmail: "",
           invitedByPhone: "",
           level1Count: 0,
+          level1RechargeTotal: 0,
           level1Earnings: 0,
           level1Users: [],
           level2Count: 0,
+          level2RechargeTotal: 0,
           level2Earnings: 0,
           level2Users: [],
           level3Count: 0,
+          level3RechargeTotal: 0,
           level3Earnings: 0,
           level3Users: []
         };
@@ -1126,39 +1631,39 @@ export default {
           }
         }
 
+        // المستوى 1
         const level1Query = query(
           collection(db, "users"),
           where("invitedBy", "==", user.id)
         );
         const level1Snap = await getDocs(level1Query);
         const level1Users = [];
+        let level1Total = 0;
 
         for (const docSnap of level1Snap.docs) {
           const refData = docSnap.data();
           const refId = docSnap.id;
+          const totalRecharge = await this.getUserTotalRecharge(refId);
           
           level1Users.push({
             id: refId,
             email: refData.email || "",
             phoneNumber: refData.phoneNumber || "",
-            createdAt: refData.createdAt || refData.registeredAt || null
+            createdAt: refData.createdAt || refData.registeredAt || null,
+            totalRecharge: totalRecharge
           });
+          level1Total += totalRecharge;
         }
 
         this.userDetails.level1Count = level1Users.length;
+        this.userDetails.level1RechargeTotal = level1Total;
+        this.userDetails.level1Earnings = level1Total * 0.15; // 15%
         this.userDetails.level1Users = level1Users;
 
-        // جلب أرباح المستوى 1
-        try {
-          const rewardsRef = collection(db, "referral_rewards");
-          const q = query(rewardsRef, where("receiver", "==", user.id), where("level", "==", 1));
-          const s = await getDocs(q);
-          this.userDetails.level1Earnings = s.docs.reduce((sum, d) => sum + Number(d.data().amount || 0), 0);
-        } catch (e) {
-          this.userDetails.level1Earnings = 0;
-        }
-
+        // المستوى 2
         const level2Users = [];
+        let level2Total = 0;
+
         for (const level1User of level1Users) {
           const level2Query = query(
             collection(db, "users"),
@@ -1169,30 +1674,29 @@ export default {
           for (const docSnap of level2Snap.docs) {
             const refData = docSnap.data();
             const refId = docSnap.id;
+            const totalRecharge = await this.getUserTotalRecharge(refId);
             
             level2Users.push({
               id: refId,
               email: refData.email || "",
               phoneNumber: refData.phoneNumber || "",
               createdAt: refData.createdAt || refData.registeredAt || null,
+              totalRecharge: totalRecharge,
               invitedByLevel1: level1User.id
             });
+            level2Total += totalRecharge;
           }
         }
 
         this.userDetails.level2Count = level2Users.length;
+        this.userDetails.level2RechargeTotal = level2Total;
+        this.userDetails.level2Earnings = level2Total * 0.10; // 10%
         this.userDetails.level2Users = level2Users;
 
-        try {
-          const rewardsRef = collection(db, "referral_rewards");
-          const q = query(rewardsRef, where("receiver", "==", user.id), where("level", "==", 2));
-          const s = await getDocs(q);
-          this.userDetails.level2Earnings = s.docs.reduce((sum, d) => sum + Number(d.data().amount || 0), 0);
-        } catch (e) {
-          this.userDetails.level2Earnings = 0;
-        }
-
+        // المستوى 3
         const level3Users = [];
+        let level3Total = 0;
+
         for (const level2User of level2Users) {
           const level3Query = query(
             collection(db, "users"),
@@ -1203,28 +1707,24 @@ export default {
           for (const docSnap of level3Snap.docs) {
             const refData = docSnap.data();
             const refId = docSnap.id;
+            const totalRecharge = await this.getUserTotalRecharge(refId);
             
             level3Users.push({
               id: refId,
               email: refData.email || "",
               phoneNumber: refData.phoneNumber || "",
               createdAt: refData.createdAt || refData.registeredAt || null,
+              totalRecharge: totalRecharge,
               invitedByLevel2: level2User.id
             });
+            level3Total += totalRecharge;
           }
         }
 
         this.userDetails.level3Count = level3Users.length;
+        this.userDetails.level3RechargeTotal = level3Total;
+        this.userDetails.level3Earnings = level3Total * 0.05; // 5%
         this.userDetails.level3Users = level3Users;
-
-        try {
-          const rewardsRef = collection(db, "referral_rewards");
-          const q = query(rewardsRef, where("receiver", "==", user.id), where("level", "==", 3));
-          const s = await getDocs(q);
-          this.userDetails.level3Earnings = s.docs.reduce((sum, d) => sum + Number(d.data().amount || 0), 0);
-        } catch (e) {
-          this.userDetails.level3Earnings = 0;
-        }
 
       } catch (error) {
         console.error("خطأ في جلب تفاصيل المستخدم:", error);
@@ -1241,12 +1741,15 @@ export default {
         invitedByEmail: "",
         invitedByPhone: "",
         level1Count: 0,
+        level1RechargeTotal: 0,
         level1Earnings: 0,
         level1Users: [],
         level2Count: 0,
+        level2RechargeTotal: 0,
         level2Earnings: 0,
         level2Users: [],
         level3Count: 0,
+        level3RechargeTotal: 0,
         level3Earnings: 0,
         level3Users: []
       };
@@ -1350,6 +1853,152 @@ export default {
         this.reloadRechargeRequests();
       } else if (tab === "rechargeLogs" && this.rechargeLogs.length === 0) {
         this.loadRechargeLogs();
+      } else if (tab === "wheelSettings") {
+        this.loadWheelSettings();
+      }
+    },
+    
+    async loadUsers() {
+      try {
+        this.loadingUsers = true;
+        const snap = await getDocs(collection(db, "users"));
+        this.users = snap.docs.map((d) => {
+          const data = d.data() || {};
+          const createdAt = data.createdAt || data.registeredAt || null;
+          
+          // استخدام balance كرصيد أساسي
+          let balance = 0;
+          if (typeof data.balance === 'number') {
+            balance = data.balance;
+          } else if (typeof data.vipBalance === 'number') {
+            // توافق مع النظام القديم
+            balance = data.vipBalance + (data.depositBalance || 0);
+          }
+          
+          const vipLockedAmount = data.vipLockedAmount || 0;
+          const availableBalance = Math.max(0, balance - vipLockedAmount);
+          
+          return {
+            id: d.id,
+            phoneNumber: data.phoneNumber || "",
+            email: data.email || "",
+            balance: balance,
+            vipLockedAmount: vipLockedAmount,
+            availableBalance: availableBalance,
+            blocked: data.blocked ?? false,
+            notificationsCount: data.notificationsCount ?? 0,
+            registrationMethod: data.registrationMethod || (data.phoneNumber ? 'phone' : 'email'),
+            createdAt: createdAt,
+            vipLevel: data.vipLevel || "عادي",
+            vipExpiryDate: data.vipExpiryDate || null
+          };
+        });
+      } catch (e) {
+        alert("خطأ عند تحميل المستخدمين");
+      } finally {
+        this.loadingUsers = false;
+      }
+    },
+    
+    promptRecharge(user) {
+      const a = prompt("أدخل مبلغ التعبئة:");
+      if (!a || isNaN(a)) return;
+      this.balanceModalType = 'add';
+      this.balanceModalUser = user;
+      this.balanceModalAmount = Number(a);
+      this.showBalanceModal = true;
+    },
+    
+    promptDeduct(user) {
+      const a = prompt("أدخل مبلغ الخصم:");
+      if (!a || isNaN(a)) return;
+      this.balanceModalType = 'deduct';
+      this.balanceModalUser = user;
+      this.balanceModalAmount = Number(a);
+      this.showBalanceModal = true;
+    },
+    
+    closeBalanceModal() {
+      this.showBalanceModal = false;
+      this.balanceModalUser = {};
+      this.balanceModalAmount = 0;
+    },
+    
+    async confirmBalanceChange() {
+      if (!this.balanceModalAmount || this.balanceModalAmount <= 0) {
+        alert("الرجاء إدخال مبلغ صحيح");
+        return;
+      }
+      
+      const userId = this.balanceModalUser.id;
+      const amount = this.balanceModalAmount;
+      const isAdd = this.balanceModalType === 'add';
+      
+      try {
+        // استخدام runTransaction لتحديث الرصيد بأمان
+        await runTransaction(db, async (transaction) => {
+          const userRef = doc(db, "users", userId);
+          const userSnap = await transaction.get(userRef);
+          
+          if (!userSnap.exists()) {
+            throw new Error("المستخدم غير موجود");
+          }
+          
+          const userData = userSnap.data();
+          // قراءة الرصيد الحالي من balance
+          const currentBalance = userData.balance || 0;
+          
+          let newBalance;
+          if (isAdd) {
+            newBalance = currentBalance + amount;
+          } else {
+            if (currentBalance < amount) {
+              throw new Error(`الرصيد غير كافٍ (الرصيد الحالي: ${currentBalance} USDT)`);
+            }
+            newBalance = Math.max(0, currentBalance - amount);
+          }
+          
+          // تحديث الرصيد في Firebase
+          transaction.update(userRef, { 
+            balance: newBalance,
+            updatedAt: serverTimestamp()
+          });
+        });
+        
+        // تسجيل العملية في transactions
+        await addDoc(collection(db, "transactions"), {
+          userId: userId,
+          userEmail: this.balanceModalUser.email || null,
+          userPhone: this.balanceModalUser.phoneNumber || null,
+          type: isAdd ? 'admin_recharge' : 'admin_deduct',
+          amount: amount,
+          currency: "USDT",
+          status: "completed",
+          adminEmail: this.currentUser?.email || "admin",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        
+        alert(`✔ تم ${isAdd ? 'تعبئة' : 'خصم'} ${amount} USDT بنجاح`);
+        
+        // تحديث البيانات المعروضة مباشرة
+        await this.loadUsers();
+        
+        // تحديث تفاصيل الحساب إذا كانت مفتوحة
+        if (this.showAccountDetailsModal && this.accountDetails.userId === userId) {
+          const updatedUser = this.users.find(u => u.id === userId);
+          if (updatedUser) {
+            this.accountDetails.balance = updatedUser.balance;
+            this.accountDetails.vipLockedAmount = updatedUser.vipLockedAmount || 0;
+            this.accountDetails.availableBalance = updatedUser.availableBalance || 0;
+          }
+        }
+        
+        this.closeBalanceModal();
+        
+      } catch (e) {
+        console.error("خطأ في تعديل الرصيد:", e);
+        alert(e.message || "خطأ أثناء تعديل الرصيد");
       }
     },
     
@@ -1383,7 +2032,6 @@ export default {
     async loadWithdrawRequests() {
       try {
         this.loadingWithdraws = true;
-        // جلب جميع طلبات السحب من withdraw_requests
         const snap = await getDocs(collection(db, "withdraw_requests"));
         this.withdraws = snap.docs.map((d) => {
           const data = d.data() || {};
@@ -1394,33 +2042,23 @@ export default {
           }
           return {
             id: d.id,
-            transactionId: data.transactionId || null,
             userId: data.userId,
             userPhone: data.userPhone || null,
             userEmail: data.userEmail || data.email,
             email: data.userEmail || data.email,
-            amount: data.amount || 0,
-            network: data.network || "",
-            wallet: data.wallet || data.walletAddress || "",
-            walletAddress: data.walletAddress || data.wallet || "",
-            status: data.status || "pending",
-            vipLevel: data.vipLevel || "",
-            withdrawDay: data.withdrawDay || "",
-            adminAction: data.adminAction || "",
-            adminMessage: data.adminMessage || "",
-            userMessage: data.userMessage || "",
-            reason: data.reason || "",
-            lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
-            availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
+            amount: data.amount,
+            network: data.network,
+            wallet: data.wallet,
+            walletAddress: data.walletAddress || data.wallet,
+            vipLevel: data.vipLevel,
+            withdrawDay: data.withdrawDay,
+            withdrawFrom: data.withdrawFrom || 'vipBalance',
+            oldBalance: data.oldBalance ?? null,
             createdAt,
-            processedAt: data.processedAt || null,
-            approvedAt: data.approvedAt || null
           };
         });
-        console.log(`✅ تم تحميل ${this.withdraws.length} طلب سحب من withdraw_requests`);
       } catch (e) {
-        console.error("خطأ عند تحميل طلبات السحب:", e);
-        alert("خطأ عند تحميل طلبات السحب: " + e.message);
+        alert("خطأ عند تحميل طلبات السحب");
       } finally {
         this.loadingWithdraws = false;
       }
@@ -1453,7 +2091,7 @@ export default {
       }
     },
     
-    async createTransactionForUser(userId, email, phoneNumber, type, amount, status, reason = "", adminMessage = "", network = "", wallet = "", vipLevel = "", withdrawDay = "") {
+    async createTransactionForUser(userId, email, phoneNumber, type, amount, status, reason = "", adminMessage = "", network = "", wallet = "", vipLevel = "", withdrawDay = "", targetBalance = "") {
       try {
         const transactionData = {
           transactionId: "TRX" + Date.now() + Math.random().toString(36).substring(2, 9),
@@ -1474,6 +2112,7 @@ export default {
           walletAddress: wallet,
           vipLevel: vipLevel,
           withdrawDay: withdrawDay,
+          targetBalance: targetBalance || 'balance',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
@@ -1501,91 +2140,91 @@ export default {
       this.processingId = req.id;
       
       try {
-        // تحديث حالة طلب السحب في withdraw_requests
-        const r = doc(db, "withdraw_requests", req.id);
-        await updateDoc(r, { 
-          status: "approved",
-          adminAction: "approved",
-          adminMessage: message || "",
-          processedAt: serverTimestamp(),
-          approvedAt: serverTimestamp()
-        });
-        console.log("✅ تم تحديث حالة طلب السحب إلى approved");
-        
-        // العمليات الفرعية - كل منها في try-catch منفصل
-        
-        // 1. إنشاء سجل في withdraw_logs
-        try {
-          await addDoc(collection(db, "withdraw_logs"), {
-            userId: req.userId || null,
-            userPhone: req.userPhone || null,
-            email: req.userEmail || req.email || null,
-            amount: req.amount || 0,
-            type: "approved",
-            adminMessage: message || "",
-            network: req.network,
-            wallet: req.wallet || req.walletAddress,
-            vipLevel: req.vipLevel,
-            withdrawDay: req.withdrawDay,
-            createdAt: serverTimestamp(),
-          });
-          console.log("✅ تم إنشاء سجل في withdraw_logs");
-        } catch (e) {
-          console.warn("⚠️ فشل إنشاء سجل في withdraw_logs:", e);
-        }
-        
-        // 2. إنشاء معاملة
-        if (req.userId) {
+        // خصم الرصيد من balance باستخدام Transaction
+        if (req.userId && req.amount) {
           try {
-            await this.createTransactionForUser(
-              req.userId,
-              req.userEmail || req.email,
-              req.userPhone,
-              "withdraw",
-              req.amount,
-              "approved",
-              "",
-              message || "تمت الموافقة على طلب السحب",
-              req.network,
-              req.wallet || req.walletAddress,
-              req.vipLevel,
-              req.withdrawDay
-            );
-            console.log("✅ تم إنشاء المعاملة");
-          } catch (e) {
-            console.warn("⚠️ فشل إنشاء المعاملة:", e);
-          }
-        }
-        
-        // 3. إرسال إشعار للمستخدم
-        if (req.userId) {
-          try {
-            const notificationMessage = message 
-              ? `تم تحويل ${req.amount} USDT. ${message}`
-              : `تم تحويل ${req.amount} USDT.`;
-              
-            await addDoc(
-              collection(db, "users", req.userId, "notifications"),
-              {
-                title: "تمت الموافقة على السحب",
-                message: notificationMessage,
-                read: false,
-                createdAt: serverTimestamp(),
+            await runTransaction(db, async (transaction) => {
+              const userRef = doc(db, "users", req.userId);
+              const uSnap = await transaction.get(userRef);
+              if (uSnap.exists()) {
+                const userData = uSnap.data();
+                const currentBalance = userData.balance || 0;
+                if (currentBalance < req.amount) {
+                  throw new Error(`الرصيد غير كافٍ (الرصيد الحالي: ${currentBalance} USDT)`);
+                }
+                transaction.update(userRef, {
+                  balance: currentBalance - Number(req.amount)
+                });
               }
-            );
-            console.log("✅ تم إرسال الإشعار");
-          } catch (e) {
-            console.warn("⚠️ فشل إرسال الإشعار:", e);
+            });
+            console.log(`✅ تم خصم ${req.amount} USDT من balance للمستخدم ${req.userId}`);
+          } catch (err) {
+            console.error("❌ خطأ في خصم الرصيد:", err);
+            alert("خطأ في خصم الرصيد: " + err.message);
+            return;
           }
         }
+
+        if (req.userId) {
+          await this.createTransactionForUser(
+            req.userId,
+            req.userEmail || req.email,
+            req.userPhone,
+            "withdraw",
+            req.amount,
+            "approved",
+            "",
+            message || "تمت الموافقة على طلب السحب",
+            req.network,
+            req.wallet || req.walletAddress,
+            req.vipLevel,
+            req.withdrawDay,
+            'balance'
+          );
+        }
+
+        await addDoc(collection(db, "withdraw_logs"), {
+          userId: req.userId || null,
+          userPhone: req.userPhone || null,
+          email: req.userEmail || req.email || null,
+          amount: req.amount || 0,
+          type: "approved",
+          adminMessage: message || "",
+          network: req.network,
+          wallet: req.wallet || req.walletAddress,
+          vipLevel: req.vipLevel,
+          withdrawDay: req.withdrawDay,
+          withdrawFrom: req.withdrawFrom || 'balance',
+          createdAt: serverTimestamp(),
+        });
         
-        alert("✔ تمت الموافقة بنجاح");
+        if (req.userId) {
+          const notificationMessage = message 
+            ? `تم تحويل ${req.amount} USDT. ${message}`
+            : `تم تحويل ${req.amount} USDT.`;
+            
+          await addDoc(
+            collection(db, "users", req.userId, "notifications"),
+            {
+              title: "تمت الموافقة على السحب",
+              message: notificationMessage,
+              read: false,
+              createdAt: serverTimestamp(),
+            }
+          );
+        }
+        
+        const r = doc(db, "withdraw_requests", req.id);
+        const ex = await getDoc(r);
+        if (ex.exists()) await deleteDoc(r);
+        
+        alert("✔ تمت الموافقة");
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
-        
+        await this.loadUsers();
       } catch (e) {
-        console.error("❌ خطأ في الموافقة:", e);
-        alert("خطأ في الموافقة: " + e.message);
+        console.error("خطأ في الموافقة:", e);
+        alert("خطأ في الموافقة");
       } finally {
         this.processingId = null;
         this.closeModal();
@@ -1601,139 +2240,103 @@ export default {
       this.processingId = r.id;
       
       try {
-        // العملية الرئيسية: تحديث حالة الدفع
         const pRef = doc(db, "payments", r.id);
         await updateDoc(pRef, { 
           status: "approved", 
           processedAt: serverTimestamp(),
-          adminMessage: message || ""
+          adminMessage: message || "",
+          targetBalance: "balance"
         });
-        console.log("✅ تم تحديث حالة الدفع إلى approved");
-        
-        // العمليات الفرعية - كل منها في try-catch منفصل
-        
-        // 1. تحديث رصيد المستخدم
-        if (r.userId) {
+
+        // إضافة الرصيد إلى balance باستخدام Transaction
+        if (r.userId && r.amount) {
           try {
-            const userRef = doc(db, "users", r.userId);
             await runTransaction(db, async (transaction) => {
+              const userRef = doc(db, "users", r.userId);
               const uSnap = await transaction.get(userRef);
               if (uSnap.exists()) {
                 const userData = uSnap.data();
                 const currentBalance = userData.balance || 0;
                 transaction.update(userRef, { 
-                  balance: currentBalance + Number(r.amount || 0) 
+                  balance: currentBalance + Number(r.amount || 0)
                 });
               }
             });
-            console.log("✅ تم تحديث رصيد المستخدم");
+            console.log(`✅ تم إضافة ${r.amount} USDT إلى balance للمستخدم ${r.userId}`);
           } catch (err) {
-            console.warn("⚠️ فشل تحديث رصيد المستخدم:", err);
+            console.error("❌ خطأ في إضافة الرصيد:", err);
+            alert("خطأ في إضافة الرصيد: " + err.message);
+            return;
           }
         }
-        
-        // 2. حساب أرباح الإحالة
+
         if (r.userId) {
-          try {
-            await this.calculateAndAddReferralEarnings(r.userId, r.amount, r.id);
-            console.log("✅ تم حساب أرباح الإحالة");
-          } catch (err) {
-            console.warn("⚠️ فشل حساب أرباح الإحالة:", err);
-          }
-        }
-        
-        // 3. إنشاء سجل في recharge_logs
-        try {
           let userPhone = r.userPhone || r.phoneNumber;
-          if (!userPhone && r.userId) {
+          if (!userPhone) {
             try {
               const userSnap = await getDoc(doc(db, "users", r.userId));
               if (userSnap.exists()) {
                 userPhone = userSnap.data().phoneNumber || null;
               }
             } catch (err) {
-              console.warn("⚠️ فشل جلب رقم الهاتف:", err);
+              console.warn("Failed to get user phone:", err);
             }
           }
-          
-          await addDoc(collection(db, "recharge_logs"), {
-            userId: r.userId || null,
-            userPhone: userPhone || null,
-            email: r.userEmail || r.email || null,
-            amount: r.amount || 0,
-            type: "approved",
-            adminMessage: message || "",
-            network: r.network,
-            txid: r.txid,
+
+          await this.createTransactionForUser(
+            r.userId,
+            r.userEmail || r.email,
+            userPhone,
+            "recharge",
+            r.amount,
+            "approved",
+            "",
+            message || "تمت الموافقة على طلب التعبئة",
+            r.network,
+            "",
+            "",
+            "",
+            "balance"
+          );
+        }
+
+        await addDoc(collection(db, "recharge_logs"), {
+          userId: r.userId || null,
+          userPhone: r.userPhone || r.phoneNumber || null,
+          email: r.userEmail || r.email || null,
+          amount: r.amount || 0,
+          type: "approved",
+          adminMessage: message || "",
+          network: r.network,
+          txid: r.txid,
+          targetBalance: "balance",
+          createdAt: serverTimestamp(),
+        });
+
+        if (r.userId) {
+          const notificationMessage = message 
+            ? `تمت إضافة ${r.amount} USDT إلى رصيدك. ${message}`
+            : `تمت إضافة ${r.amount} USDT إلى رصيدك. شكراً لك.`;
+            
+          await addDoc(collection(db, "users", r.userId, "notifications"), {
+            title: "تمت الموافقة على طلب التعبئة",
+            message: notificationMessage,
+            read: false,
             createdAt: serverTimestamp(),
           });
-          console.log("✅ تم إنشاء سجل في recharge_logs");
-        } catch (e) {
-          console.warn("⚠️ فشل إنشاء سجل في recharge_logs:", e);
+
+          // حساب أرباح الإحالة
+          await this.calculateAndAddReferralEarnings(r.userId, r.amount, r.id);
         }
-        
-        // 4. إنشاء معاملة
-        if (r.userId) {
-          try {
-            let userPhone = r.userPhone || r.phoneNumber;
-            if (!userPhone) {
-              try {
-                const userSnap = await getDoc(doc(db, "users", r.userId));
-                if (userSnap.exists()) {
-                  userPhone = userSnap.data().phoneNumber || null;
-                }
-              } catch (err) {}
-            }
-            
-            await this.createTransactionForUser(
-              r.userId,
-              r.userEmail || r.email,
-              userPhone,
-              "recharge",
-              r.amount,
-              "approved",
-              "",
-              message || "تمت الموافقة على طلب التعبئة",
-              r.network,
-              "",
-              "",
-              ""
-            );
-            console.log("✅ تم إنشاء المعاملة");
-          } catch (e) {
-            console.warn("⚠️ فشل إنشاء المعاملة:", e);
-          }
-        }
-        
-        // 5. إرسال إشعار للمستخدم
-        if (r.userId) {
-          try {
-            const notificationMessage = message 
-              ? `تمت إضافة ${r.amount} USDT إلى رصيدك. ${message}`
-              : `تمت إضافة ${r.amount} USDT إلى رصيدك. شكراً لك.`;
-              
-            await addDoc(collection(db, "users", r.userId, "notifications"), {
-              title: "تمت الموافقة على طلب التعبئة",
-              message: notificationMessage,
-              read: false,
-              createdAt: serverTimestamp(),
-            });
-            console.log("✅ تم إرسال الإشعار");
-          } catch (e) {
-            console.warn("⚠️ فشل إرسال الإشعار:", e);
-          }
-        }
-        
+
         alert("✔ تمت الموافقة على طلب التعبئة وتمت إضافة المبلغ إلى الرصيد");
-        
       } catch (e) {
-        console.error("❌ approveRecharge error:", e);
+        console.error("approveRecharge error:", e);
         alert("خطأ أثناء الموافقة على الطلب");
       } finally {
         this.processingId = null;
         this.closeModal();
         this.closeApproveModal();
-        // تحديث البيانات
         await this.reloadRechargeRequests();
         await this.loadRechargeLogs();
         await this.loadUsers();
@@ -1754,20 +2357,7 @@ export default {
       this.processingId = req.id;
       
       try {
-        // تحديث حالة طلب السحب في withdraw_requests
-        const r = doc(db, "withdraw_requests", req.id);
-        await updateDoc(r, { 
-          status: "rejected",
-          adminAction: "rejected",
-          reason: reason,
-          adminMessage: reason,
-          processedAt: serverTimestamp()
-        });
-        console.log("✅ تم تحديث حالة طلب السحب إلى rejected");
-        
-        // العمليات الفرعية - كل منها في try-catch منفصل
-        
-        // 1. إرجاع الرصيد للمستخدم
+        // إرجاع الرصيد عند الرفض
         if (req.userId && req.amount) {
           try {
             await runTransaction(db, async (transaction) => {
@@ -1781,143 +2371,72 @@ export default {
                 });
               }
             });
-            console.log(`✅ تم إرجاع ${req.amount} USDT للمستخدم ${req.userId}`);
+            console.log(`✅ تم إرجاع ${req.amount} USDT إلى balance للمستخدم ${req.userId}`);
           } catch (err) {
-            console.warn("⚠️ فشل إرجاع الرصيد:", err);
+            console.error("❌ خطأ في إرجاع الرصيد:", err);
           }
         }
-        
-        // 2. إنشاء سجل في withdraw_logs
-        try {
-          await addDoc(collection(db, "withdraw_logs"), {
-            userId: req.userId || null,
-            userPhone: req.userPhone || null,
-            email: req.userEmail || req.email || null,
-            amount: req.amount || 0,
-            type: "rejected",
-            reason: reason,
-            network: req.network,
-            wallet: req.wallet || req.walletAddress,
-            vipLevel: req.vipLevel,
-            withdrawDay: req.withdrawDay,
-            createdAt: serverTimestamp(),
-          });
-          console.log("✅ تم إنشاء سجل في withdraw_logs");
-        } catch (e) {
-          console.warn("⚠️ فشل إنشاء سجل في withdraw_logs:", e);
-        }
-        
-        // 3. إنشاء معاملة
+
         if (req.userId) {
-          try {
-            await this.createTransactionForUser(
-              req.userId,
-              req.userEmail || req.email,
-              req.userPhone,
-              "withdraw",
-              req.amount,
-              "rejected",
-              reason,
-              "تم رفض طلب السحب",
-              req.network,
-              req.wallet || req.walletAddress,
-              req.vipLevel,
-              req.withdrawDay
-            );
-            console.log("✅ تم إنشاء المعاملة");
-          } catch (e) {
-            console.warn("⚠️ فشل إنشاء المعاملة:", e);
-          }
+          await this.createTransactionForUser(
+            req.userId,
+            req.userEmail || req.email,
+            req.userPhone,
+            "withdraw",
+            req.amount,
+            "rejected",
+            reason,
+            "تم رفض طلب السحب",
+            req.network,
+            req.wallet || req.walletAddress,
+            req.vipLevel,
+            req.withdrawDay,
+            'balance'
+          );
         }
-        
-        // 4. إرسال إشعار للمستخدم
-        if (req.userId) {
-          try {
-            await addDoc(
-              collection(db, "users", req.userId, "notifications"),
-              {
-                title: "تم رفض طلب السحب",
-                message: `تم رفض سحب ${req.amount} USDT. السبب: ${reason}. تم إرجاع المبلغ إلى رصيدك.`,
-                read: false,
-                createdAt: serverTimestamp(),
-              }
-            );
-            console.log("✅ تم إرسال الإشعار");
-          } catch (e) {
-            console.warn("⚠️ فشل إرسال الإشعار:", e);
-          }
-        }
-        
-        alert("❌ تم الرفض وإرجاع الرصيد");
-        await this.loadWithdrawRequests();
-        await this.loadWithdrawLogs();
-        
-      } catch (e) {
-        console.error("❌ خطأ في رفض الطلب:", e);
-        alert("خطأ في رفض الطلب: " + e.message);
-      } finally {
-        this.processingId = null;
-        this.closeModal();
-        this.closeRejectModal();
-      }
-    },
-    
-    async deleteWithdraw(req) {
-      if (!req || !req.id) return;
-      const allowed = await this.ensureAdmin();
-      if (!allowed) return alert("غير مصرح لك");
-      if (!confirm(`هل أنت متأكد أنك تريد حذف طلب السحب بقيمة ${req.amount} USDT نهائياً؟`)) return;
-      this.processingId = req.id;
-      try {
-        // حذف طلب السحب من withdraw_requests
-        await deleteDoc(doc(db, "withdraw_requests", req.id));
-        
-        // إضافة سجل في withdraw_logs مع الحفاظ على الحالة الأصلية
+
         await addDoc(collection(db, "withdraw_logs"), {
           userId: req.userId || null,
           userPhone: req.userPhone || null,
           email: req.userEmail || req.email || null,
           amount: req.amount || 0,
-          type: req.status || "pending",
-          status: req.status || "pending",
+          type: "rejected",
+          reason: reason,
           network: req.network,
           wallet: req.wallet || req.walletAddress,
           vipLevel: req.vipLevel,
           withdrawDay: req.withdrawDay,
-          adminMessage: "تم حذف الطلب بواسطة الأدمن (تم الإلغاء من قبل الإدارة)",
+          withdrawFrom: req.withdrawFrom || 'balance',
           createdAt: serverTimestamp(),
-          transactionId: req.transactionId || null,
-          originalStatus: req.status || "pending",
-          deletedByAdmin: true,
-          deletedAt: serverTimestamp()
         });
-        
-        // إضافة إشعار للمستخدم
+
         if (req.userId) {
-          try {
-            await addDoc(
-              collection(db, "users", req.userId, "notifications"),
-              {
-                title: "⚠️ تم إلغاء طلب السحب",
-                message: `تم إلغاء طلب سحب ${req.amount} USDT بواسطة الإدارة.`,
-                read: false,
-                createdAt: serverTimestamp(),
-              }
-            );
-          } catch (e) {
-            console.warn("⚠️ فشل إرسال الإشعار:", e);
-          }
+          await addDoc(
+            collection(db, "users", req.userId, "notifications"),
+            {
+              title: "تم رفض طلب السحب",
+              message: `تم رفض سحب ${req.amount} USDT. السبب: ${reason}. تم إرجاع المبلغ إلى رصيدك.`,
+              read: false,
+              createdAt: serverTimestamp(),
+            }
+          );
         }
+
+        const r = doc(db, "withdraw_requests", req.id);
+        const ex = await getDoc(r);
+        if (ex.exists()) await deleteDoc(r);
         
-        alert("✅ تم حذف طلب السحب بنجاح");
+        alert("❌ تم الرفض وإرجاع الرصيد");
         await this.loadWithdrawRequests();
         await this.loadWithdrawLogs();
+        await this.loadUsers();
       } catch (e) {
-        console.error("deleteWithdraw error:", e);
-        alert("❌ خطأ أثناء حذف الطلب: " + e.message);
+        console.error("خطأ في رفض الطلب:", e);
+        alert("خطأ في رفض الطلب");
       } finally {
         this.processingId = null;
         this.closeModal();
+        this.closeRejectModal();
       }
     },
     
@@ -1957,98 +2476,21 @@ export default {
     async loadWithdrawLogs() {
       try {
         this.loadingWithdrawLogs = true;
-        let allLogs = [];
-        
-        // 1. جلب من withdraw_requests (الطلبات الموجودة)
-        try {
-          const snap = await getDocs(collection(db, "withdraw_requests"));
-          const logs = snap.docs.map((d) => {
-            const data = d.data() || {};
-            let createdAt = Date.now();
-            if (data.createdAt) {
-              if (typeof data.createdAt === "number") createdAt = data.createdAt;
-              else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
-            }
-            return {
-              id: d.id,
-              transactionId: data.transactionId || null,
-              userId: data.userId || null,
-              userPhone: data.userPhone || null,
-              userEmail: data.userEmail || data.email || null,
-              email: data.userEmail || data.email || null,
-              amount: data.amount || 0,
-              network: data.network || "",
-              wallet: data.wallet || data.walletAddress || "",
-              walletAddress: data.walletAddress || data.wallet || "",
-              status: data.status || "pending",
-              type: data.status || "pending",
-              vipLevel: data.vipLevel || "",
-              withdrawDay: data.withdrawDay || "",
-              adminAction: data.adminAction || "",
-              adminMessage: data.adminMessage || "",
-              userMessage: data.userMessage || "",
-              reason: data.reason || "",
-              lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
-              availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
-              createdAt,
-              processedAt: data.processedAt || null,
-              approvedAt: data.approvedAt || null
-            };
-          });
-          allLogs = [...allLogs, ...logs];
-        } catch (e) {
-          console.warn("⚠️ فشل جلب من withdraw_requests:", e);
-        }
-        
-        // 2. جلب من withdraw_logs (بما فيها المحذوفة)
-        try {
-          const logsSnap = await getDocs(collection(db, "withdraw_logs"));
-          const logs = logsSnap.docs.map((d) => {
-            const data = d.data() || {};
-            let createdAt = Date.now();
-            if (data.createdAt) {
-              if (typeof data.createdAt === "number") createdAt = data.createdAt;
-              else if (data.createdAt.toMillis) createdAt = data.createdAt.toMillis();
-            }
-            return {
-              id: d.id,
-              transactionId: data.transactionId || null,
-              userId: data.userId || null,
-              userPhone: data.userPhone || null,
-              userEmail: data.email || data.userEmail || null,
-              email: data.email || data.userEmail || null,
-              amount: data.amount || 0,
-              network: data.network || "",
-              wallet: data.wallet || "",
-              walletAddress: data.wallet || "",
-              status: data.status || data.type || "pending",
-              type: data.type || data.status || "pending",
-              vipLevel: data.vipLevel || "",
-              withdrawDay: data.withdrawDay || "",
-              adminAction: data.adminAction || "",
-              adminMessage: data.adminMessage || "",
-              userMessage: data.userMessage || "",
-              reason: data.reason || "",
-              lockedAmountAtWithdraw: data.lockedAmountAtWithdraw || 0,
-              availableBalanceAtWithdraw: data.availableBalanceAtWithdraw || 0,
-              createdAt,
-              processedAt: data.processedAt || null,
-              approvedAt: data.approvedAt || null,
-              deletedByAdmin: data.deletedByAdmin || false
-            };
-          });
-          allLogs = [...allLogs, ...logs];
-        } catch (e) {
-          console.warn("⚠️ فشل جلب من withdraw_logs:", e);
-        }
-        
-        // ترتيب السجلات حسب التاريخ (الأحدث أولاً)
-        allLogs.sort((a, b) => this.getTimeFromDate(b.createdAt) - this.getTimeFromDate(a.createdAt));
-        
-        this.withdrawLogs = allLogs;
-        console.log(`✅ تم تحميل ${this.withdrawLogs.length} سجل سحب`);
+        const snap = await getDocs(collection(db, "withdraw_logs"));
+        this.withdrawLogs = snap.docs.map((d) => {
+          const data = d.data() || {};
+          return {
+            id: d.id,
+            ...data,
+            userPhone: data.userPhone || null,
+            email: data.email || data.userEmail,
+            userEmail: data.userEmail || data.email,
+            wallet: data.wallet || data.walletAddress || null,
+            walletAddress: data.walletAddress || data.wallet || null,
+            withdrawFrom: data.withdrawFrom || 'balance',
+          };
+        });
       } catch (e) {
-        console.error("خطأ عند تحميل سجل السحوبات:", e);
         this.withdrawLogs = [];
       } finally {
         this.loadingWithdrawLogs = false;
@@ -2069,8 +2511,7 @@ export default {
             const data = d.data() || {};
             return {
               id: d.id,
-              type: data.type || data.status || '',
-              status: data.status || data.type || '',
+              type: data.type || '',
               amount: data.amount || 0,
               userPhone: data.userPhone || null,
               email: data.email || data.userEmail || '',
@@ -2079,8 +2520,8 @@ export default {
               adminMessage: data.adminMessage || '',
               network: data.network || '',
               txid: data.txid || '',
+              targetBalance: data.targetBalance || 'balance',
               createdAt: data.createdAt,
-              deletedByAdmin: data.deletedByAdmin || false
             };
           });
           
@@ -2113,8 +2554,8 @@ export default {
               adminMessage: data.adminMessage || '',
               network: data.network || '',
               txid: data.txid || '',
+              targetBalance: data.targetBalance || 'balance',
               createdAt: data.createdAt,
-              deletedByAdmin: false
             };
           });
           
@@ -2165,6 +2606,7 @@ export default {
             txid: data.txid || "",
             proofURL: data.proofURL || null,
             status: data.status || "pending",
+            targetBalance: data.targetBalance || "balance",
             createdAt,
           };
         });
@@ -2201,12 +2643,14 @@ export default {
         const userEmail = userData.email || "";
         const userPhone = userData.phoneNumber || "";
         
+        // نسب العمولة: 15%، 10%، 5%
         const commissionRates = {
           level1: 15,
           level2: 10,
           level3: 5,
         };
         
+        // حساب عمولة المستوى الأول (15%)
         if (userData.invitedBy) {
           try {
             const level1Ref = doc(db, "users", userData.invitedBy);
@@ -2215,15 +2659,20 @@ export default {
             if (level1Snap.exists()) {
               const level1Data = level1Snap.data();
               const level1Amount = (amount * commissionRates.level1) / 100;
-              const newBalance = (level1Data.balance || 0) + level1Amount;
+              const currentBalance = level1Data.balance || 0;
+              const newBalance = currentBalance + level1Amount;
               
-              await updateDoc(level1Ref, { balance: newBalance });
+              await updateDoc(level1Ref, { 
+                balance: newBalance,
+                updatedAt: serverTimestamp()
+              });
               
               await addDoc(collection(db, "referral_rewards"), {
                 receiver: userData.invitedBy,
                 fromUser: userId,
                 amount: level1Amount,
                 level: 1,
+                targetBalance: 'balance',
                 createdAt: serverTimestamp()
               });
               
@@ -2236,6 +2685,7 @@ export default {
                 amount: level1Amount,
                 currency: "USDT",
                 status: "completed",
+                targetBalance: 'balance',
                 details: {
                   fromUserId: userId,
                   fromEmail: userEmail,
@@ -2263,6 +2713,7 @@ export default {
           }
         }
         
+        // حساب عمولة المستوى الثاني (10%)
         if (userData.level2) {
           try {
             const level2Ref = doc(db, "users", userData.level2);
@@ -2271,15 +2722,20 @@ export default {
             if (level2Snap.exists()) {
               const level2Data = level2Snap.data();
               const level2Amount = (amount * commissionRates.level2) / 100;
-              const newBalance = (level2Data.balance || 0) + level2Amount;
+              const currentBalance = level2Data.balance || 0;
+              const newBalance = currentBalance + level2Amount;
               
-              await updateDoc(level2Ref, { balance: newBalance });
+              await updateDoc(level2Ref, { 
+                balance: newBalance,
+                updatedAt: serverTimestamp()
+              });
               
               await addDoc(collection(db, "referral_rewards"), {
                 receiver: userData.level2,
                 fromUser: userId,
                 amount: level2Amount,
                 level: 2,
+                targetBalance: 'balance',
                 createdAt: serverTimestamp()
               });
               
@@ -2292,6 +2748,7 @@ export default {
                 amount: level2Amount,
                 currency: "USDT",
                 status: "completed",
+                targetBalance: 'balance',
                 details: {
                   fromUserId: userId,
                   fromEmail: userEmail,
@@ -2319,6 +2776,7 @@ export default {
           }
         }
         
+        // حساب عمولة المستوى الثالث (5%)
         if (userData.level3) {
           try {
             const level3Ref = doc(db, "users", userData.level3);
@@ -2327,15 +2785,20 @@ export default {
             if (level3Snap.exists()) {
               const level3Data = level3Snap.data();
               const level3Amount = (amount * commissionRates.level3) / 100;
-              const newBalance = (level3Data.balance || 0) + level3Amount;
+              const currentBalance = level3Data.balance || 0;
+              const newBalance = currentBalance + level3Amount;
               
-              await updateDoc(level3Ref, { balance: newBalance });
+              await updateDoc(level3Ref, { 
+                balance: newBalance,
+                updatedAt: serverTimestamp()
+              });
               
               await addDoc(collection(db, "referral_rewards"), {
                 receiver: userData.level3,
                 fromUser: userId,
                 amount: level3Amount,
                 level: 3,
+                targetBalance: 'balance',
                 createdAt: serverTimestamp()
               });
               
@@ -2348,6 +2811,7 @@ export default {
                 amount: level3Amount,
                 currency: "USDT",
                 status: "completed",
+                targetBalance: 'balance',
                 details: {
                   fromUserId: userId,
                   fromEmail: userEmail,
@@ -2397,83 +2861,64 @@ export default {
       this.processingId = r.id;
       
       try {
-        // العملية الرئيسية: تحديث حالة الدفع
         const pRef = doc(db, "payments", r.id);
         await updateDoc(pRef, { status: "rejected", processedAt: serverTimestamp() });
-        console.log("✅ تم تحديث حالة الدفع إلى rejected");
-        
-        // العمليات الفرعية - كل منها في try-catch منفصل
-        
-        // 1. إنشاء سجل في recharge_logs
-        try {
-          await addDoc(collection(db, "recharge_logs"), {
-            userId: r.userId || null,
-            userPhone: r.userPhone || r.phoneNumber || null,
-            email: r.userEmail || r.email || null,
-            amount: r.amount || 0,
-            type: "rejected",
-            reason: reason,
-            network: r.network,
-            txid: r.txid,
+
+        if (r.userId) {
+          let userPhone = r.userPhone || r.phoneNumber;
+          if (!userPhone) {
+            try {
+              const userSnap = await getDoc(doc(db, "users", r.userId));
+              if (userSnap.exists()) {
+                userPhone = userSnap.data().phoneNumber || null;
+              }
+            } catch (err) {
+              console.warn("Failed to get user phone:", err);
+            }
+          }
+
+          await this.createTransactionForUser(
+            r.userId,
+            r.userEmail || r.email,
+            userPhone,
+            "recharge",
+            r.amount,
+            "rejected",
+            reason,
+            "تم رفض طلب التعبئة",
+            r.network,
+            "",
+            "",
+            "",
+            "balance"
+          );
+        }
+
+        await addDoc(collection(db, "recharge_logs"), {
+          userId: r.userId || null,
+          userPhone: r.userPhone || r.phoneNumber || null,
+          email: r.userEmail || r.email || null,
+          amount: r.amount || 0,
+          type: "rejected",
+          reason: reason,
+          network: r.network,
+          txid: r.txid,
+          targetBalance: "balance",
+          createdAt: serverTimestamp(),
+        });
+
+        if (r.userId) {
+          await addDoc(collection(db, "users", r.userId, "notifications"), {
+            title: "تم رفض طلب التعبئة",
+            message: `تم رفض طلب تعبئة ${r.amount} USDT. السبب: ${reason}`,
+            read: false,
             createdAt: serverTimestamp(),
           });
-          console.log("✅ تم إنشاء سجل في recharge_logs");
-        } catch (e) {
-          console.warn("⚠️ فشل إنشاء سجل في recharge_logs:", e);
         }
-        
-        // 2. إنشاء معاملة
-        if (r.userId) {
-          try {
-            let userPhone = r.userPhone || r.phoneNumber;
-            if (!userPhone) {
-              try {
-                const userSnap = await getDoc(doc(db, "users", r.userId));
-                if (userSnap.exists()) {
-                  userPhone = userSnap.data().phoneNumber || null;
-                }
-              } catch (err) {}
-            }
-            
-            await this.createTransactionForUser(
-              r.userId,
-              r.userEmail || r.email,
-              userPhone,
-              "recharge",
-              r.amount,
-              "rejected",
-              reason,
-              "تم رفض طلب التعبئة",
-              r.network,
-              "",
-              "",
-              ""
-            );
-            console.log("✅ تم إنشاء المعاملة");
-          } catch (e) {
-            console.warn("⚠️ فشل إنشاء المعاملة:", e);
-          }
-        }
-        
-        // 3. إرسال إشعار للمستخدم
-        if (r.userId) {
-          try {
-            await addDoc(collection(db, "users", r.userId, "notifications"), {
-              title: "تم رفض طلب التعبئة",
-              message: `تم رفض طلب تعبئة ${r.amount} USDT. السبب: ${reason}`,
-              read: false,
-              createdAt: serverTimestamp(),
-            });
-            console.log("✅ تم إرسال الإشعار");
-          } catch (e) {
-            console.warn("⚠️ فشل إرسال الإشعار:", e);
-          }
-        }
-        
+
         alert("❌ تم رفض طلب التعبئة");
-        
       } catch (e) {
-        console.error("❌ rejectRecharge error:", e);
+        console.error("rejectRecharge error:", e);
         alert("حدث خطأ أثناء رفض الطلب");
       } finally {
         this.processingId = null;
@@ -2492,27 +2937,18 @@ export default {
       this.processingId = r.id;
       try {
         await deleteDoc(doc(db, "payments", r.id));
-        
-        // إضافة سجل في recharge_logs مع الحفاظ على الحالة الأصلية
         await addDoc(collection(db, "recharge_logs"), {
           userId: r.userId || null,
           userPhone: r.userPhone || r.phoneNumber || null,
           email: r.userEmail || r.email || null,
           amount: r.amount || 0,
-          type: r.status || "pending",
-          status: r.status || "pending",
+          type: "deleted",
           network: r.network,
           txid: r.txid,
-          adminMessage: "تم حذف الطلب بواسطة الأدمن (تم الإلغاء من قبل الإدارة)",
+          targetBalance: "balance",
           createdAt: serverTimestamp(),
-          originalStatus: r.status || "pending",
-          deletedByAdmin: true,
-          deletedAt: serverTimestamp()
         });
-        
         alert("تم حذف الطلب");
-        await this.reloadRechargeRequests();
-        await this.loadRechargeLogs();
       } catch (e) {
         console.error("deleteRecharge error:", e);
         alert("خطأ أثناء حذف الطلب");
@@ -2528,212 +2964,11 @@ export default {
       }
     },
     
-    async openAccountDetailsModal(user) {
-      try {
-        this.showAccountDetailsModal = true;
-        this.showWithdrawHistory = false;
-        this.showRechargeHistory = false;
-        
-        let vipLevel = "عادي";
-        let vipExpiryDate = null;
-        
-        try {
-          const vipPurchasesQuery = query(
-            collection(db, "vip_purchases"),
-            where("userId", "==", user.id),
-            where("status", "==", "active"),
-            orderBy("expiryDate", "desc"),
-            limit(1)
-          );
-          const vipSnap = await getDocs(vipPurchasesQuery);
-          
-          if (!vipSnap.empty) {
-            const vipData = vipSnap.docs[0].data();
-            vipLevel = vipData.vipLevel || "عادي";
-            vipExpiryDate = vipData.expiryDate;
-          } else if (user.vipLevel && user.vipLevel !== "عادي") {
-            vipLevel = user.vipLevel;
-            vipExpiryDate = user.vipExpiryDate || null;
-          }
-        } catch (err) {
-          console.warn("Failed to fetch VIP data:", err);
-          if (user.vipLevel) {
-            vipLevel = user.vipLevel;
-          }
-        }
-        
-        const vipLockedAmount = user.vipLockedAmount || 0;
-        const availableBalance = Math.max(0, user.balance - vipLockedAmount);
-        
-        this.accountDetails = {
-          email: user.email || "—",
-          phoneNumber: user.phoneNumber || "—",
-          vipLevel: vipLevel,
-          vipExpiryDate: vipExpiryDate,
-          createdAt: user.createdAt || null,
-          balance: user.balance || 0,
-          vipLockedAmount: vipLockedAmount,
-          availableBalance: availableBalance,
-          blocked: user.blocked || false,
-          userId: user.id
-        };
-        
-        await this.loadUserWithdrawHistory(user.id);
-        await this.loadUserRechargeHistory(user.id);
-        
-      } catch (error) {
-        console.error("خطأ في جلب تفاصيل الحساب:", error);
-        alert("حدث خطأ في جلب تفاصيل الحساب");
-      }
-    },
-    
-    async loadUserWithdrawHistory(userId) {
-      try {
-        let allLogs = [];
-        
-        // جلب سجل السحوبات من withdraw_requests
-        try {
-          const withdrawRequestsQuery = query(
-            collection(db, "withdraw_requests"),
-            where("userId", "==", userId),
-            orderBy("createdAt", "desc")
-          );
-          const withdrawSnap = await getDocs(withdrawRequestsQuery);
-          const logs = withdrawSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            status: doc.data().status || "pending"
-          }));
-          allLogs = [...allLogs, ...logs];
-        } catch (e) {
-          console.warn("⚠️ فشل جلب من withdraw_requests:", e);
-        }
-        
-        // جلب سجلات الحذف من withdraw_logs
-        try {
-          const logsSnap = await getDocs(query(
-            collection(db, "withdraw_logs"),
-            where("userId", "==", userId),
-            where("deletedByAdmin", "==", true)
-          ));
-          const deletedLogs = logsSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            status: doc.data().status || doc.data().type || "pending",
-            type: doc.data().type || doc.data().status || "pending"
-          }));
-          allLogs = [...allLogs, ...deletedLogs];
-        } catch (e) {
-          console.warn("⚠️ فشل جلب سجلات الحذف:", e);
-        }
-        
-        // ترتيب حسب التاريخ
-        allLogs.sort((a, b) => this.getTimeFromDate(b.createdAt) - this.getTimeFromDate(a.createdAt));
-        
-        this.accountWithdrawHistory = allLogs;
-        console.log(`✅ تم تحميل ${this.accountWithdrawHistory.length} سجل سحب للمستخدم`);
-      } catch (error) {
-        console.error("خطأ في جلب سجل السحوبات:", error);
-        this.accountWithdrawHistory = [];
-      }
-    },
-    
-    async loadUserRechargeHistory(userId) {
-      try {
-        const rechargeLogsQuery = query(
-          collection(db, "recharge_logs"),
-          where("userId", "==", userId),
-          orderBy("createdAt", "desc")
-        );
-        const rechargeSnap = await getDocs(rechargeLogsQuery);
-        
-        if (!rechargeSnap.empty) {
-          this.accountRechargeHistory = rechargeSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-        } else {
-          const transactionsQuery = query(
-            collection(db, "transactions"),
-            where("userId", "==", userId),
-            where("type", "==", "recharge"),
-            orderBy("createdAt", "desc")
-          );
-          const transSnap = await getDocs(transactionsQuery);
-          this.accountRechargeHistory = transSnap.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            type: doc.data().status
-          }));
-        }
-      } catch (error) {
-        console.error("خطأ في جلب سجل التعبئة:", error);
-        this.accountRechargeHistory = [];
-      }
-    },
-    
-    showUserWithdrawHistory() {
-      this.showWithdrawHistory = !this.showWithdrawHistory;
-      this.showRechargeHistory = false;
-    },
-    
-    showUserRechargeHistory() {
-      this.showRechargeHistory = !this.showRechargeHistory;
-      this.showWithdrawHistory = false;
-    },
-    
-    closeAccountDetailsModal() {
-      this.showAccountDetailsModal = false;
-      this.accountDetails = {
-        email: "",
-        phoneNumber: "",
-        vipLevel: "عادي",
-        vipExpiryDate: null,
-        createdAt: null,
-        balance: 0,
-        vipLockedAmount: 0,
-        availableBalance: 0,
-        blocked: false,
-        userId: null
-      };
-      this.accountWithdrawHistory = [];
-      this.accountRechargeHistory = [];
-      this.showWithdrawHistory = false;
-      this.showRechargeHistory = false;
-    },
-    
-    getVipText(vipLevel) {
-      if (!vipLevel || vipLevel === "عادي" || vipLevel === "normal") {
-        return "عادي";
-      }
-      const vipMap = {
-        "bronze": "برونزي",
-        "silver": "فضي",
-        "gold": "ذهبي",
-        "platinum": "بلاتيني",
-        "diamond": "ألماس",
-        "vip1": "VIP 1",
-        "vip2": "VIP 2",
-        "vip3": "VIP 3",
-        "vip4": "VIP 4",
-        "vip5": "VIP 5"
-      };
-      return vipMap[vipLevel.toLowerCase()] || vipLevel;
-    },
-    
-    getVipClass(vipLevel) {
-      if (!vipLevel || vipLevel === "عادي" || vipLevel === "normal") {
-        return "vip-normal";
-      }
-      const lowerLevel = vipLevel.toLowerCase();
-      if (lowerLevel === "bronze" || lowerLevel === "vip1") return "vip-bronze";
-      if (lowerLevel === "silver" || lowerLevel === "vip2") return "vip-silver";
-      if (lowerLevel === "gold" || lowerLevel === "vip3") return "vip-gold";
-      if (lowerLevel === "platinum" || lowerLevel === "vip4") return "vip-platinum";
-      if (lowerLevel === "diamond" || lowerLevel === "vip5") return "vip-diamond";
-      return "vip-normal";
+    async markAllRechargeNotificationsReadServerSide() {
+      alert("ميزة وضع الإشعارات كمقروءة تحتاج تنفيذ على حسب تصميم قاعدة البيانات.");
     },
 
+    // ========== دالة حذف جميع سجلات المستخدم بالكامل ==========
     async confirmDeleteAllUserLogs(userId) {
       if (!userId) {
         alert("معرف المستخدم غير صالح");
@@ -2773,7 +3008,7 @@ export default {
   ⚠️ تحذير: أنت على وشك حذف جميع سجلات المستخدم!
   
   📌 اسم المستخدم: ${userName}
-  📌 الرصيد: ${user.balance || 0} USDT
+  📌 الرصيد الإجمالي: ${user.balance || 0} USDT
   📌 عدد السجلات المراد حذفها: ${totalLogs} سجل
   
   سيتم حذف:
@@ -2785,6 +3020,7 @@ export default {
   • طلبات السحب المعلقة
   • طلبات التعبئة المعلقة
   • مشتريات VIP
+  • إعدادات العجلة الخاصة
   
   ⚠️ سيتم الاحتفاظ بحساب المستخدم نفسه (البريد، رقم الهاتف، الرصيد)
   ⚠️ هذا الإجراء لا يمكن التراجع عنه أبداً!
@@ -2811,7 +3047,8 @@ export default {
           referralRewards: 0,
           withdrawRequests: 0,
           payments: 0,
-          vipPurchases: 0
+          vipPurchases: 0,
+          userWheelSettings: 0
         };
         
         try {
@@ -2917,6 +3154,17 @@ export default {
           console.log("⚠️ خطأ في حذف مشتريات VIP:", e);
         }
         
+        try {
+          const wheelSettingsRef = doc(db, "user_wheel_settings", userId);
+          const wheelSettingsSnap = await getDoc(wheelSettingsRef);
+          if (wheelSettingsSnap.exists()) {
+            deletePromises.push(deleteDoc(wheelSettingsRef));
+            deletedCounts.userWheelSettings = 1;
+          }
+        } catch (e) {
+          console.log("⚠️ خطأ في حذف إعدادات العجلة:", e);
+        }
+        
         await Promise.all(deletePromises);
         
         const totalDeleted = Object.values(deletedCounts).reduce((a, b) => a + b, 0);
@@ -2941,6 +3189,7 @@ export default {
         await this.loadRechargeLogs();
         await this.loadWithdrawRequests();
         await this.reloadRechargeRequests();
+        await this.loadUsers();
         
         alert(`✅ تم حذف جميع سجلات المستخدم "${userName}" بنجاح!
         
@@ -2953,6 +3202,7 @@ export default {
   • طلبات السحب: ${deletedCounts.withdrawRequests}
   • طلبات التعبئة: ${deletedCounts.payments}
   • مشتريات VIP: ${deletedCounts.vipPurchases}
+  • إعدادات العجلة: ${deletedCounts.userWheelSettings}
   📌 المجموع الكلي: ${totalDeleted} سجل`);
         
       } catch (e) {
@@ -3177,16 +3427,6 @@ export default {
   background: #6c757d;
 }
 
-.white-btn {
-  background: #ffffff;
-  color: #0A0C10;
-  font-weight: 700;
-}
-
-.white-btn:hover {
-  background: #e0e0e0;
-}
-
 .gold {
   background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
   color: #0A0C10;
@@ -3217,6 +3457,11 @@ export default {
 
 .purple {
   background: #9c27b0;
+}
+
+.wheel-settings-btn {
+  background: #ff9800;
+  color: #0A0C10;
 }
 
 .loading {
@@ -3254,6 +3499,10 @@ export default {
   overflow-y: auto;
   color: #ffffff;
   border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+.user-wheel-modal {
+  max-width: 450px;
 }
 
 .account-details-modal {
@@ -3365,6 +3614,201 @@ export default {
   font-style: italic;
   text-align: center;
   padding: 10px;
+}
+
+.wheel-settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+}
+
+.form-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.form-group label {
+  width: 150px;
+  font-weight: 600;
+  color: #D4AF37;
+}
+
+.settings-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: #1A1F2A;
+  color: white;
+  font-size: 14px;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: #D4AF37;
+}
+
+.value-display {
+  min-width: 60px;
+  color: #D4AF37;
+  font-weight: bold;
+}
+
+.hint {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 8px;
+}
+
+.total-info {
+  padding: 10px;
+  border-radius: 6px;
+  background: #1A1F2A;
+  text-align: center;
+}
+
+.total-info.error {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid #dc3545;
+}
+
+.total-info .error-message {
+  color: #dc3545;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.total-info .success-message {
+  color: #28a745;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.preview {
+  margin-top: 15px;
+  padding: 10px;
+  background: #1A1F2A;
+  border-radius: 8px;
+}
+
+.preview h3 {
+  font-size: 12px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.preview-bars {
+  display: flex;
+  height: 30px;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.preview-bars .bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-shadow: 0 0 2px black;
+}
+
+.bar.loss {
+  background: #dc3545;
+}
+
+.bar.small-win {
+  background: #ff9800;
+}
+
+.bar.big-win {
+  background: #28a745;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #D4AF37, #F6E27A, #C5A028);
+  color: #0A0C10;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-message {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.save-message.success {
+  background: rgba(40, 167, 69, 0.2);
+  color: #28a745;
+  border: 1px solid #28a745;
+}
+
+.save-message.error {
+  background: rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border: 1px solid #dc3545;
+}
+
+.global-settings-info {
+  padding: 10px;
+  background: #1A1F2A;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.global-preview {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.global-preview .preview-item {
+  padding: 4px 8px;
+  background: #11151C;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.user-settings-form {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(212, 175, 55, 0.3);
 }
 
 .account-details {
@@ -3510,6 +3954,18 @@ export default {
   border-radius: 4px;
 }
 
+.referred-users {
+  margin-top: 15px;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  padding-top: 10px;
+}
+
+.referred-users h4 {
+  font-size: 12px;
+  color: #D4AF37;
+  margin-bottom: 8px;
+}
+
 @media (max-width: 768px) {
   .admin-page {
     padding: 8px;
@@ -3552,6 +4008,19 @@ export default {
   
   .account-buttons {
     flex-direction: column;
+  }
+  
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .form-group label {
+    width: auto;
+  }
+  
+  .settings-input {
+    width: 100%;
   }
 }
 </style>
