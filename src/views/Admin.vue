@@ -215,7 +215,7 @@
       </div>
     </div>
 
-    <!-- سجل السحوبات -->
+    <!-- سجل السحوبات (مع زر الحذف) -->
     <div v-if="activeTab === 'withdrawLogs'" class="panel">
       <div class="panel-header">
         <h2>سجل السحوبات</h2>
@@ -260,6 +260,9 @@
             <p class="muted">تاريخ الطلب: {{ formatDate(l.createdAt) }}</p>
             <p v-if="l.processedAt" class="muted">تاريخ المعالجة: {{ formatDate(l.processedAt) }}</p>
             <p v-if="l.approvedAt" class="muted">تاريخ الموافقة: {{ formatDate(l.approvedAt) }}</p>
+            <div class="card-actions">
+              <button class="btn black" type="button" @click.stop="deleteWithdrawLog(l)" :disabled="processingId === l.id">حذف</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2368,6 +2371,42 @@ export default {
         this.closeRejectModal();
         await this.reloadRechargeRequests();
         await this.loadRechargeLogs();
+      }
+    },
+
+    // ========== حذف سجل السحب ==========
+    async deleteWithdrawLog(log) {
+      if (!log || !log.id) return;
+      const allowed = await this.ensureAdmin();
+      if (!allowed) return alert("غير مصرح لك");
+      if (!confirm("هل أنت متأكد أنك تريد حذف هذا السجل نهائياً؟")) return;
+      
+      this.processingId = log.id;
+      
+      try {
+        await deleteDoc(doc(db, "withdraw_logs", log.id));
+        
+        // تسجيل عملية الحذف في سجل الأدمن
+        await addDoc(collection(db, "admin_logs"), {
+          action: "delete_withdraw_log",
+          logId: log.id,
+          userId: log.userId || null,
+          userEmail: log.email || log.userEmail || null,
+          amount: log.amount || 0,
+          adminEmail: this.currentUser?.email || "admin",
+          timestamp: serverTimestamp()
+        });
+        
+        alert("تم حذف السجل بنجاح");
+        
+        // تحديث القائمة
+        await this.loadWithdrawLogs();
+        
+      } catch (e) {
+        console.error("deleteWithdrawLog error:", e);
+        alert("خطأ أثناء حذف السجل");
+      } finally {
+        this.processingId = null;
       }
     },
 
