@@ -3,7 +3,7 @@
 // ===============================
 
 // منع تشغيل الموقع على أي دومين غير الدومين الرسمي
-if (window.location.hostname !== "whhhhj.shjsjsju.") {
+if (window.location.hostname !== "lumarise.vfshj.workers.dev") {
   document.body.innerHTML = "403 Forbidden";
   throw new Error("Domain not allowed");
 }
