@@ -3,22 +3,41 @@
   "version": "1.0.0",
   "private": true,
   "main": "expo-router/entry",
+
   "scripts": {
     "dev": "concurrently -k \"pnpm dev:server\" \"pnpm dev:metro\"",
+
     "dev:server": "cross-env NODE_ENV=development tsx watch server/_core/index.ts",
+
     "dev:metro": "cross-env EXPO_USE_METRO_WORKSPACE_ROOT=1 npx expo start --web --port ${EXPO_PORT:-8081}",
-    "build": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "NODE_ENV=production node dist/index.js",
+
+    "build:web": "expo export --platform web",
+
+    "build:server": "esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server-dist",
+
+    "build": "pnpm build:web && pnpm build:server",
+
+    "start": "NODE_ENV=production node server-dist/index.js",
+
     "check": "tsc --noEmit",
+
     "lint": "expo lint",
+
     "format": "prettier --write .",
+
     "test": "vitest run",
+
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
+
     "android": "expo start --android",
+
     "ios": "expo start --ios",
+
     "qr": "node scripts/generate_qr.mjs",
+
     "db:seed-admin": "node scripts/seed-admin.mjs"
   },
+
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
@@ -68,8 +87,10 @@
     "react-native-worklets": "0.5.1",
     "superjson": "^1.13.3",
     "tailwind-merge": "^2.6.0",
+    "tailwindcss": "^3.4.17",
     "zod": "^4.2.1"
   },
+
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
     "@types/cookie": "^0.6.0",
@@ -90,5 +111,6 @@
     "typescript": "~5.9.3",
     "vitest": "^2.1.9"
   },
+
   "packageManager": "pnpm@9.12.0"
 }
