@@ -1,85 +1,82 @@
-import { decimal, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { integer, numeric, pgEnum, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
-export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
-  id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const requestStatusEnum = pgEnum("request_status", ["pending", "approved", "rejected"]);
+export const transactionTypeEnum = pgEnum("transaction_type", ["deposit", "withdrawal", "trade", "transfer"]);
+export const transactionStatusEnum = pgEnum("transaction_status", ["pending", "completed", "failed"]);
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
+  username: varchar("username", { length: 64 }).unique(),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  passwordHash: text("passwordHash"),
+  role: roleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-export const walletBalances = mysqlTable("wallet_balances", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+export const walletBalances = pgTable("wallet_balances", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
   currency: varchar("currency", { length: 16 }).notNull(),
-  amount: decimal("amount", { precision: 24, scale: 8 }).default("0").notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  amount: numeric("amount", { precision: 24, scale: 8 }).default("0").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const depositRequests = mysqlTable("deposit_requests", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+export const depositRequests = pgTable("deposit_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
   currency: varchar("currency", { length: 16 }).notNull(),
-  amount: decimal("amount", { precision: 24, scale: 8 }).notNull(),
+  amount: numeric("amount", { precision: 24, scale: 8 }).notNull(),
   network: varchar("network", { length: 32 }),
   paymentMethod: varchar("paymentMethod", { length: 64 }),
-  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
-  approvedBy: int("approvedBy"),
+  status: requestStatusEnum("status").default("pending").notNull(),
+  approvedBy: integer("approvedBy"),
   approvedAt: timestamp("approvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const withdrawalRequests = mysqlTable("withdrawal_requests", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+export const withdrawalRequests = pgTable("withdrawal_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
   currency: varchar("currency", { length: 16 }).notNull(),
-  amount: decimal("amount", { precision: 24, scale: 8 }).notNull(),
+  amount: numeric("amount", { precision: 24, scale: 8 }).notNull(),
   address: text("address").notNull(),
   network: varchar("network", { length: 32 }),
-  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
-  approvedBy: int("approvedBy"),
+  status: requestStatusEnum("status").default("pending").notNull(),
+  approvedBy: integer("approvedBy"),
   approvedAt: timestamp("approvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const transactions = mysqlTable("transactions", {
-  id: int("id").autoincrement().primaryKey(),
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
   transactionId: varchar("transactionId", { length: 40 }).notNull().unique(),
-  userId: int("userId").notNull(),
-  type: mysqlEnum("type", ["deposit", "withdrawal", "trade", "transfer"]).notNull(),
-  amount: decimal("amount", { precision: 24, scale: 8 }).notNull(),
+  userId: integer("userId").notNull(),
+  type: transactionTypeEnum("type").notNull(),
+  amount: numeric("amount", { precision: 24, scale: 8 }).notNull(),
   currency: varchar("currency", { length: 16 }).notNull(),
-  status: mysqlEnum("status", ["pending", "completed", "failed"]).notNull(),
-  adminId: int("adminId"),
+  status: transactionStatusEnum("status").notNull(),
+  adminId: integer("adminId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
-export const auditLogs = mysqlTable("audit_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  adminId: int("adminId").notNull(),
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  adminId: integer("adminId").notNull(),
   action: varchar("action", { length: 80 }).notNull(),
   entity: varchar("entity", { length: 40 }).notNull(),
-  entityId: int("entityId").notNull(),
+  entityId: integer("entityId").notNull(),
   metadata: text("metadata"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
