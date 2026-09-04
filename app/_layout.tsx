@@ -1,119 +1,572 @@
 import "@/global.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+
+import {
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+
+import {
+  Stack,
+  useRouter,
+  useSegments,
+} from "expo-router";
+
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  ActivityIndicator,
+  Platform,
+  View,
+} from "react-native";
+
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 import "react-native-reanimated";
-import { Platform } from "react-native";
+
 import "@/lib/_core/nativewind-pressable";
+
 import { ThemeProvider } from "@/lib/theme-provider";
+
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
   SafeAreaProvider,
   initialWindowMetrics,
 } from "react-native-safe-area-context";
-import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
-import { trpc, createTRPCClient } from "@/lib/trpc";
-import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
+import type {
+  EdgeInsets,
+  Metrics,
+  Rect,
+} from "react-native-safe-area-context";
 
-const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
-const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
+import {
+  trpc,
+  createTRPCClient,
+} from "@/lib/trpc";
+
+import {
+  initManusRuntime,
+  subscribeSafeAreaInsets,
+} from "@/lib/_core/manus-runtime";
+
+
+/* =========================================================
+   Safe Area Defaults
+========================================================= */
+
+const DEFAULT_WEB_INSETS: EdgeInsets = {
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+};
+
+const DEFAULT_WEB_FRAME: Rect = {
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
+};
+
+
+/* =========================================================
+   Expo Router
+========================================================= */
 
 export const unstable_settings = {
   anchor: "(tabs)",
 };
 
+
+/* =========================================================
+   Public Routes
+========================================================= */
+
+/*
+ * هذه الصفحات يمكن فتحها بدون تسجيل دخول.
+ *
+ * جميع الصفحات الأخرى تحتاج إلى Session صحيحة.
+ */
+const PUBLIC_ROUTES = [
+  "login",
+  "register",
+  "forgot-password",
+  "oauth",
+];
+
+
+/* =========================================================
+   Authentication Guard
+========================================================= */
+
+function AuthGate() {
+  const router = useRouter();
+  const segments = useSegments();
+
+  /*
+   * التحقق الحقيقي من المستخدم يتم عن طريق السيرفر.
+   *
+   * auth.me موجود داخل server/routers.ts
+   * ويعيد المستخدم الحالي من Session.
+   */
+  const me = trpc.auth.me.useQuery(undefined, {
+    retry: false,
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+  });
+
+  const isCheckingAuth = me.isPending;
+
+  const user = me.data;
+
+  /*
+   * أول جزء من المسار الحالي.
+   *
+   * أمثلة:
+   *
+   * /login       -> login
+   * /register    -> register
+   * /(tabs)      -> (tabs)
+   * /profile     -> profile
+   */
+  const firstSegment = segments[0];
+
+  /*
+   * هل الصفحة الحالية من الصفحات المسموح بها بدون تسجيل؟
+   */
+  const isPublicRoute =
+    typeof firstSegment === "string" &&
+    PUBLIC_ROUTES.includes(firstSegment);
+
+
+  /* =======================================================
+     Redirect Logic
+  ======================================================= */
+
+  useEffect(() => {
+    /*
+     * لا نقرر أي شيء قبل انتهاء فحص Session.
+     */
+    if (isCheckingAuth) {
+      return;
+    }
+
+
+    /*
+     * =====================================================
+     * المستخدم غير مسجل الدخول
+     * =====================================================
+     */
+
+    if (!user && !isPublicRoute) {
+      router.replace("/login");
+      return;
+    }
+
+
+    /*
+     * =====================================================
+     * المستخدم مسجل الدخول
+     * =====================================================
+     *
+     * إذا حاول فتح صفحة تسجيل الدخول أو التسجيل،
+     * نرسله مباشرة إلى الصفحة الرئيسية.
+     */
+
+    if (user && isPublicRoute) {
+      router.replace("/(tabs)");
+      return;
+    }
+
+  }, [
+    user,
+    isCheckingAuth,
+    isPublicRoute,
+    router,
+  ]);
+
+
+  /* =======================================================
+     Loading Screen
+  ======================================================= */
+
+  /*
+   * مهم جداً:
+   *
+   * لا نعرض الصفحة الرئيسية أثناء فحص Session.
+   *
+   * هذا يمنع ظهور الصفحة الموجودة في الصورة للحظات
+   * قبل تحويل المستخدم إلى Login.
+   */
+
+  if (isCheckingAuth) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#FFFFFF",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator
+          size="large"
+          color="#078A5B"
+        />
+      </View>
+    );
+  }
+
+
+  /* =======================================================
+     حماية الصفحات
+  ======================================================= */
+
+  /*
+   * إذا المستخدم غير مسجل وحاول فتح الصفحة الرئيسية
+   * أو أي صفحة محمية، نخفي المحتوى أثناء التحويل.
+   */
+
+  if (!user && !isPublicRoute) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#FFFFFF",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator
+          size="large"
+          color="#078A5B"
+        />
+      </View>
+    );
+  }
+
+
+  /*
+   * إذا المستخدم مسجل الدخول وحاول فتح Login/Register
+   * نخفي الصفحة أثناء التحويل إلى الرئيسية.
+   */
+
+  if (user && isPublicRoute) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#FFFFFF",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator
+          size="large"
+          color="#078A5B"
+        />
+      </View>
+    );
+  }
+
+
+  return null;
+}
+
+
+/* =========================================================
+   Root Layout
+========================================================= */
+
 export default function RootLayout() {
-  const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
-  const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
-  const [insets, setInsets] = useState<EdgeInsets>(initialInsets);
-  const [frame, setFrame] = useState<Rect>(initialFrame);
+  const initialInsets =
+    initialWindowMetrics?.insets ??
+    DEFAULT_WEB_INSETS;
 
-  // Initialize Manus runtime for cookie injection from parent container
+  const initialFrame =
+    initialWindowMetrics?.frame ??
+    DEFAULT_WEB_FRAME;
+
+
+  /* =======================================================
+     Safe Area State
+  ======================================================= */
+
+  const [insets, setInsets] =
+    useState<EdgeInsets>(
+      initialInsets,
+    );
+
+  const [frame, setFrame] =
+    useState<Rect>(
+      initialFrame,
+    );
+
+
+  /* =======================================================
+     Manus Runtime
+  ======================================================= */
+
   useEffect(() => {
     initManusRuntime();
   }, []);
 
-  const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
-    setInsets(metrics.insets);
-    setFrame(metrics.frame);
-  }, []);
+
+  /* =======================================================
+     Safe Area Updates
+  ======================================================= */
+
+  const handleSafeAreaUpdate =
+    useCallback(
+      (metrics: Metrics) => {
+        setInsets(metrics.insets);
+        setFrame(metrics.frame);
+      },
+      [],
+    );
+
 
   useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const unsubscribe = subscribeSafeAreaInsets(handleSafeAreaUpdate);
-    return () => unsubscribe();
-  }, [handleSafeAreaUpdate]);
 
-  // Create clients once and reuse them
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            // Disable automatic refetching on window focus for mobile
-            refetchOnWindowFocus: false,
-            // Retry failed requests once
-            retry: 1,
-          },
-        },
-      }),
-  );
-  const [trpcClient] = useState(() => createTRPCClient());
+    if (Platform.OS !== "web") {
+      return;
+    }
 
-  // Ensure minimum 8px padding for top and bottom on mobile
-  const providerInitialMetrics = useMemo(() => {
-    const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
-    return {
-      ...metrics,
-      insets: {
-        ...metrics.insets,
-        top: Math.max(metrics.insets.top, 16),
-        bottom: Math.max(metrics.insets.bottom, 12),
-      },
+    const unsubscribe =
+      subscribeSafeAreaInsets(
+        handleSafeAreaUpdate,
+      );
+
+    return () => {
+      unsubscribe();
     };
-  }, [initialInsets, initialFrame]);
+
+  }, [
+    handleSafeAreaUpdate,
+  ]);
+
+
+  /* =======================================================
+     React Query
+  ======================================================= */
+
+  const [queryClient] =
+    useState(
+      () =>
+        new QueryClient({
+          defaultOptions: {
+            queries: {
+              refetchOnWindowFocus: false,
+              retry: 1,
+            },
+          },
+        }),
+    );
+
+
+  /* =======================================================
+     tRPC
+  ======================================================= */
+
+  const [trpcClient] =
+    useState(
+      () =>
+        createTRPCClient(),
+    );
+
+
+  /* =======================================================
+     Safe Area Metrics
+  ======================================================= */
+
+  const providerInitialMetrics =
+    useMemo(() => {
+
+      const metrics =
+        initialWindowMetrics ?? {
+          insets: initialInsets,
+          frame: initialFrame,
+        };
+
+      return {
+        ...metrics,
+
+        insets: {
+          ...metrics.insets,
+
+          top: Math.max(
+            metrics.insets.top,
+            16,
+          ),
+
+          bottom: Math.max(
+            metrics.insets.bottom,
+            12,
+          ),
+        },
+      };
+
+    }, [
+      initialInsets,
+      initialFrame,
+    ]);
+
+
+  /* =======================================================
+     Navigation
+  ======================================================= */
 
   const content = (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-          {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-          {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="oauth/callback" />
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+      }}
+    >
+
+      <trpc.Provider
+        client={trpcClient}
+        queryClient={queryClient}
+      >
+
+        <QueryClientProvider
+          client={queryClient}
+        >
+
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
+
+            {/* Authentication */}
+
+            <Stack.Screen
+              name="login"
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="register"
+              options={{
+                headerShown: false,
+              }}
+            />
+
+            <Stack.Screen
+              name="forgot-password"
+              options={{
+                headerShown: false,
+              }}
+            />
+
+
+            {/* Main Application */}
+
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+              }}
+            />
+
+
+            {/* OAuth */}
+
+            <Stack.Screen
+              name="oauth/callback"
+              options={{
+                headerShown: false,
+              }}
+            />
+
           </Stack>
-          <StatusBar style="auto" />
+
+
+          {/* Authentication Protection */}
+
+          <AuthGate />
+
+
+          <StatusBar
+            style="auto"
+          />
+
         </QueryClientProvider>
+
       </trpc.Provider>
+
     </GestureHandlerRootView>
   );
 
-  const shouldOverrideSafeArea = Platform.OS === "web";
+
+  /* =======================================================
+     Web Safe Area
+  ======================================================= */
+
+  const shouldOverrideSafeArea =
+    Platform.OS === "web";
+
 
   if (shouldOverrideSafeArea) {
+
     return (
       <ThemeProvider>
-        <SafeAreaProvider initialMetrics={providerInitialMetrics}>
-          <SafeAreaFrameContext.Provider value={frame}>
-            <SafeAreaInsetsContext.Provider value={insets}>
+
+        <SafeAreaProvider
+          initialMetrics={
+            providerInitialMetrics
+          }
+        >
+
+          <SafeAreaFrameContext.Provider
+            value={frame}
+          >
+
+            <SafeAreaInsetsContext.Provider
+              value={insets}
+            >
+
               {content}
+
             </SafeAreaInsetsContext.Provider>
+
           </SafeAreaFrameContext.Provider>
+
         </SafeAreaProvider>
+
       </ThemeProvider>
     );
   }
 
+
+  /* =======================================================
+     Native
+  ======================================================= */
+
   return (
     <ThemeProvider>
-      <SafeAreaProvider initialMetrics={providerInitialMetrics}>{content}</SafeAreaProvider>
+
+      <SafeAreaProvider
+        initialMetrics={
+          providerInitialMetrics
+        }
+      >
+
+        {content}
+
+      </SafeAreaProvider>
+
     </ThemeProvider>
   );
 }
