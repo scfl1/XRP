@@ -1,32 +1,311 @@
-import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
-import { ScreenContainer } from "@/components/screen-container";
-import { CwaLogo } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
-import { trpc } from "@/lib/trpc";
-import * as Auth from "@/lib/_core/auth";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from "react-native";
+import { router } from "expo-router";
 
 export default function LoginScreen() {
-  const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [show, setShow] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const login = trpc.auth.login.useMutation();
-  const submit = async () => {
-    if (!identifier.trim() || !password) return Alert.alert("بيانات ناقصة", "أدخل البريد الإلكتروني أو اسم المستخدم وكلمة المرور.");
+
+  const handleLogin = async () => {
+    if (!identifier.trim()) {
+      alert("يرجى إدخال البريد الإلكتروني أو رقم الهاتف");
+      return;
+    }
+
+    if (!password) {
+      alert("يرجى إدخال كلمة المرور");
+      return;
+    }
+
     setLoading(true);
-    try {
-      const result = await login.mutateAsync({ identifier: identifier.trim(), password });
-      if (result.token) await Auth.setSessionToken(result.token);
-      await Auth.setUserInfo({ ...result.user, lastSignedIn: new Date(result.user.lastSignedIn) });
-      router.replace(result.user.role === "admin" ? "/admin" : "/(tabs)");
-    } catch (e: any) {
-      Alert.alert("تعذر تسجيل الدخول", e?.message || "تحقق من بياناتك وحاول مرة أخرى.");
-    } finally { setLoading(false); }
+
+    // سيتم ربط تسجيل الدخول بقاعدة البيانات والـ API لاحقاً.
+    setTimeout(() => {
+      setLoading(false);
+      alert("واجهة تسجيل الدخول جاهزة. سيتم ربط قاعدة البيانات لاحقاً.");
+    }, 700);
   };
-  return <ScreenContainer className="px-6" edges={["top", "left", "right"]}><View style={styles.content}><CwaLogo/><View style={styles.intro}><Text style={styles.title}>مرحباً بعودتك</Text><Text style={styles.subtitle}>سجّل الدخول إلى CwaAX</Text></View><Text style={styles.label}>البريد الإلكتروني أو اسم المستخدم</Text><View style={styles.inputRow}><MaterialIcons name="person-outline" size={19} color={CWAAX.muted}/><TextInput value={identifier} onChangeText={setIdentifier} placeholder="name@email.com" placeholderTextColor="#9CA8A1" autoCapitalize="none" style={styles.input}/></View><Text style={styles.label}>كلمة المرور</Text><View style={styles.inputRow}><MaterialIcons name="lock-outline" size={19} color={CWAAX.muted}/><TextInput value={password} onChangeText={setPassword} placeholder="أدخل كلمة المرور" placeholderTextColor="#9CA8A1" secureTextEntry={!show} style={styles.input}/><Pressable onPress={() => setShow(!show)}><MaterialIcons name={show ? "visibility" : "visibility-off"} size={19} color={CWAAX.muted}/></Pressable></View><Pressable onPress={submit} disabled={loading} style={({pressed}) => [styles.button, pressed && styles.pressed]}>{loading ? <ActivityIndicator color={CWAAX.white}/> : <><Text style={styles.buttonText}>تسجيل الدخول</Text><MaterialIcons name="arrow-back" size={18} color={CWAAX.white}/></>}</Pressable><View style={styles.signup}><Text style={styles.signupText}>ليس لديك حساب؟</Text><Pressable onPress={() => router.push("/register")}><Text style={styles.signupLink}> إنشاء حساب</Text></Pressable></View></View></ScreenContainer>;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Logo */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logo}>
+              <Text style={styles.logoText}>C</Text>
+            </View>
+
+            <Text style={styles.brand}>CwaAX</Text>
+            <Text style={styles.subtitle}>مرحباً بعودتك</Text>
+          </View>
+
+          {/* Card */}
+          <View style={styles.card}>
+            <Text style={styles.title}>تسجيل الدخول</Text>
+
+            <Text style={styles.description}>
+              قم بتسجيل الدخول إلى حسابك للمتابعة
+            </Text>
+
+            {/* Email / Phone */}
+            <Text style={styles.label}>البريد الإلكتروني أو رقم الهاتف</Text>
+
+            <TextInput
+              style={styles.input}
+              value={identifier}
+              onChangeText={setIdentifier}
+              placeholder="أدخل البريد الإلكتروني أو رقم الهاتف"
+              placeholderTextColor="#8A8F98"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textAlign="right"
+            />
+
+            {/* Password */}
+            <View style={styles.passwordHeader}>
+              <Text style={styles.label}>كلمة المرور</Text>
+
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.showPassword}>
+                  {showPassword ? "إخفاء" : "إظهار"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="أدخل كلمة المرور"
+              placeholderTextColor="#8A8F98"
+              secureTextEntry={!showPassword}
+              textAlign="right"
+            />
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotContainer}
+              onPress={() => alert("سيتم إضافة استعادة كلمة المرور لاحقاً")}
+            >
+              <Text style={styles.forgot}>نسيت كلمة المرور؟</Text>
+            </TouchableOpacity>
+
+            {/* Login */}
+            <TouchableOpacity
+              style={[styles.loginButton, loading && styles.disabled]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              <Text style={styles.loginText}>
+                {loading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Register */}
+            <View style={styles.registerRow}>
+              <Text style={styles.registerQuestion}>
+                ليس لديك حساب؟
+              </Text>
+
+              <TouchableOpacity onPress={() => router.push("/register")}>
+                <Text style={styles.registerLink}> إنشاء حساب</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Footer */}
+          <Text style={styles.footer}>
+            باستخدامك CwaAX فإنك توافق على الشروط والأحكام وسياسة الخصوصية.
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }
-const styles = StyleSheet.create({content:{flex:1,paddingTop:26},intro:{marginTop:55,marginBottom:28},title:{color:CWAAX.ink,fontSize:29,fontWeight:"900",textAlign:"right"},subtitle:{color:CWAAX.muted,fontSize:13,marginTop:7,textAlign:"right"},label:{color:CWAAX.ink,fontSize:12,fontWeight:"800",textAlign:"right",marginBottom:8,marginTop:10},inputRow:{height:52,borderWidth:1,borderColor:CWAAX.line,borderRadius:14,paddingHorizontal:13,flexDirection:"row",alignItems:"center",gap:8},input:{flex:1,color:CWAAX.ink,textAlign:"right",fontSize:12},button:{height:52,borderRadius:15,backgroundColor:CWAAX.green,justifyContent:"center",alignItems:"center",flexDirection:"row",gap:8,marginTop:24},buttonText:{color:CWAAX.white,fontSize:14,fontWeight:"900"},signup:{flexDirection:"row-reverse",justifyContent:"center",marginTop:24},signupText:{color:CWAAX.muted,fontSize:11},signupLink:{color:CWAAX.green,fontSize:11,fontWeight:"900"},pressed:{opacity:.62}});
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+
+  container: {
+    flex: 1,
+    backgroundColor: "#F7F8FA",
+  },
+
+  scroll: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingVertical: 35,
+    justifyContent: "center",
+  },
+
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+
+  logo: {
+    width: 62,
+    height: 62,
+    borderRadius: 18,
+    backgroundColor: "#111827",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+
+  logoText: {
+    color: "#FFFFFF",
+    fontSize: 36,
+    fontWeight: "800",
+  },
+
+  brand: {
+    fontSize: 27,
+    fontWeight: "800",
+    color: "#111827",
+    letterSpacing: 0.5,
+  },
+
+  subtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: "#737984",
+  },
+
+  card: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: "#E9EBEF",
+  },
+
+  title: {
+    fontSize: 25,
+    fontWeight: "800",
+    color: "#111827",
+    textAlign: "right",
+    marginBottom: 8,
+  },
+
+  description: {
+    fontSize: 14,
+    color: "#737984",
+    textAlign: "right",
+    marginBottom: 25,
+  },
+
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#252A32",
+    textAlign: "right",
+    marginBottom: 8,
+  },
+
+  input: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: "#DDE1E7",
+    borderRadius: 12,
+    backgroundColor: "#FAFBFC",
+    paddingHorizontal: 15,
+    color: "#111827",
+    fontSize: 15,
+    marginBottom: 18,
+  },
+
+  passwordHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  showPassword: {
+    color: "#2563EB",
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+
+  forgotContainer: {
+    alignItems: "flex-start",
+    marginTop: -5,
+    marginBottom: 20,
+  },
+
+  forgot: {
+    color: "#2563EB",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  loginButton: {
+    height: 53,
+    borderRadius: 12,
+    backgroundColor: "#111827",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  disabled: {
+    opacity: 0.6,
+  },
+
+  loginText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "800",
+  },
+
+  registerRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 23,
+  },
+
+  registerQuestion: {
+    color: "#737984",
+    fontSize: 14,
+  },
+
+  registerLink: {
+    color: "#2563EB",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+
+  footer: {
+    textAlign: "center",
+    color: "#969BA4",
+    fontSize: 11,
+    lineHeight: 18,
+    marginTop: 25,
+    paddingHorizontal: 15,
+  },
+});
