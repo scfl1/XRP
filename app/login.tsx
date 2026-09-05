@@ -11,12 +11,30 @@ import {
   ScrollView,
 } from "react-native";
 import { router } from "expo-router";
+import { trpc } from "@/lib/trpc";
+import * as Auth from "@/lib/_core/auth";
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const utils = trpc.useUtils();
+
+  const loginMutation = trpc.auth.login.useMutation({
+    onSuccess: async (data) => {
+      if (data.token) {
+        await Auth.setSessionToken(data.token);
+      }
+      await utils.auth.me.invalidate();
+      setLoading(false);
+      router.replace("/(tabs)");
+    },
+    onError: (err) => {
+      setLoading(false);
+      alert(err.message || "بيانات تسجيل الدخول غير صحيحة");
+    },
+  });
 
   const handleLogin = async () => {
     if (!identifier.trim()) {
@@ -30,12 +48,7 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-
-    // سيتم ربط تسجيل الدخول بقاعدة البيانات والـ API لاحقاً.
-    setTimeout(() => {
-      setLoading(false);
-      alert("واجهة تسجيل الدخول جاهزة. سيتم ربط قاعدة البيانات لاحقاً.");
-    }, 700);
+    loginMutation.mutate({ identifier: identifier.trim(), password });
   };
 
   return (
