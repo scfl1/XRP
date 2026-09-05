@@ -1,7 +1,16 @@
-name = "lumarise"
-
-compatibility_date = "2026-09-03"
+name = "cwaax"
+main = "worker/index.ts"
+compatibility_date = "2026-09-05"
 
 [assets]
 directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
 not_found_handling = "single-page-application"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "REPLACE_WITH_YOUR_HYPERDRIVE_ID"
+
+[vars]
+API_ALLOWED_ORIGINS = "https://cwaax.vfshj.workers.dev"
