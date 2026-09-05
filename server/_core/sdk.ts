@@ -2,7 +2,6 @@ import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.j
 import { ForbiddenError } from "../../shared/_core/errors.js";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
-import type { Request } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
@@ -193,7 +192,9 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
+      // Local email/username authentication can work without a Manus appId.
+      // openId and name are required; appId is optional for local sessions.
+      if (!isNonEmptyString(openId) || !isNonEmptyString(name)) {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
@@ -232,14 +233,14 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<AuthenticatedUser> {
-    // Regular authentication flow
-    const authHeader = req.headers.authorization || req.headers.Authorization;
+    // Regular authentication flow. Cloudflare Workers uses the standard Fetch Headers API.
+    const authHeader = req.headers.get("authorization") ?? "";
     let token: string | undefined;
-    if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
+    if (authHeader.startsWith("Bearer ")) {
       token = authHeader.slice("Bearer ".length).trim();
     }
 
-    const cookies = this.parseCookies(req.headers.cookie);
+    const cookies = this.parseCookies(req.headers.get("cookie") ?? undefined);
     const sessionCookie = token || cookies.get(COOKIE_NAME);
     const session = await this.verifySession(sessionCookie);
 
