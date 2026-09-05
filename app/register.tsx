@@ -11,6 +11,8 @@ import {
   ScrollView,
 } from "react-native";
 import { router } from "expo-router";
+import { trpc } from "@/lib/trpc";
+import * as Auth from "@/lib/_core/auth";
 
 export default function RegisterScreen() {
   const [username, setUsername] = useState("");
@@ -23,6 +25,22 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const utils = trpc.useUtils();
+
+  const registerMutation = trpc.auth.register.useMutation({
+    onSuccess: async (data) => {
+      if (data.token) {
+        await Auth.setSessionToken(data.token);
+      }
+      await utils.auth.me.invalidate();
+      setLoading(false);
+      router.replace("/(tabs)");
+    },
+    onError: (err) => {
+      setLoading(false);
+      alert(err.message || "تعذر إنشاء الحساب");
+    },
+  });
 
   const handleRegister = async () => {
     if (!username.trim()) {
@@ -30,8 +48,18 @@ export default function RegisterScreen() {
       return;
     }
 
-    if (!email.trim() && !phone.trim()) {
-      alert("يرجى إدخال البريد الإلكتروني أو رقم الهاتف");
+    if (username.trim().length < 3) {
+      alert("يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
+      alert("اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام و(_) فقط، بدون مسافات أو رموز");
+      return;
+    }
+
+    if (!email.trim()) {
+      alert("يرجى إدخال البريد الإلكتروني");
       return;
     }
 
@@ -52,11 +80,12 @@ export default function RegisterScreen() {
 
     setLoading(true);
 
-    // سيتم ربط التسجيل بقاعدة البيانات والـ API لاحقاً.
-    setTimeout(() => {
-      setLoading(false);
-      alert("واجهة إنشاء الحساب جاهزة. سيتم ربط قاعدة البيانات لاحقاً.");
-    }, 700);
+    registerMutation.mutate({
+      name: username.trim(),
+      username: username.trim(),
+      email: email.trim(),
+      password,
+    });
   };
 
   return (
