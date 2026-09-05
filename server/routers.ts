@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { COOKIE_NAME } from "../shared/const.js";
-import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
@@ -14,7 +12,21 @@ const requestInput = z.object({ currency: z.string().min(2).max(16), amount: z.n
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
+    me: publicProcedure.query((opts) => {
+      const user = opts.ctx.user;
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        openId: user.openId,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        loginMethod: user.loginMethod,
+        lastSignedIn: user.lastSignedIn,
+      };
+    }),
     register: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(120), username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_]+$/), email: z.string().trim().email().max(320), password: z.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
       const email = input.email.toLowerCase();
       if (await db.getUserByEmail(email)) throw new Error("البريد الإلكتروني مستخدم بالفعل");
@@ -22,7 +34,6 @@ export const appRouter = router({
       const user = await db.createLocalUser({ name: input.name, username: input.username, email, passwordHash: hashPassword(input.password) });
       if (!user) throw new Error("تعذر إنشاء الحساب");
       const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
-      ctx.res.cookie(COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: user.lastSignedIn } };
     }),
     login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3).max(320), password: z.string().min(1).max(128) })).mutation(async ({ ctx, input }) => {
@@ -30,10 +41,9 @@ export const appRouter = router({
       if (!user || !user.passwordHash || !verifyPassword(input.password, user.passwordHash)) throw new Error("بيانات تسجيل الدخول غير صحيحة");
       await db.updateUserLastSignedIn(user.id);
       const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
-      ctx.res.cookie(COOKIE_NAME, token, { ...getSessionCookieOptions(ctx.req), maxAge: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: new Date() } };
     }),
-    logout: publicProcedure.mutation(({ ctx }) => { const cookieOptions = getSessionCookieOptions(ctx.req); ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 }); return { success: true } as const; })
+    logout: publicProcedure.mutation(() => ({ success: true } as const))
   }),
   wallet: router({
     balances: protectedProcedure.query(({ ctx }) => db.getWalletBalances(ctx.user.id)),
