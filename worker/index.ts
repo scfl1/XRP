@@ -1,94 +1,81 @@
+import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import { appRouter } from "../server/routers";
+import { createContext } from "../server/_core/context";
+import { configureServerEnvironment, type ServerEnvBindings } from "../server/_core/env";
+import { configureDatabase } from "../server/db";
+
+type Env = ServerEnvBindings & {
+  HYPERDRIVE: { connectionString: string };
+  ASSETS: Fetcher;
+  API_ALLOWED_ORIGINS?: string;
+};
+
+function allowedOrigin(request: Request, env: Env): string | null {
+  const origin = request.headers.get("Origin");
+  if (!origin) return null;
+  const configured = (env.API_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (configured.length === 0 || configured.includes(origin)) return origin;
+  if (origin.includes("localhost") || origin.includes("127.0.0.1")) return origin;
+  return null;
+}
+
+function withCors(response: Response, request: Request, env: Env): Response {
+  const origin = allowedOrigin(request, env);
+  if (!origin) return response;
+  const headers = new Headers(response.headers);
+  headers.set("Access-Control-Allow-Origin", origin);
+  headers.set("Access-Control-Allow-Credentials", "true");
+  headers.set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  headers.set("Vary", "Origin");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function json(data: unknown, status = 200, request?: Request, env?: Env) {
+  const response = Response.json(data, { status });
+  return request && env ? withCors(response, request, env) : response;
+}
+
 export default {
-  async fetch(request: Request, env: any): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname;
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      configureServerEnvironment(env);
+      configureDatabase(env.HYPERDRIVE.connectionString);
 
-    // ✅ قراءة المفتاح مباشرة
-    const JWT_SECRET = env.JWT_SECRET || "fallback-key-for-testing";
-
-    // CORS
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      });
-    }
-
-    // ===== REGISTER =====
-    if (path === "/api/auth/register" && request.method === "POST") {
-      try {
-        const body = await request.json();
-        if (!body.email || !body.password) {
-          return Response.json({ error: "Email and password required" }, { status: 400 });
-        }
-
-        // توليد توكن بسيط
-        const token = btoa(JSON.stringify({
-          email: body.email,
-          userId: crypto.randomUUID(),
-          exp: Date.now() + 86400000,
-        }));
-
-        return Response.json({
-          success: true,
-          user: { email: body.email },
-          token: token,
-        }, { status: 201 });
-      } catch (err) {
-        return Response.json({ error: String(err) }, { status: 500 });
+      if (request.method === "OPTIONS") {
+        return withCors(new Response(null, { status: 204 }), request, env);
       }
-    }
 
-    // ===== LOGIN =====
-    if (path === "/api/auth/login" && request.method === "POST") {
-      try {
-        const body = await request.json();
-        if (!body.email || !body.password) {
-          return Response.json({ error: "Email and password required" }, { status: 400 });
-        }
+      const url = new URL(request.url);
 
-        const token = btoa(JSON.stringify({
-          email: body.email,
-          userId: "user-123",
-          exp: Date.now() + 86400000,
-        }));
-
-        return Response.json({
-          success: true,
-          user: { email: body.email },
-          token: token,
-        }, { status: 200 });
-      } catch (err) {
-        return Response.json({ error: String(err) }, { status: 500 });
+      if (url.pathname === "/api/health") {
+        return json({ ok: true, service: "CwaAX API", timestamp: Date.now() }, 200, request, env);
       }
-    }
 
-    // ===== VERIFY =====
-    if (path === "/api/auth/verify" && request.method === "GET") {
-      const auth = request.headers.get("Authorization");
-      if (!auth || !auth.startsWith("Bearer ")) {
-        return Response.json({ error: "No token" }, { status: 401 });
+      if (url.pathname === "/api/trpc" || url.pathname.startsWith("/api/trpc/")) {
+        const response = await fetchRequestHandler({
+          endpoint: "/api/trpc",
+          req: request,
+          router: appRouter,
+          createContext: ({ req }) => createContext({ req }),
+          onError({ path, error }) {
+            console.error("[tRPC]", path, error);
+          },
+        });
+        return withCors(response, request, env);
       }
-      try {
-        const payload = JSON.parse(atob(auth.split(" ")[1]));
-        return Response.json({ valid: true, user: payload }, { status: 200 });
-      } catch {
-        return Response.json({ error: "Invalid token" }, { status: 401 });
-      }
-    }
 
-    // ===== HOME =====
-    return Response.json({
-      message: "CwaAX API is running",
-      endpoints: [
-        "POST /api/auth/register",
-        "POST /api/auth/login",
-        "GET /api/auth/verify",
-      ],
-      jwt_secret_loaded: !!JWT_SECRET,
-    });
+      if (url.pathname.startsWith("/api/")) {
+        return json({ error: "API endpoint not found" }, 404, request, env);
+      }
+
+      return env.ASSETS.fetch(request);
+    } catch (error) {
+      console.error("[Worker] Request failed", error);
+      return json({ error: "Internal server error" }, 500, request, env);
+    }
   },
 };
