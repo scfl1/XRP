@@ -26,6 +26,14 @@ import {
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _databaseUrl = "";
+
+export function configureDatabase(databaseUrl: string) {
+  if (databaseUrl && databaseUrl !== _databaseUrl) {
+    _databaseUrl = databaseUrl;
+    _db = null;
+  }
+}
 
 export async function getDb() {
   if (_db) {
@@ -33,6 +41,7 @@ export async function getDb() {
   }
 
   const databaseUrl =
+    _databaseUrl ||
     process.env.DATABASE_URL ||
     ENV.databaseUrl;
 
