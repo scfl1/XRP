@@ -1,43 +1,8 @@
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
-import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
-import { configureServerEnvironment, type ServerEnvBindings } from "../server/_core/env";
-import { configureDatabase } from "../server/db";
-
-type Env = ServerEnvBindings & {
-  HYPERDRIVE: { connectionString: string };
-  ASSETS: Fetcher;
+export interface Env {
+  JWT_SECRET?: string;
+  HYPERDRIVE?: { connectionString: string };
+  ASSETS?: Fetcher;
   API_ALLOWED_ORIGINS?: string;
-  JWT_SECRET?: string;  // ✅ تأكد من وجود هذا
-};
-
-function allowedOrigin(request: Request, env: Env): string | null {
-  const origin = request.headers.get("Origin");
-  if (!origin) return null;
-  const configured = (env.API_ALLOWED_ORIGINS ?? "")
-    .split(",")
-    .map((value) => value.trim())
-    .filter(Boolean);
-  if (configured.length === 0 || configured.includes(origin)) return origin;
-  if (origin.includes("localhost") || origin.includes("127.0.0.1")) return origin;
-  return null;
-}
-
-function withCors(response: Response, request: Request, env: Env): Response {
-  const origin = allowedOrigin(request, env);
-  if (!origin) return response;
-  const headers = new Headers(response.headers);
-  headers.set("Access-Control-Allow-Origin", origin);
-  headers.set("Access-Control-Allow-Credentials", "true");
-  headers.set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-  headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  headers.set("Vary", "Origin");
-  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-}
-
-function json(data: unknown, status = 200, request?: Request, env?: Env) {
-  const response = Response.json(data, { status });
-  return request && env ? withCors(response, request, env) : response;
 }
 
 // ===== دوال JWT =====
@@ -114,126 +79,227 @@ async function verifyJWT(token: string, secret: string): Promise<any> {
     return null;
   }
 }
-// ===== نهاية دوال JWT =====
+
+// ===== تخزين مؤقت للمستخدمين =====
+const users = new Map();
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    try {
-      // ✅ التحقق من JWT_SECRET مع رسالة واضحة
-      if (!env.JWT_SECRET || env.JWT_SECRET.length < 10) {
-        console.error("❌ JWT_SECRET is missing or too short!");
-        return json({ 
-          error: "JWT_SECRET not configured properly. Please add it to environment variables.",
-          hint: "Add JWT_SECRET with at least 32 characters in Cloudflare Dashboard → Settings → Variables"
-        }, 500, request, env);
-      }
+    const url = new URL(request.url);
+    const path = url.pathname;
 
-      console.log("✅ JWT_SECRET loaded successfully");
-
-      configureServerEnvironment(env);
-      configureDatabase(env.HYPERDRIVE.connectionString);
-
-      if (request.method === "OPTIONS") {
-        return withCors(new Response(null, { status: 204 }), request, env);
-      }
-
-      const url = new URL(request.url);
-
-      if (url.pathname === "/api/health") {
-        return json({ ok: true, service: "CwaAX API", timestamp: Date.now() }, 200, request, env);
-      }
-
-      // ===== REGISTER =====
-      if (url.pathname === "/api/auth/register" && request.method === "POST") {
-        try {
-          const body = await request.json() as { email: string; password: string; name?: string };
-          if (!body.email || !body.password) {
-            return json({ error: "Email and password required" }, 400, request, env);
-          }
-
-          // استخدم tRPC أو منطقك الخاص هنا
-          // هذا مجرد مثال بسيط
-          const userId = crypto.randomUUID();
-          const token = await signJWT({ userId, email: body.email }, env.JWT_SECRET);
-
-          return json({
-            success: true,
-            user: { id: userId, email: body.email, name: body.name || body.email.split('@')[0] },
-            token: token
-          }, 201, request, env);
-        } catch (error) {
-          console.error("[Register] Error:", error);
-          return json({ error: (error as Error).message }, 500, request, env);
+    // ✅ التحقق من JWT_SECRET
+    const JWT_SECRET = env.JWT_SECRET;
+    
+    if (!JWT_SECRET || JWT_SECRET.length < 10) {
+      return new Response(JSON.stringify({
+        error: "JWT_SECRET is required",
+        solution: "Add JWT_SECRET to environment variables in Cloudflare Dashboard"
+      }), {
+        status: 500,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
         }
-      }
-
-      // ===== LOGIN =====
-      if (url.pathname === "/api/auth/login" && request.method === "POST") {
-        try {
-          const body = await request.json() as { email: string; password: string };
-          if (!body.email || !body.password) {
-            return json({ error: "Email and password required" }, 400, request, env);
-          }
-
-          // هنا يجب التحقق من المستخدم في قاعدة البيانات
-          // هذا مجرد مثال
-          const token = await signJWT({ userId: "user-id", email: body.email }, env.JWT_SECRET);
-
-          return json({
-            success: true,
-            user: { id: "user-id", email: body.email },
-            token: token
-          }, 200, request, env);
-        } catch (error) {
-          console.error("[Login] Error:", error);
-          return json({ error: (error as Error).message }, 500, request, env);
-        }
-      }
-
-      // ===== VERIFY =====
-      if (url.pathname === "/api/auth/verify" && request.method === "GET") {
-        try {
-          const authHeader = request.headers.get("Authorization");
-          if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return json({ error: "No token provided" }, 401, request, env);
-          }
-
-          const token = authHeader.split(" ")[1];
-          const payload = await verifyJWT(token, env.JWT_SECRET);
-
-          if (!payload) {
-            return json({ error: "Invalid or expired token" }, 401, request, env);
-          }
-
-          return json({ valid: true, user: payload }, 200, request, env);
-        } catch (error) {
-          console.error("[Verify] Error:", error);
-          return json({ error: (error as Error).message }, 500, request, env);
-        }
-      }
-
-      // ===== tRPC =====
-      if (url.pathname === "/api/trpc" || url.pathname.startsWith("/api/trpc/")) {
-        const response = await fetchRequestHandler({
-          endpoint: "/api/trpc",
-          req: request,
-          router: appRouter,
-          createContext: ({ req }) => createContext({ req }),
-          onError({ path, error }) {
-            console.error("[tRPC]", path, error);
-          },
-        });
-        return withCors(response, request, env);
-      }
-
-      if (url.pathname.startsWith("/api/")) {
-        return json({ error: "API endpoint not found" }, 404, request, env);
-      }
-
-      return env.ASSETS.fetch(request);
-    } catch (error) {
-      console.error("[Worker] Request failed", error);
-      return json({ error: "Internal server error: " + (error as Error).message }, 500, request, env);
+      });
     }
-  },
+
+    // CORS
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    }
+
+    // ===== تسجيل حساب جديد =====
+    if (path === '/api/auth/register' && request.method === 'POST') {
+      try {
+        const body = await request.json() as { email: string; password: string; name?: string };
+        
+        if (!body.email || !body.password) {
+          return new Response(JSON.stringify({ error: 'Email and password required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        // التحقق من وجود المستخدم
+        for (const [id, user] of users) {
+          if (user.email === body.email) {
+            return new Response(JSON.stringify({ error: 'User already exists' }), {
+              status: 409,
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+            });
+          }
+        }
+
+        // إنشاء مستخدم جديد
+        const userId = crypto.randomUUID();
+        const newUser = {
+          id: userId,
+          email: body.email,
+          name: body.name || body.email.split('@')[0],
+          createdAt: new Date().toISOString()
+        };
+        users.set(userId, newUser);
+
+        // إنشاء JWT
+        const token = await signJWT(
+          { userId, email: body.email, name: newUser.name },
+          JWT_SECRET
+        );
+
+        return new Response(JSON.stringify({
+          success: true,
+          user: { id: userId, email: body.email, name: newUser.name },
+          token: token
+        }), {
+          status: 201,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+
+      } catch (error) {
+        return new Response(JSON.stringify({ 
+          error: 'Registration failed',
+          details: (error as Error).message 
+        }), {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+    }
+
+    // ===== تسجيل الدخول =====
+    if (path === '/api/auth/login' && request.method === 'POST') {
+      try {
+        const body = await request.json() as { email: string; password: string };
+        
+        if (!body.email || !body.password) {
+          return new Response(JSON.stringify({ error: 'Email and password required' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        // البحث عن المستخدم
+        let foundUser = null;
+        for (const [id, user] of users) {
+          if (user.email === body.email) {
+            foundUser = user;
+            break;
+          }
+        }
+
+        if (!foundUser) {
+          return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        // إنشاء JWT
+        const token = await signJWT(
+          { userId: foundUser.id, email: foundUser.email, name: foundUser.name },
+          JWT_SECRET
+        );
+
+        return new Response(JSON.stringify({
+          success: true,
+          user: { id: foundUser.id, email: foundUser.email, name: foundUser.name },
+          token: token
+        }), {
+          status: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+
+      } catch (error) {
+        return new Response(JSON.stringify({ 
+          error: 'Login failed',
+          details: (error as Error).message 
+        }), {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+    }
+
+    // ===== التحقق من JWT =====
+    if (path === '/api/auth/verify' && request.method === 'GET') {
+      try {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return new Response(JSON.stringify({ error: 'No token provided' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const payload = await verifyJWT(token, JWT_SECRET);
+
+        if (!payload) {
+          return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+            status: 401,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          });
+        }
+
+        return new Response(JSON.stringify({ 
+          valid: true, 
+          user: payload 
+        }), {
+          status: 200,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+
+      } catch (error) {
+        return new Response(JSON.stringify({ 
+          error: 'Verification failed',
+          details: (error as Error).message 
+        }), {
+          status: 500,
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+    }
+
+    // ===== الصفحة الرئيسية =====
+    return new Response(JSON.stringify({
+      message: '✅ CwaAX API is running!',
+      endpoints: [
+        'POST /api/auth/register - Create account',
+        'POST /api/auth/login - Login',
+        'GET /api/auth/verify - Verify token'
+      ],
+      status: 'JWT_SECRET is configured ✅'
+    }), {
+      status: 200,
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
 };
