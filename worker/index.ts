@@ -8,7 +8,7 @@ type Env = ServerEnvBindings & {
   HYPERDRIVE: { connectionString: string };
   ASSETS: Fetcher;
   API_ALLOWED_ORIGINS?: string;
-  JWT_SECRET?: string;
+  JWT_SECRET?: string;  // ✅ تأكد من وجود هذا
 };
 
 function allowedOrigin(request: Request, env: Env): string | null {
@@ -40,12 +40,11 @@ function json(data: unknown, status = 200, request?: Request, env?: Env) {
   return request && env ? withCors(response, request, env) : response;
 }
 
-// ===== دوال JWT المصلحة =====
+// ===== دوال JWT =====
 async function getCryptoKey(secret: string): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   let keyData = encoder.encode(secret);
   
-  // التأكد من أن المفتاح بطول 32 بايت (256 بت) لـ HMAC-SHA256
   if (keyData.byteLength < 32) {
     const padded = new Uint8Array(32);
     for (let i = 0; i < 32; i++) {
@@ -73,7 +72,7 @@ async function signJWT(payload: any, secret: string): Promise<string> {
   const payloadWithExp = {
     ...payload,
     iat: now,
-    exp: now + 604800 // 7 أيام
+    exp: now + 604800
   };
 
   const encodedHeader = btoa(JSON.stringify(header))
@@ -120,14 +119,19 @@ async function verifyJWT(token: string, secret: string): Promise<any> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
+      // ✅ التحقق من JWT_SECRET مع رسالة واضحة
+      if (!env.JWT_SECRET || env.JWT_SECRET.length < 10) {
+        console.error("❌ JWT_SECRET is missing or too short!");
+        return json({ 
+          error: "JWT_SECRET not configured properly. Please add it to environment variables.",
+          hint: "Add JWT_SECRET with at least 32 characters in Cloudflare Dashboard → Settings → Variables"
+        }, 500, request, env);
+      }
+
+      console.log("✅ JWT_SECRET loaded successfully");
+
       configureServerEnvironment(env);
       configureDatabase(env.HYPERDRIVE.connectionString);
-
-      // التحقق من وجود JWT_SECRET
-      if (!env.JWT_SECRET || env.JWT_SECRET.length < 10) {
-        console.error('JWT_SECRET is not configured properly');
-        // نستمر في التشغيل ولكن مع تحذير
-      }
 
       if (request.method === "OPTIONS") {
         return withCors(new Response(null, { status: 204 }), request, env);
@@ -135,25 +139,20 @@ export default {
 
       const url = new URL(request.url);
 
-      // ===== صحة الخدمة =====
       if (url.pathname === "/api/health") {
         return json({ ok: true, service: "CwaAX API", timestamp: Date.now() }, 200, request, env);
       }
 
-      // ===== تسجيل مستخدم جديد =====
+      // ===== REGISTER =====
       if (url.pathname === "/api/auth/register" && request.method === "POST") {
         try {
-          if (!env.JWT_SECRET) {
-            return json({ error: "JWT_SECRET not configured" }, 500, request, env);
-          }
-
           const body = await request.json() as { email: string; password: string; name?: string };
           if (!body.email || !body.password) {
             return json({ error: "Email and password required" }, 400, request, env);
           }
 
-          // هنا يمكنك إضافة منطق التسجيل الخاص بك
-          // مثال مبسط:
+          // استخدم tRPC أو منطقك الخاص هنا
+          // هذا مجرد مثال بسيط
           const userId = crypto.randomUUID();
           const token = await signJWT({ userId, email: body.email }, env.JWT_SECRET);
 
@@ -168,20 +167,16 @@ export default {
         }
       }
 
-      // ===== تسجيل الدخول =====
+      // ===== LOGIN =====
       if (url.pathname === "/api/auth/login" && request.method === "POST") {
         try {
-          if (!env.JWT_SECRET) {
-            return json({ error: "JWT_SECRET not configured" }, 500, request, env);
-          }
-
           const body = await request.json() as { email: string; password: string };
           if (!body.email || !body.password) {
             return json({ error: "Email and password required" }, 400, request, env);
           }
 
-          // هنا يمكنك إضافة منطق تسجيل الدخول الخاص بك
-          // مثال مبسط:
+          // هنا يجب التحقق من المستخدم في قاعدة البيانات
+          // هذا مجرد مثال
           const token = await signJWT({ userId: "user-id", email: body.email }, env.JWT_SECRET);
 
           return json({
@@ -195,13 +190,9 @@ export default {
         }
       }
 
-      // ===== التحقق من JWT =====
+      // ===== VERIFY =====
       if (url.pathname === "/api/auth/verify" && request.method === "GET") {
         try {
-          if (!env.JWT_SECRET) {
-            return json({ error: "JWT_SECRET not configured" }, 500, request, env);
-          }
-
           const authHeader = request.headers.get("Authorization");
           if (!authHeader || !authHeader.startsWith("Bearer ")) {
             return json({ error: "No token provided" }, 401, request, env);
@@ -235,16 +226,14 @@ export default {
         return withCors(response, request, env);
       }
 
-      // ===== 404 =====
       if (url.pathname.startsWith("/api/")) {
         return json({ error: "API endpoint not found" }, 404, request, env);
       }
 
-      // ===== Assets =====
       return env.ASSETS.fetch(request);
     } catch (error) {
       console.error("[Worker] Request failed", error);
-      return json({ error: "Internal server error" }, 500, request, env);
+      return json({ error: "Internal server error: " + (error as Error).message }, 500, request, env);
     }
   },
 };
