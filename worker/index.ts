@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "../server/routers";
 import { createContext } from "../server/_core/context";
-import { configureServerEnvironment, type ServerEnvBindings } from "../server/_core/env";
+import { assertServerEnvironment, configureServerEnvironment, type ServerEnvBindings } from "../server/_core/env";
 import { configureDatabase } from "../server/db";
 
 type Env = ServerEnvBindings & {
@@ -43,6 +43,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       configureServerEnvironment(env);
+      assertServerEnvironment();
       configureDatabase(env.HYPERDRIVE.connectionString);
 
       if (request.method === "OPTIONS") {
