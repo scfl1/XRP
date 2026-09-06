@@ -23,10 +23,21 @@ export default function LoginScreen() {
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async (data) => {
-      if (data.token) {
-        await Auth.setSessionToken(data.token);
+      if (!data.token) {
+        setLoading(false);
+        alert("تعذر إنشاء جلسة تسجيل الدخول. يرجى المحاولة مرة أخرى.");
+        return;
       }
-      await utils.auth.me.invalidate();
+      // Save the JWT before changing routes so the auth guard can authenticate immediately.
+      await Auth.setSessionToken(data.token);
+
+      // Update the cached auth user immediately. This prevents the root AuthGate
+      // from seeing the old `null` value for auth.me and redirecting back to login.
+      utils.auth.me.setData(undefined, data.user);
+
+      // Refresh in the background to verify the session with the server.
+      void utils.auth.me.refetch();
+
       setLoading(false);
       router.replace("/(tabs)");
     },
