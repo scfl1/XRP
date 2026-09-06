@@ -56,6 +56,27 @@ export default {
         return json({ ok: true, service: "CwaAX API", timestamp: Date.now() }, 200, request, env);
       }
 
+      // Local/web logout: the browser may still have the httpOnly app_session_id
+      // cookie even after the JWT in localStorage is removed. Clear both the
+      // host cookie and the parent-domain variant used by preview subdomains.
+      if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+        const headers = new Headers({
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        });
+        const hostname = url.hostname;
+        const secure = url.protocol === "https:" ? "; Secure" : "";
+        const sameSite = "; SameSite=None";
+        const base = `Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly${secure}${sameSite}`;
+        headers.append("Set-Cookie", `app_session_id=; ${base}`);
+        const parts = hostname.split(".");
+        if (parts.length >= 3) {
+          const parentDomain = `.${parts.slice(-2).join(".")}`;
+          headers.append("Set-Cookie", `app_session_id=; Domain=${parentDomain}; ${base}`);
+        }
+        return withCors(new Response(JSON.stringify({ success: true }), { status: 200, headers }), request, env);
+      }
+
       if (url.pathname === "/api/trpc" || url.pathname.startsWith("/api/trpc/")) {
         const response = await fetchRequestHandler({
           endpoint: "/api/trpc",
