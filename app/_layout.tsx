@@ -120,6 +120,7 @@ function AuthGate() {
    */
   const [sessionReady, setSessionReady] = useState(false);
   const [hasSessionToken, setHasSessionToken] = useState(false);
+  const [cachedUser, setCachedUser] = useState<Auth.User | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -128,6 +129,13 @@ function AuthGate() {
       const token = await Auth.getSessionToken();
       if (!active) return;
       setHasSessionToken(Boolean(token));
+
+      // Keep the locally stored user as a stable fallback while the server
+      // verifies auth.me. A temporary network/query error must not log out
+      // an already authenticated user.
+      const storedUser = token ? await Auth.getUserInfo() : null;
+      if (!active) return;
+      setCachedUser(storedUser);
       setSessionReady(true);
     };
 
@@ -158,7 +166,9 @@ function AuthGate() {
 
   const isCheckingAuth = !sessionReady || (hasSessionToken && me.isPending);
 
-  const user = hasSessionToken ? me.data : null;
+  // Prefer the server result, but keep the last locally stored user while
+  // auth.me is loading or temporarily unavailable.
+  const user = hasSessionToken ? (me.data ?? cachedUser) : null;
 
   /*
    * أول جزء من المسار الحالي.
@@ -224,6 +234,7 @@ function AuthGate() {
     isCheckingAuth,
     isPublicRoute,
     router,
+    cachedUser,
   ]);
 
 
