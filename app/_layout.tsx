@@ -51,6 +51,7 @@ import {
   trpc,
   createTRPCClient,
 } from "@/lib/trpc";
+import * as Auth from "@/lib/_core/auth";
 
 import {
   initManusRuntime,
@@ -117,15 +118,47 @@ function AuthGate() {
    * auth.me موجود داخل server/routers.ts
    * ويعيد المستخدم الحالي من Session.
    */
+  const [sessionReady, setSessionReady] = useState(false);
+  const [hasSessionToken, setHasSessionToken] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    const refreshSessionState = async () => {
+      const token = await Auth.getSessionToken();
+      if (!active) return;
+      setHasSessionToken(Boolean(token));
+      setSessionReady(true);
+    };
+
+    void refreshSessionState();
+
+    if (typeof window !== "undefined") {
+      const handleAuthChanged = () => {
+        void refreshSessionState();
+      };
+      window.addEventListener("cwaax-auth-changed", handleAuthChanged);
+      return () => {
+        active = false;
+        window.removeEventListener("cwaax-auth-changed", handleAuthChanged);
+      };
+    }
+
+    return () => { active = false; };
+  }, []);
+
+  // IMPORTANT: never trust a server cookie alone for local login.
+  // Local login is authenticated by the JWT stored on this device/browser.
   const me = trpc.auth.me.useQuery(undefined, {
+    enabled: sessionReady && hasSessionToken,
     retry: false,
     staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
-  const isCheckingAuth = me.isPending;
+  const isCheckingAuth = !sessionReady || (hasSessionToken && me.isPending);
 
-  const user = me.data;
+  const user = hasSessionToken ? me.data : null;
 
   /*
    * أول جزء من المسار الحالي.
