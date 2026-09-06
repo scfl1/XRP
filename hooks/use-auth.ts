@@ -2,6 +2,7 @@ import * as Api from "@/lib/_core/api";
 import * as Auth from "@/lib/_core/auth";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
+import { trpc } from "@/lib/trpc";
 
 type UseAuthOptions = {
   autoFetch?: boolean;
@@ -12,6 +13,7 @@ export function useAuth(options?: UseAuthOptions) {
   const [user, setUser] = useState<Auth.User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const utils = trpc.useUtils();
 
   const fetchUser = useCallback(async () => {
     console.log("[useAuth] fetchUser called");
@@ -20,7 +22,7 @@ export function useAuth(options?: UseAuthOptions) {
       setError(null);
 
       const sessionToken = await Auth.getSessionToken();
-      if (Platform.OS !== "web" && !sessionToken) {
+      if (!sessionToken) {
         setUser(null);
         return;
       }
@@ -57,6 +59,8 @@ export function useAuth(options?: UseAuthOptions) {
     } finally {
       await Auth.removeSessionToken();
       await Auth.clearUserInfo();
+      await utils.auth.me.cancel();
+      utils.auth.me.setData(undefined, null);
       setUser(null);
       setError(null);
     }
