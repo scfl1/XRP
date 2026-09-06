@@ -159,7 +159,8 @@ function AuthGate() {
   // Local login is authenticated by the JWT stored on this device/browser.
   const me = trpc.auth.me.useQuery(undefined, {
     enabled: sessionReady && hasSessionToken,
-    retry: false,
+    retry: 2,
+    retryDelay: 500,
     staleTime: 0,
     refetchOnWindowFocus: false,
   });
@@ -168,7 +169,9 @@ function AuthGate() {
 
   // Prefer the server result, but keep the last locally stored user while
   // auth.me is loading or temporarily unavailable.
-  const user = hasSessionToken ? (me.data ?? cachedUser) : null;
+  const user = hasSessionToken
+    ? (me.isPending ? cachedUser : (me.data ?? null))
+    : null;
 
   /*
    * أول جزء من المسار الحالي.
