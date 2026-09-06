@@ -29,10 +29,18 @@ export default function RegisterScreen() {
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: async (data) => {
-      if (data.token) {
-        await Auth.setSessionToken(data.token);
+      if (!data.token) {
+        setLoading(false);
+        alert("تعذر إنشاء جلسة تسجيل الدخول. يرجى المحاولة مرة أخرى.");
+        return;
       }
-      await utils.auth.me.invalidate();
+
+      // Persist the session and seed auth.me before navigation so AuthGate
+      // never sees an empty user during the route transition.
+      await Auth.setSessionToken(data.token);
+      await Auth.setUserInfo(data.user as any);
+      utils.auth.me.setData(undefined, data.user);
+
       setLoading(false);
       router.replace("/(tabs)");
     },
