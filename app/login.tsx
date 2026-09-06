@@ -36,9 +36,9 @@ export default function LoginScreen() {
       // from seeing the old `null` value for auth.me and redirecting back to login.
       utils.auth.me.setData(undefined, data.user);
 
-      // Refresh in the background to verify the session with the server.
-      void utils.auth.me.refetch();
-
+      // Do not refetch here. AuthGate will verify the session after the
+      // token is persisted. Refetching immediately can race with navigation
+      // and temporarily turn a valid session into an apparent logout.
       setLoading(false);
       router.replace("/(tabs)");
     },
