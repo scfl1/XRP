@@ -15,13 +15,15 @@ export type User = {
 
 export async function getSessionToken(): Promise<string | null> {
   try {
-    // Web platform uses cookie-based auth, no manual token management needed
+    // Web: store the same JWT returned by the local login endpoint.
+    // The API client sends it as Authorization: Bearer <token>.
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token retrieval");
-      return null;
+      const token = window.localStorage.getItem(SESSION_TOKEN_KEY);
+      console.log("[Auth] Web session token:", token ? "present" : "missing");
+      return token;
     }
 
-    // Use SecureStore for native
+    // Native: use SecureStore
     console.log("[Auth] Getting session token...");
     const token = await SecureStore.getItemAsync(SESSION_TOKEN_KEY);
     console.log(
@@ -37,13 +39,15 @@ export async function getSessionToken(): Promise<string | null> {
 
 export async function setSessionToken(token: string): Promise<void> {
   try {
-    // Web platform uses cookie-based auth, no manual token management needed
+    // Web: persist the JWT in localStorage so subsequent API requests
+    // can authenticate with Authorization: Bearer <token>.
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token storage");
+      window.localStorage.setItem(SESSION_TOKEN_KEY, token);
+      console.log("[Auth] Web session token stored successfully");
       return;
     }
 
-    // Use SecureStore for native
+    // Native: use SecureStore
     console.log("[Auth] Setting session token...", token.substring(0, 20) + "...");
     await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
     console.log("[Auth] Session token stored in SecureStore successfully");
@@ -55,13 +59,14 @@ export async function setSessionToken(token: string): Promise<void> {
 
 export async function removeSessionToken(): Promise<void> {
   try {
-    // Web platform uses cookie-based auth, logout is handled by server clearing cookie
+    // Web: remove the locally stored JWT.
     if (Platform.OS === "web") {
-      console.log("[Auth] Web platform uses cookie-based auth, skipping token removal");
+      window.localStorage.removeItem(SESSION_TOKEN_KEY);
+      console.log("[Auth] Web session token removed successfully");
       return;
     }
 
-    // Use SecureStore for native
+    // Native: use SecureStore
     console.log("[Auth] Removing session token...");
     await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
     console.log("[Auth] Session token removed from SecureStore successfully");
