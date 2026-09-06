@@ -74,7 +74,8 @@ export async function removeSessionToken(): Promise<void> {
     // Native: use SecureStore
     console.log("[Auth] Removing session token...");
     await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
-    console.log("[Auth] Session token removed from SecureStore successfully");
+    await SecureStore.deleteItemAsync(USER_INFO_KEY);
+    console.log("[Auth] Session token and user info removed from SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to remove session token:", error);
   }
