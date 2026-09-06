@@ -36,14 +36,21 @@ export function useAuth(options?: UseAuthOptions) {
         setUser(userInfo);
         await Auth.setUserInfo(userInfo);
       } else {
+        // The server did not accept the token. Remove both the token and
+        // cached user so a stale/fake local profile can never look logged in.
         setUser(null);
+        await Auth.removeSessionToken();
         await Auth.clearUserInfo();
+        utils.auth.me.setData(undefined, null);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Failed to fetch user");
       console.error("[useAuth] fetchUser error:", error);
       setError(error);
-      setUser(null);
+      // Keep the cached user during transient/network failures. A real invalid
+      // session is handled by the successful null response branch above.
+      const storedUser = await Auth.getUserInfo();
+      if (storedUser) setUser(storedUser);
     } finally {
       setLoading(false);
       console.log("[useAuth] fetchUser completed, loading:", false);
