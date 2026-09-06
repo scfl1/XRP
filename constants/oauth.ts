@@ -49,8 +49,8 @@ export function getApiBaseUrl(): string {
   return "";
 }
 
-export const SESSION_TOKEN_KEY = "app_session_token";
-export const USER_INFO_KEY = "manus-runtime-user-info";
+export const SESSION_TOKEN_KEY = "cwaax_session_token_v2";
+export const USER_INFO_KEY = "cwaax_user_info_v2";
 
 const encodeState = (value: string) => {
   if (typeof globalThis.btoa === "function") {
