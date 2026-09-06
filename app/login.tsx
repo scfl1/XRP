@@ -30,6 +30,7 @@ export default function LoginScreen() {
       }
       // Save the JWT before changing routes so the auth guard can authenticate immediately.
       await Auth.setSessionToken(data.token);
+      await Auth.setUserInfo(data.user as any);
 
       // Update the cached auth user immediately. This prevents the root AuthGate
       // from seeing the old `null` value for auth.me and redirecting back to login.
