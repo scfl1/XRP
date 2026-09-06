@@ -43,6 +43,7 @@ export async function setSessionToken(token: string): Promise<void> {
     // can authenticate with Authorization: Bearer <token>.
     if (Platform.OS === "web") {
       window.localStorage.setItem(SESSION_TOKEN_KEY, token);
+      window.dispatchEvent(new Event("cwaax-auth-changed"));
       console.log("[Auth] Web session token stored successfully");
       return;
     }
@@ -62,6 +63,10 @@ export async function removeSessionToken(): Promise<void> {
     // Web: remove the locally stored JWT.
     if (Platform.OS === "web") {
       window.localStorage.removeItem(SESSION_TOKEN_KEY);
+      window.localStorage.removeItem("app_session_token");
+      window.localStorage.removeItem("manus-runtime-user-info");
+      window.localStorage.removeItem(USER_INFO_KEY);
+      window.dispatchEvent(new Event("cwaax-auth-changed"));
       console.log("[Auth] Web session token removed successfully");
       return;
     }
