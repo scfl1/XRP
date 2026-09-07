@@ -120,14 +120,17 @@ function AuthGate() {
    */
   const [sessionReady, setSessionReady] = useState(false);
   const [hasSessionToken, setHasSessionToken] = useState(false);
+  const [localUser, setLocalUser] = useState<Auth.User | null>(null);
 
   useEffect(() => {
     let active = true;
 
     const refreshSessionState = async () => {
       const token = await Auth.getSessionToken();
+      const storedUser = token ? await Auth.getUserInfo() : null;
       if (!active) return;
       setHasSessionToken(Boolean(token));
+      setLocalUser(storedUser);
       setSessionReady(true);
     };
 
@@ -152,15 +155,16 @@ function AuthGate() {
   const me = trpc.auth.me.useQuery(undefined, {
     enabled: sessionReady && hasSessionToken,
     retry: false,
-    staleTime: 60_000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
-  // The local token + locally stored user establish the navigation state.
-  // auth.me is only a background verification and must not be allowed to
-  // turn a valid local session into an immediate redirect to /login.
-  const user = hasSessionToken ? (localUser ?? me.data ?? null) : null;
-  const isCheckingAuth = !sessionReady || (hasSessionToken && !localUser && me.isPending);
+  const isCheckingAuth = !sessionReady || (hasSessionToken && me.isPending);
+
+  // Do not gate navigation on the network auth.me request.
+  // A valid local JWT + cached user is enough to keep the user on the app
+  // while auth.me verifies the session in the background.
+  const user = hasSessionToken ? (me.data ?? localUser) : null;
 
   /*
    * أول جزء من المسار الحالي.
