@@ -36,9 +36,9 @@ export default function LoginScreen() {
       // from seeing the old `null` value for auth.me and redirecting back to login.
       utils.auth.me.setData(undefined, data.user);
 
-      // Do not refetch here. AuthGate will verify the session after the
-      // token is persisted. Refetching immediately can race with navigation
-      // and temporarily turn a valid session into an apparent logout.
+      // Do not refetch auth.me before navigation. The root auth guard
+      // verifies the session in the background; refetching here can race
+      // with the route transition and briefly return the app to /login.
       setLoading(false);
       router.replace("/(tabs)");
     },
