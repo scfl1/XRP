@@ -120,22 +120,17 @@ function AuthGate() {
    */
   const [sessionReady, setSessionReady] = useState(false);
   const [hasSessionToken, setHasSessionToken] = useState(false);
-  const [cachedUser, setCachedUser] = useState<Auth.User | null>(null);
+  const [localUser, setLocalUser] = useState<Auth.User | null>(null);
 
   useEffect(() => {
     let active = true;
 
     const refreshSessionState = async () => {
       const token = await Auth.getSessionToken();
-      if (!active) return;
-      setHasSessionToken(Boolean(token));
-
-      // Keep the locally stored user as a stable fallback while the server
-      // verifies auth.me. A temporary network/query error must not log out
-      // an already authenticated user.
       const storedUser = token ? await Auth.getUserInfo() : null;
       if (!active) return;
-      setCachedUser(storedUser);
+      setHasSessionToken(Boolean(token));
+      setLocalUser(storedUser);
       setSessionReady(true);
     };
 
@@ -159,19 +154,17 @@ function AuthGate() {
   // Local login is authenticated by the JWT stored on this device/browser.
   const me = trpc.auth.me.useQuery(undefined, {
     enabled: sessionReady && hasSessionToken,
-    retry: 2,
-    retryDelay: 500,
+    retry: false,
     staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
   const isCheckingAuth = !sessionReady || (hasSessionToken && me.isPending);
 
-  // Prefer the server result, but keep the last locally stored user while
-  // auth.me is loading or temporarily unavailable.
-  const user = hasSessionToken
-    ? (me.isPending ? cachedUser : (me.data ?? null))
-    : null;
+  // Do not gate navigation on the network auth.me request.
+  // A valid local JWT + cached user is enough to keep the user on the app
+  // while auth.me verifies the session in the background.
+  const user = hasSessionToken ? (me.data ?? localUser) : null;
 
   /*
    * أول جزء من المسار الحالي.
@@ -237,7 +230,6 @@ function AuthGate() {
     isCheckingAuth,
     isPublicRoute,
     router,
-    cachedUser,
   ]);
 
 
