@@ -43,7 +43,9 @@ export async function setSessionToken(token: string): Promise<void> {
     // can authenticate with Authorization: Bearer <token>.
     if (Platform.OS === "web") {
       window.localStorage.setItem(SESSION_TOKEN_KEY, token);
-      window.dispatchEvent(new Event("cwaax-auth-changed"));
+      // Do not notify AuthGate here. Login stores the user immediately after
+      // the token; notifying at this point can race with setUserInfo() and
+      // make AuthGate read a valid token with no local user.
       console.log("[Auth] Web session token stored successfully");
       return;
     }
@@ -74,8 +76,7 @@ export async function removeSessionToken(): Promise<void> {
     // Native: use SecureStore
     console.log("[Auth] Removing session token...");
     await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
-    await SecureStore.deleteItemAsync(USER_INFO_KEY);
-    console.log("[Auth] Session token and user info removed from SecureStore successfully");
+    console.log("[Auth] Session token removed from SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to remove session token:", error);
   }
@@ -114,6 +115,10 @@ export async function setUserInfo(user: User): Promise<void> {
     if (Platform.OS === "web") {
       // Use localStorage for web
       window.localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
+      // Notify AuthGate only after BOTH the token and user data exist.
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cwaax-auth-changed"));
+      }
       console.log("[Auth] User info stored in localStorage successfully");
       return;
     }
