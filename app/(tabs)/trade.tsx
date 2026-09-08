@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -12,15 +12,15 @@ export default function TradeScreen() {
   const [amount, setAmount] = useState("");
   return <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول"/></View>
+      <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول" onPress={() => Alert.alert("إعدادات التداول", "يمكنك اختيار وضع الشراء أو البيع أو التبديل من الأزرار أدناه.")} /></View>
       <View style={styles.titleRow}><View style={styles.live}><View style={styles.liveDot}/><Text style={styles.liveText}>السوق مباشر</Text></View><View><Text style={styles.kicker}>استكشف الفرص</Text><Text style={styles.title}>تجارة</Text></View></View>
       <Card style={styles.quoteCard}><View style={styles.quoteHead}><Text style={styles.quoteTag}>+4.12%</Text><View><Text style={styles.pair}>XRP / USDT</Text><Text style={styles.quoteLabel}>السعر الحالي</Text></View></View><View style={styles.quoteBody}><View><Text style={styles.quotePrice}>$0.4671</Text><Text style={styles.quoteChange}>↑ $0.0184 اليوم</Text></View><TrendLine color={CWAAX.green}/></View></Card>
       <View style={styles.modeSwitch}>{["شراء", "بيع", "تبديل"].map((item) => <Pressable key={item} onPress={() => setMode(item)} style={({ pressed }) => [styles.mode, mode === item && styles.modeActive, pressed && styles.pressed]}><Text style={[styles.modeText, mode === item && styles.modeActiveText]}>{item}</Text></Pressable>)}</View>
       <Text style={styles.formLabel}>الأصل</Text>
       <Pressable onPress={() => router.push("/assets")} style={({ pressed }) => [styles.assetSelect, pressed && styles.pressed]}><CoinMark mark="X" color="#232B32" size={31}/><View style={styles.selectName}><Text style={styles.selectSymbol}>XRP</Text><Text style={styles.selectBalance}>الرصيد المتاح: 486.20</Text></View><MaterialIcons name="unfold-more" size={20} color={CWAAX.muted}/></Pressable>
       <Text style={styles.formLabel}>المبلغ</Text><View style={styles.amountBox}><TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#9CA8A1" keyboardType="decimal-pad" style={styles.amountInput}/><Text style={styles.amountUnit}>USDT</Text></View>
-      <Pressable onPress={() => router.push("/deposit")} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryText}>{mode === "تبديل" ? "مراجعة التبديل" : `متابعة ${mode}`}</Text><MaterialIcons name="arrow-back" size={18} color={CWAAX.white}/></Pressable>
-      <SectionTitle title="الأسواق الرائجة" action="عرض الكل"/><View style={styles.marketList}>{MARKETS.map((item, index) => <Pressable key={item.symbol} onPress={() => setMode("شراء")} style={({ pressed }) => [styles.marketItem, index < MARKETS.length - 1 && styles.marketBorder, pressed && styles.pressed]}><View style={[styles.marketIcon, { backgroundColor: item.color }]}><Text style={styles.marketIconText}>{item.symbol[0]}</Text></View><Text style={styles.marketSymbol}>{item.symbol}</Text><Text style={styles.marketValue}>{item.price}</Text><Text style={styles.marketPositive}>{item.change}</Text></Pressable>)}</View>
+      <Pressable onPress={() => { if (!amount || Number(amount) <= 0) { Alert.alert("تحقق من المبلغ", "أدخل مبلغاً صحيحاً للمتابعة."); return; } if (mode === "شراء" || mode === "بيع") router.push("/deposit"); else Alert.alert("مراجعة التبديل", `سيتم تجهيز تبديل بقيمة ${amount} USDT.`); }} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryText}>{mode === "تبديل" ? "مراجعة التبديل" : `متابعة ${mode}`}</Text><MaterialIcons name="arrow-back" size={18} color={CWAAX.white}/></Pressable>
+      <SectionTitle title="الأسواق الرائجة" action="عرض الكل" onAction={() => router.push("/assets")} /><View style={styles.marketList}>{MARKETS.map((item, index) => <Pressable key={item.symbol} onPress={() => setMode("شراء")} style={({ pressed }) => [styles.marketItem, index < MARKETS.length - 1 && styles.marketBorder, pressed && styles.pressed]}><View style={[styles.marketIcon, { backgroundColor: item.color }]}><Text style={styles.marketIconText}>{item.symbol[0]}</Text></View><Text style={styles.marketSymbol}>{item.symbol}</Text><Text style={styles.marketValue}>{item.price}</Text><Text style={styles.marketPositive}>{item.change}</Text></Pressable>)}</View>
     </ScrollView>
   </ScreenContainer>;
 }
