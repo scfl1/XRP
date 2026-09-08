@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, IconButton, SectionTitle } from "@/components/cwaax-ui";
@@ -17,7 +17,7 @@ export default function AssetsScreen() {
   const totalUsdt = balanceMap.get("USDT") || 0;
   const filtered = useMemo(() => COINS.filter((coin) => `${coin.symbol} ${coin.name}`.toLowerCase().includes(query.toLowerCase())), [query]);
   return <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-    <View style={styles.header}><View><Text style={styles.kicker}>محفظتي</Text><Text style={styles.title}>الأصول</Text></View><View style={styles.actions}><IconButton icon="search" label="بحث" onPress={() => setQuery(query ? "" : "xrp")} /><IconButton icon="more-horiz" label="المزيد" /></View></View>
+    <View style={styles.header}><View><Text style={styles.kicker}>محفظتي</Text><Text style={styles.title}>الأصول</Text></View><View style={styles.actions}><IconButton icon="search" label="بحث" onPress={() => setQuery(query ? "" : "xrp")} /><IconButton icon="more-horiz" label="المزيد" onPress={() => Alert.alert("خيارات الأصول", "استخدم البحث أو اختر إحدى العملات لعرض رصيدها.")} /></View></View>
     <View style={styles.tabs}>{tabs.map((tab) => <Pressable key={tab} onPress={() => setActiveTab(tab)} style={({ pressed }) => [styles.tab, activeTab === tab && styles.activeTab, pressed && styles.pressed]}><Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text></Pressable>)}</View>
     <Card style={styles.totalCard}><Text style={styles.label}>إجمالي قيمة الأصول</Text><Text style={styles.total}>${totalUsdt.toFixed(2)}</Text><View style={styles.totalFoot}><Text style={styles.subtle}>USDT</Text><View style={styles.positivePill}><Text style={styles.positive}>+4.68%</Text></View></View></Card>
     <SectionTitle title="الأصول" action={`${filtered.length} عملات`} />
