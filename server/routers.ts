@@ -43,7 +43,13 @@ export const appRouter = router({
       const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: new Date() } };
     }),
-    logout: publicProcedure.mutation(() => ({ success: true } as const))
+    logout: publicProcedure.mutation(() => ({ success: true } as const)),
+    changePassword: protectedProcedure.input(z.object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
+      const user = await db.getUserByOpenId(ctx.user.openId);
+      if (!user || !user.passwordHash || !verifyPassword(input.currentPassword, user.passwordHash)) throw new Error("كلمة المرور الحالية غير صحيحة");
+      await db.updateUserPassword(user.id, hashPassword(input.newPassword));
+      return { success: true } as const;
+    }),
   }),
   wallet: router({
     balances: protectedProcedure.query(({ ctx }) => db.getWalletBalances(ctx.user.id)),
