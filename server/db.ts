@@ -59,12 +59,19 @@ export async function getDb() {
      * in transaction mode.
      *
      * Prepared statements must therefore be disabled.
+     *
+     * Hyperdrive already maintains a shared connection pool at the
+     * edge, so each Worker isolate only needs a handful of local
+     * connections. Keeping `max` low avoids hitting Supabase's
+     * connection limit when many isolates run in parallel, which is
+     * what caused intermittent "Failed query" errors during login.
      */
     const client = postgres(databaseUrl, {
       prepare: false,
-      max: 10,
+      max: 3,
       idle_timeout: 20,
       connect_timeout: 10,
+      max_lifetime: 60 * 30,
     });
 
     _db = drizzle(client);
@@ -171,6 +178,27 @@ export async function upsertUser(
     });
 }
 
+/*
+ * Transient network/connection failures between the Worker and
+ * Hyperdrive (e.g. a pooled connection that Supabase closed while
+ * idle) can make a single query fail even though the database itself
+ * is healthy. Retrying once, right away, resolves nearly all of
+ * these cases because the postgres.js client opens a fresh
+ * connection on the retry.
+ */
+async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    console.warn(
+      "[Database] Query failed, retrying once:",
+      error instanceof Error ? error.message : error,
+    );
+
+    return operation();
+  }
+}
+
 export async function getUserByEmailOrUsername(
   identifier: string,
 ) {
@@ -180,7 +208,7 @@ export async function getUserByEmailOrUsername(
     return undefined;
   }
 
-  return (
+  return withDbRetry(async () => (
     await db
       .select()
       .from(users)
@@ -197,7 +225,7 @@ export async function getUserByEmailOrUsername(
         ),
       )
       .limit(1)
-  )[0];
+  )[0]);
 }
 
 export async function getUserByEmail(
@@ -301,7 +329,7 @@ export async function getUserByOpenId(
     return undefined;
   }
 
-  return (
+  return withDbRetry(async () => (
     await db
       .select()
       .from(users)
@@ -309,7 +337,7 @@ export async function getUserByOpenId(
         eq(users.openId, openId),
       )
       .limit(1)
-  )[0];
+  )[0]);
 }
 
 export async function updateUserLastSignedIn(
