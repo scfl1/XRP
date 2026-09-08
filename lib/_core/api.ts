@@ -1,6 +1,40 @@
 import { Platform } from "react-native";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import superjson from "superjson";
+import type { AppRouter } from "@/server/routers";
 import { getApiBaseUrl } from "@/constants/oauth";
 import * as Auth from "./auth";
+
+// Vanilla (non-React) tRPC client used only for plain async helpers in this
+// file (e.g. getMe). This talks to the SAME "/api/trpc" endpoint that the
+// app's main React tRPC client uses, and that worker/index.ts actually
+// serves in production. It intentionally does NOT call the REST-style
+// "/api/auth/me" path, because that route only exists in the local
+// Express dev server (server/_core/oauth.ts) and returns 404 on the
+// deployed Cloudflare Worker, which used to wipe a valid session right
+// after login.
+let _vanillaTrpc: ReturnType<typeof createTRPCClient<AppRouter>> | null = null;
+
+function getVanillaTrpc() {
+  if (!_vanillaTrpc) {
+    _vanillaTrpc = createTRPCClient<AppRouter>({
+      links: [
+        httpBatchLink({
+          url: `${getApiBaseUrl()}/api/trpc`,
+          transformer: superjson,
+          async headers() {
+            const token = await Auth.getSessionToken();
+            return token ? { Authorization: `Bearer ${token}` } : {};
+          },
+          fetch(url, options) {
+            return fetch(url, { ...options, credentials: "include" });
+          },
+        }),
+      ],
+    });
+  }
+  return _vanillaTrpc;
+}
 
 type ApiResponse<T> = {
   data?: T;
@@ -132,8 +166,8 @@ export async function getMe(): Promise<{
   lastSignedIn: string;
 } | null> {
   try {
-    const result = await apiCall<{ user: any }>("/api/auth/me");
-    return result.user || null;
+    const user = await getVanillaTrpc().auth.me.query();
+    return (user as any) || null;
   } catch (error) {
     console.error("[API] getMe failed:", error);
     return null;
