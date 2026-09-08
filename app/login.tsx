@@ -123,7 +123,7 @@ export default function LoginScreen() {
             {/* Forgot Password */}
             <TouchableOpacity
               style={styles.forgotContainer}
-              onPress={() => alert("سيتم إضافة استعادة كلمة المرور لاحقاً")}
+              onPress={() => router.push("/forgot-password")}
             >
               <Text style={styles.forgot}>نسيت كلمة المرور؟</Text>
             </TouchableOpacity>
