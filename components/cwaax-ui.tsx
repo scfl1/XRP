@@ -32,7 +32,7 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
   return (
     <View style={styles.sectionTitle}>
       <Text style={styles.sectionTitleText}>{title}</Text>
-      {action && <Pressable onPress={onAction} style={({ pressed }) => [pressed && styles.pressed]}><Text style={styles.sectionAction}>{action}</Text></Pressable>}
+      {action && (onAction ? <Pressable onPress={onAction} style={({ pressed }) => [pressed && styles.pressed]}><Text style={styles.sectionAction}>{action}</Text></Pressable> : <Text style={styles.sectionAction}>{action}</Text>)}
     </View>
   );
 }
