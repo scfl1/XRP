@@ -111,26 +111,18 @@ const PUBLIC_ROUTES = [
 function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
-
-  /*
-   * التحقق الحقيقي من المستخدم يتم عن طريق السيرفر.
-   *
-   * auth.me موجود داخل server/routers.ts
-   * ويعيد المستخدم الحالي من Session.
-   */
   const [sessionReady, setSessionReady] = useState(false);
   const [hasSessionToken, setHasSessionToken] = useState(false);
-  const [localUser, setLocalUser] = useState<Auth.User | null>(null);
 
+  // The local token is the source of truth for the navigation guard.
+  // Server validation remains enforced by protected tRPC procedures.
   useEffect(() => {
     let active = true;
 
     const refreshSessionState = async () => {
       const token = await Auth.getSessionToken();
-      const storedUser = token ? await Auth.getUserInfo() : null;
       if (!active) return;
       setHasSessionToken(Boolean(token));
-      setLocalUser(storedUser);
       setSessionReady(true);
     };
 
@@ -147,106 +139,32 @@ function AuthGate() {
       };
     }
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, []);
 
-  // IMPORTANT: never trust a server cookie alone for local login.
-  // Local login is authenticated by the JWT stored on this device/browser.
-  const me = trpc.auth.me.useQuery(undefined, {
-    enabled: sessionReady && hasSessionToken,
-    retry: false,
-    staleTime: 0,
-    refetchOnWindowFocus: false,
-  });
-
-  const isCheckingAuth = !sessionReady || (hasSessionToken && me.isPending);
-
-  // Do not gate navigation on the network auth.me request.
-  // A valid local JWT + cached user is enough to keep the user on the app
-  // while auth.me verifies the session in the background.
-  const user = hasSessionToken ? (me.data ?? localUser) : null;
-
-  /*
-   * أول جزء من المسار الحالي.
-   *
-   * أمثلة:
-   *
-   * /login       -> login
-   * /register    -> register
-   * /(tabs)      -> (tabs)
-   * /profile     -> profile
-   */
   const firstSegment = segments[0];
-
-  /*
-   * هل الصفحة الحالية من الصفحات المسموح بها بدون تسجيل؟
-   */
   const isPublicRoute =
     typeof firstSegment === "string" &&
     PUBLIC_ROUTES.includes(firstSegment);
 
-
-  /* =======================================================
-     Redirect Logic
-  ======================================================= */
-
   useEffect(() => {
-    /*
-     * لا نقرر أي شيء قبل انتهاء فحص Session.
-     */
-    if (isCheckingAuth) {
-      return;
-    }
+    if (!sessionReady) return;
 
-
-    /*
-     * =====================================================
-     * المستخدم غير مسجل الدخول
-     * =====================================================
-     */
-
-    if (!user && !isPublicRoute) {
+    if (!hasSessionToken && !isPublicRoute) {
       router.replace("/login");
       return;
     }
 
-
-    /*
-     * =====================================================
-     * المستخدم مسجل الدخول
-     * =====================================================
-     *
-     * إذا حاول فتح صفحة تسجيل الدخول أو التسجيل،
-     * نرسله مباشرة إلى الصفحة الرئيسية.
-     */
-
-    if (user && isPublicRoute) {
+    if (hasSessionToken && isPublicRoute) {
       router.replace("/(tabs)");
-      return;
     }
+  }, [sessionReady, hasSessionToken, isPublicRoute, router]);
 
-  }, [
-    user,
-    isCheckingAuth,
-    isPublicRoute,
-    router,
-  ]);
-
-
-  /* =======================================================
-     Loading Screen
-  ======================================================= */
-
-  /*
-   * مهم جداً:
-   *
-   * لا نعرض الصفحة الرئيسية أثناء فحص Session.
-   *
-   * هذا يمنع ظهور الصفحة الموجودة في الصورة للحظات
-   * قبل تحويل المستخدم إلى Login.
-   */
-
-  if (isCheckingAuth) {
+  // Do not block the navigation tree with a second server-side auth check.
+  // This avoids the Home -> Login race after a successful login.
+  if (!sessionReady) {
     return (
       <View
         style={{
@@ -256,25 +174,12 @@ function AuthGate() {
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator
-          size="large"
-          color="#078A5B"
-        />
+        <ActivityIndicator size="large" color="#078A5B" />
       </View>
     );
   }
 
-
-  /* =======================================================
-     حماية الصفحات
-  ======================================================= */
-
-  /*
-   * إذا المستخدم غير مسجل وحاول فتح الصفحة الرئيسية
-   * أو أي صفحة محمية، نخفي المحتوى أثناء التحويل.
-   */
-
-  if (!user && !isPublicRoute) {
+  if ((!hasSessionToken && !isPublicRoute) || (hasSessionToken && isPublicRoute)) {
     return (
       <View
         style={{
@@ -284,42 +189,13 @@ function AuthGate() {
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator
-          size="large"
-          color="#078A5B"
-        />
+        <ActivityIndicator size="large" color="#078A5B" />
       </View>
     );
   }
-
-
-  /*
-   * إذا المستخدم مسجل الدخول وحاول فتح Login/Register
-   * نخفي الصفحة أثناء التحويل إلى الرئيسية.
-   */
-
-  if (user && isPublicRoute) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#FFFFFF",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <ActivityIndicator
-          size="large"
-          color="#078A5B"
-        />
-      </View>
-    );
-  }
-
 
   return null;
 }
-
 
 /* =========================================================
    Root Layout
