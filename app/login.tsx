@@ -19,7 +19,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const utils = trpc.useUtils();
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: async (data) => {
@@ -32,13 +31,6 @@ export default function LoginScreen() {
       await Auth.setSessionToken(data.token);
       await Auth.setUserInfo(data.user as any);
 
-      // Update the cached auth user immediately. This prevents the root AuthGate
-      // from seeing the old `null` value for auth.me and redirecting back to login.
-      utils.auth.me.setData(undefined, data.user);
-
-      // Do not refetch auth.me before navigation. The root auth guard
-      // verifies the session in the background; refetching here can race
-      // with the route transition and briefly return the app to /login.
       setLoading(false);
       router.replace("/(tabs)");
     },
