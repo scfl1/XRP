@@ -5,8 +5,13 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CwaLogo, IconButton, SectionTitle, TrendLine } from "@/components/cwaax-ui";
 import { CWAAX, MARKETS, quickActions } from "@/constants/cwaax";
+import { formatAmount } from "@/constants/currencies";
+import type { CurrencyCode } from "@/lib/_core/preferences";
+import * as Preferences from "@/lib/_core/preferences";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -14,7 +19,9 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user });
   const usdt = Number(balances.data?.find((b:any) => b.currency === "USDT")?.amount ?? 0);
-  const total = usdt.toFixed(2);
+  const [currency, setCurrency] = useState<CurrencyCode>("USD");
+  useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
+  const total = formatAmount(usdt, currency);
   const [notice, setNotice] = useState("");
   const showNotice = (message: string) => { setNotice(message); setTimeout(() => setNotice(""), 2200); };
 
@@ -37,14 +44,14 @@ export default function HomeScreen() {
 
         <Card style={styles.assetCard}>
           <View style={styles.assetTop}><Text style={styles.cardLabel}>إجمالي الأصول</Text><Pressable onPress={() => setHidden(!hidden)} style={({ pressed }) => [pressed && styles.pressed]}><MaterialIcons name={hidden ? "visibility-off" : "visibility"} size={20} color={CWAAX.white}/></Pressable></View>
-          <Text style={styles.assetValue}>{hidden ? "••••••" : `$${total}`}</Text>
+          <Text style={styles.assetValue}>{hidden ? "••••••" : total}</Text>
           <View style={styles.assetBottom}><View style={styles.changeBadge}><MaterialIcons name="trending-up" size={15} color={CWAAX.white}/><Text style={styles.changeText}>متاح</Text></View><Text style={styles.assetSub}>رصيد USDT</Text></View>
           <View style={styles.assetGlowOne}/><View style={styles.assetGlowTwo}/>
         </Card>
 
         <View style={styles.quickGrid}>{quickActions.map((action) => <Pressable key={action.label} onPress={() => router.push(action.route as never)} style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}><View style={styles.quickIcon}><MaterialIcons name={action.icon} size={21} color={CWAAX.green}/></View><Text style={styles.quickLabel}>{action.label}</Text></Pressable>)}</View>
 
-        <Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [styles.promo, pressed && styles.pressed]}><View style={styles.promoIcon}><MaterialIcons name="bolt" size={24} color={CWAAX.gold}/></View><View style={styles.promoCopy}><Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text><Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text></View><MaterialIcons name="chevron-left" size={22} color={CWAAX.ink}/></Pressable>
+        <Pressable onPress={() => router.push("/deposit")} style={({ pressed }) => [styles.promo, pressed && styles.pressed]}><View style={styles.promoIcon}><MaterialIcons name="bolt" size={24} color={CWAAX.gold}/></View><View style={styles.promoCopy}><Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text><Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text></View><MaterialIcons name="chevron-left" size={22} color={CWAAX.ink}/></Pressable>
 
         <SectionTitle title="ابدأ مع CwaAX" action="عرض الكل" onAction={() => router.push("/menu")} />
         <View style={styles.startRow}><Card style={styles.startCard} onPress={() => router.push("/deposit")}><View style={[styles.startIcon, { backgroundColor: "#E9F7EF" }]}><MaterialIcons name="call-received" size={21} color={CWAAX.green}/></View><Text style={styles.startTitle}>استقبل عملة</Text><Text style={styles.startSub}>أضف أول أصل لمحفظتك</Text></Card><Card style={styles.startCard} onPress={() => router.push("/trade")}><View style={[styles.startIcon, { backgroundColor: "#FFF3DD" }]}><MaterialIcons name="swap-horizontal-circle" size={21} color={CWAAX.gold}/></View><Text style={styles.startTitle}>جرّب التبديل</Text><Text style={styles.startSub}>بدّل أصولك بسهولة</Text></Card></View>
