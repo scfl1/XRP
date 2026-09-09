@@ -58,6 +58,8 @@ import {
   subscribeSafeAreaInsets,
 } from "@/lib/_core/manus-runtime";
 
+import { LocaleProvider } from "@/lib/_core/i18n";
+
 
 /* =========================================================
    Safe Area Defaults
@@ -347,6 +349,8 @@ export default function RootLayout() {
       }}
     >
 
+      <LocaleProvider>
+
       <trpc.Provider
         client={trpcClient}
         queryClient={queryClient}
@@ -420,6 +424,8 @@ export default function RootLayout() {
         </QueryClientProvider>
 
       </trpc.Provider>
+
+      </LocaleProvider>
 
     </GestureHandlerRootView>
   );
