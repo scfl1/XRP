@@ -1,100 +1,127 @@
-import { useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, IconButton } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
-
-const currencies = ["USD · الدولار الأمريكي", "EUR · اليورو", "GBP · الجنيه الإسترليني"];
-const languages = ["العربية", "English", "Русский"];
+import { CURRENCIES } from "@/constants/currencies";
+import { notify } from "@/lib/_core/native-alert";
+import { useTranslation } from "@/lib/_core/i18n";
+import * as Preferences from "@/lib/_core/preferences";
+import type { CurrencyCode } from "@/lib/_core/preferences";
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const [twoFactor, setTwoFactor] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-  const [currency, setCurrency] = useState(currencies[0]);
-  const [language, setLanguage] = useState(languages[0]);
-  const [selector, setSelector] = useState<"currency" | "language" | null>(null);
+  const [currency, setCurrency] = useState<CurrencyCode>("USD");
 
-  const selectorItems = selector === "currency" ? currencies : languages;
-  const selectorTitle = selector === "currency" ? "العملة الأصلية" : "اللغة";
+  useFocusEffect(
+    useCallback(() => {
+      Preferences.getCurrency().then(setCurrency);
+    }, []),
+  );
+
+  const currencyInfo = CURRENCIES.find((c) => c.code === currency) || CURRENCIES[0];
+
+  const items = [
+    { key: "twoFactor", label: t("twoFactor"), icon: "verified-user" as const, sub: t("twoFactorSub") },
+    { key: "notifications", label: t("notifications"), icon: "notifications-none" as const, sub: t("notificationsSub") },
+    { key: "currency", label: t("currency"), icon: "paid" as const, sub: `${currencyInfo.code} · ${currencyInfo.name}` },
+    { key: "language", label: t("language"), icon: "language" as const, sub: locale === "ar" ? t("arabic") : t("english") },
+  ];
+
+  const onRowPress = (key: string) => {
+    if (key === "notifications") { router.push("/notifications"); return; }
+    if (key === "currency") { router.push("/currency"); return; }
+    if (key === "language") { router.push("/language"); return; }
+  };
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <IconButton icon="arrow-forward" label="رجوع" onPress={() => router.back()} />
-          <Text style={styles.title}>الإعدادات</Text>
+          <IconButton icon="arrow-forward" label={t("back")} onPress={() => router.back()} />
+          <Text style={styles.title}>{t("settingsTitle")}</Text>
           <View style={{ width: 42 }} />
         </View>
 
         <Card style={styles.banner}>
           <MaterialIcons name="security" size={23} color={CWAAX.green} />
           <View style={styles.bannerCopy}>
-            <Text style={styles.bannerTitle}>اجعل حسابك أكثر أماناً</Text>
-            <Text style={styles.bannerSub}>فعّل المصادقة الثنائية الآن</Text>
+            <Text style={styles.bannerTitle}>{t("settingsBannerTitle")}</Text>
+            <Text style={styles.bannerSub}>{t("settingsBannerSub")}</Text>
           </View>
-          <Pressable onPress={() => setTwoFactor((value) => !value)} style={({ pressed }) => [styles.enable, pressed && styles.pressed]}>
-            <Text style={styles.enableText}>{twoFactor ? "مفعّلة" : "تفعيل"}</Text>
+          <Pressable onPress={() => setTwoFactor(!twoFactor)} style={({ pressed }) => [styles.enable, pressed && styles.pressed]}>
+            <Text style={styles.enableText}>{twoFactor ? t("settingsEnabled") : t("settingsEnable")}</Text>
           </Pressable>
         </Card>
 
-        <Text style={styles.section}>الأمان والخصوصية</Text>
+        <Text style={styles.section}>{t("settingsSecuritySection")}</Text>
         <Card>
-          <Pressable onPress={() => setTwoFactor((value) => !value)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={styles.icon}><MaterialIcons name="verified-user" size={18} color={CWAAX.green} /></View>
-            <View style={styles.copy}><Text style={styles.label}>المصادقة الثنائية</Text><Text style={styles.sub}>{twoFactor ? "مفعّلة لحماية حسابك" : "حماية إضافية لحسابك"}</Text></View>
-            <Switch value={twoFactor} onValueChange={setTwoFactor} trackColor={{ false: "#DDE4E0", true: "#9BD5B4" }} thumbColor={twoFactor ? CWAAX.green : "#fff"} />
-          </Pressable>
-          <Pressable onPress={() => setNotifications((value) => !value)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={styles.icon}><MaterialIcons name="notifications-none" size={18} color={CWAAX.green} /></View>
-            <View style={styles.copy}><Text style={styles.label}>الإشعارات</Text><Text style={styles.sub}>{notifications ? "تنبيهات الأسعار والعمليات مفعّلة" : "الإشعارات متوقفة"}</Text></View>
-            <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: "#DDE4E0", true: "#9BD5B4" }} thumbColor={notifications ? CWAAX.green : "#fff"} />
-          </Pressable>
-          <Pressable onPress={() => setSelector("currency")} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={styles.icon}><MaterialIcons name="paid" size={18} color={CWAAX.green} /></View>
-            <View style={styles.copy}><Text style={styles.label}>العملة الأصلية</Text><Text style={styles.sub}>{currency}</Text></View>
-            <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
-          </Pressable>
-          <Pressable onPress={() => setSelector("language")} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={styles.icon}><MaterialIcons name="language" size={18} color={CWAAX.green} /></View>
-            <View style={styles.copy}><Text style={styles.label}>اللغة</Text><Text style={styles.sub}>{language}</Text></View>
-            <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
-          </Pressable>
+          {items.map((item, i) => (
+            <Pressable
+              key={item.key}
+              disabled={item.key === "twoFactor"}
+              onPress={() => onRowPress(item.key)}
+              style={({ pressed }) => [
+                styles.row,
+                i === items.length - 1 && { borderBottomWidth: 0 },
+                pressed && item.key !== "twoFactor" && styles.pressed,
+              ]}
+            >
+              <View style={styles.icon}>
+                <MaterialIcons name={item.icon} size={18} color={CWAAX.green} />
+              </View>
+              <View style={styles.copy}>
+                <Text style={styles.label}>{item.label}</Text>
+                <Text style={styles.sub}>{item.sub}</Text>
+              </View>
+              {item.key === "twoFactor" ? (
+                <Switch
+                  value={twoFactor}
+                  onValueChange={setTwoFactor}
+                  trackColor={{ false: "#DDE4E0", true: "#9BD5B4" }}
+                  thumbColor={twoFactor ? CWAAX.green : "#fff"}
+                />
+              ) : (
+                <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
+              )}
+            </Pressable>
+          ))}
         </Card>
 
-        <Text style={styles.section}>الدعم</Text>
+        <Text style={styles.section}>{t("settingsSupportSection")}</Text>
         <Card>
           <Pressable onPress={() => router.push("/support")} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={[styles.icon, { backgroundColor: "#FFF5DE" }]}><MaterialIcons name="support-agent" size={18} color={CWAAX.gold} /></View>
-            <View style={styles.copy}><Text style={styles.label}>مركز الدعم</Text><Text style={styles.sub}>نحن هنا لمساعدتك</Text></View>
+            <View style={[styles.icon, { backgroundColor: "#FFF5DE" }]}>
+              <MaterialIcons name="support-agent" size={18} color={CWAAX.gold} />
+            </View>
+            <View style={styles.copy}>
+              <Text style={styles.label}>{t("supportCenter")}</Text>
+              <Text style={styles.sub}>{t("supportCenterSub")}</Text>
+            </View>
             <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
           </Pressable>
-          <Pressable onPress={() => Alert.alert("الشروط والسياسات", "باستخدام CwaAX توافق على شروط الاستخدام وسياسة الخصوصية. لا تشارك كلمة المرور أو رموز التحقق مع أي شخص." )} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={[styles.icon, { backgroundColor: "#F2F3F2" }]}><MaterialIcons name="description" size={18} color={CWAAX.ink} /></View>
-            <View style={styles.copy}><Text style={styles.label}>الشروط والسياسات</Text><Text style={styles.sub}>آخر تحديث: سبتمبر 2026</Text></View>
+          <Pressable
+            onPress={() => notify(t("terms"), locale === "ar" ? "سيتم عرض شروط الاستخدام وسياسة الخصوصية هنا." : "Terms of service and privacy policy will be shown here.")}
+            style={({ pressed }) => [styles.row, { borderBottomWidth: 0 }, pressed && styles.pressed]}
+          >
+            <View style={[styles.icon, { backgroundColor: "#F2F3F2" }]}>
+              <MaterialIcons name="description" size={18} color={CWAAX.ink} />
+            </View>
+            <View style={styles.copy}>
+              <Text style={styles.label}>{t("terms")}</Text>
+              <Text style={styles.sub}>{t("termsSub")}</Text>
+            </View>
             <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
           </Pressable>
         </Card>
-        <Text style={styles.version}>CwaAX Wallet · الإصدار 1.0.0</Text>
-      </ScrollView>
 
-      <Modal visible={selector !== null} transparent animationType="fade" onRequestClose={() => setSelector(null)}>
-        <Pressable style={styles.modalBackdrop} onPress={() => setSelector(null)}>
-          <Pressable style={styles.modalCard} onPress={() => {}}>
-            <Text style={styles.modalTitle}>{selectorTitle}</Text>
-            {selectorItems.map((item) => {
-              const selected = (selector === "currency" ? currency : language) === item;
-              return <Pressable key={item} onPress={() => { if (selector === "currency") setCurrency(item); else setLanguage(item); setSelector(null); }} style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && styles.pressed]}>
-                <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{item}</Text>
-                {selected && <MaterialIcons name="check" size={19} color={CWAAX.green} />}
-              </Pressable>;
-            })}
-            <Pressable onPress={() => setSelector(null)} style={styles.cancel}><Text style={styles.cancelText}>إلغاء</Text></Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <Text style={styles.version}>{t("version")}</Text>
+      </ScrollView>
     </ScreenContainer>
   );
 }
@@ -104,17 +131,17 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 23 },
   title: { color: CWAAX.ink, fontSize: 20, fontWeight: "900" },
   banner: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#F0F9F4", borderColor: "#D8F0E1", marginBottom: 22 },
-  bannerCopy: { flex: 1 }, bannerTitle: { color: CWAAX.ink, fontSize: 12, fontWeight: "900", textAlign: "right" }, bannerSub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
-  enable: { backgroundColor: CWAAX.green, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 }, enableText: { color: CWAAX.white, fontSize: 10, fontWeight: "800" },
+  bannerCopy: { flex: 1 },
+  bannerTitle: { color: CWAAX.ink, fontSize: 12, fontWeight: "900", textAlign: "right" },
+  bannerSub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
+  enable: { backgroundColor: CWAAX.green, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 },
+  enableText: { color: CWAAX.white, fontSize: 10, fontWeight: "800" },
   section: { color: CWAAX.muted, fontWeight: "800", fontSize: 12, textAlign: "right", marginBottom: 9, marginTop: 5 },
   row: { minHeight: 65, flexDirection: "row", alignItems: "center", gap: 10, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
-  icon: { width: 35, height: 35, borderRadius: 12, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center" }, copy: { flex: 1 },
-  label: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "right" }, sub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
-  version: { color: "#A3AEA7", textAlign: "center", fontSize: 10, marginTop: 23 }, pressed: { opacity: .62 },
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,.35)", justifyContent: "center", padding: 22 },
-  modalCard: { backgroundColor: CWAAX.white, borderRadius: 22, padding: 18, borderWidth: 1, borderColor: CWAAX.line },
-  modalTitle: { color: CWAAX.ink, fontSize: 18, fontWeight: "900", textAlign: "right", marginBottom: 12 },
-  option: { minHeight: 50, borderRadius: 12, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, marginBottom: 6 },
-  optionSelected: { backgroundColor: CWAAX.greenSoft }, optionText: { color: CWAAX.ink, fontSize: 12, fontWeight: "700" }, optionTextSelected: { color: CWAAX.green },
-  cancel: { alignItems: "center", paddingVertical: 12, marginTop: 4 }, cancelText: { color: CWAAX.red, fontSize: 12, fontWeight: "800" },
+  icon: { width: 35, height: 35, borderRadius: 12, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center" },
+  copy: { flex: 1 },
+  label: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "right" },
+  sub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
+  version: { color: "#A3AEA7", textAlign: "center", fontSize: 10, marginTop: 23 },
+  pressed: { opacity: 0.62 },
 });
