@@ -33,7 +33,7 @@ export const TRANSACTIONS = [
 ];
 
 export const quickActions = [
-  { label: "دفع", icon: "qr-code-scanner" as const, route: "/deposit" },
+  { label: "دفع", icon: "qr-code-scanner" as const, route: "/send" },
   { label: "استقبال", icon: "call-received" as const, route: "/deposit" },
   { label: "شراء / بيع", icon: "swap-vertical-circle" as const, route: "/trade" },
   { label: "تبديل", icon: "compare-arrows" as const, route: "/trade" },
