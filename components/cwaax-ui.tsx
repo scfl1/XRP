@@ -1,7 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, G, Path, Polygon } from "react-native-svg";
+import Svg, { Circle, Path } from "react-native-svg";
 import { CWAAX } from "@/constants/cwaax";
 import { NetworkIcon } from "@/app/network-select";
 
@@ -100,33 +100,20 @@ export function SectionTitle({
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  CoinMark — يستخدم نفس NetworkIcon حتى تظهر الأيقونات موحّدة        */
-/*  mark: يمكن أن يكون كود الشبكة (TRC20, ERC20, SOL, ...) أو حرف      */
-/*  color: يُستخدم فقط عند الرسم الاحتياطي بالحرف                      */
-/* ------------------------------------------------------------------ */
+/* ================================================================== */
+/*  CoinMark — يستخدم NetworkIcon لأكواد الشبكات المعروفة              */
+/* ================================================================== */
 
 const KNOWN_NETWORK_CODES = new Set([
-  "TRC20",
-  "TRON",
-  "ERC20",
-  "ETH",
-  "ETHEREUM",
-  "OPTIMISM",
-  "OP",
-  "ARETH",
-  "ARBITRUM",
-  "ARB",
-  "AVAX",
-  "AVALANCHE",
-  "OPBNB",
-  "BEP20",
-  "BNB",
-  "SOL",
-  "SOLANA",
+  "TRC20", "TRON",
+  "ERC20", "ETH", "ETHEREUM",
+  "OPTIMISM", "OP",
+  "ARETH", "ARBITRUM", "ARB",
+  "AVAX", "AVALANCHE",
+  "OPBNB", "BEP20", "BNB",
+  "SOL", "SOLANA",
   "TON",
-  "POLYGON",
-  "MATIC",
+  "POLYGON", "MATIC",
   "CELO",
 ]);
 
@@ -143,13 +130,12 @@ export function CoinMark({
 
   if (KNOWN_NETWORK_CODES.has(upper)) {
     return (
-      <View style={{ width: size, height: size, borderRadius: size / 2 }}>
+      <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <NetworkIcon code={upper} size={size} />
       </View>
     );
   }
 
-  /* Fallback: حرف داخل دائرة ملوّنة (للعملات غير المعروفة) */
   return (
     <View
       style={[
@@ -164,7 +150,10 @@ export function CoinMark({
   );
 }
 
-/* أيقونة عملة SVG عامة (اختيارية للاستخدام المباشر) */
+/* ================================================================== */
+/*  CoinGlyph — أيقونات عملات رسمية SVG                                */
+/* ================================================================== */
+
 export function CoinGlyph({
   glyph,
   size = 24,
@@ -178,91 +167,104 @@ export function CoinGlyph({
       return (
         <Svg width={size} height={size} viewBox={vb}>
           <Circle cx="12" cy="12" r="12" fill="#F7931A" />
-          <Path
-            d="M16.5 10.6c.2-1.4-.9-2.2-2.4-2.7l.5-2-1.2-.3-.5 2c-.3-.1-.7-.2-1-.2l.5-2-1.2-.3-.5 2c-.3-.1-.6-.1-.8-.2v0l-1.7-.4-.3 1.3s.9.2.9.2c.5.1.6.4.6.7l-.6 2.3c0 0 .1 0 .1.1-.1 0-.1 0-.1 0l-.8 3.3c-.1.2-.2.4-.6.3 0 0-.9-.2-.9-.2l-.6 1.4 1.6.4c.3.1.6.2.9.2l-.5 2 1.2.3.5-2c.3.1.7.2 1 .2l-.5 2 1.2.3.5-2c2.1.4 3.6.2 4.3-1.6.5-1.5 0-2.3-1.1-2.9.8-.2 1.4-.7 1.5-1.7zm-2.7 3.8c-.4 1.5-3 .7-3.9.5l.7-2.7c.8.2 3.5.6 3.2 2.2zm.4-3.8c-.3 1.3-2.5.7-3.2.5l.6-2.5c.7.2 3 .5 2.6 2z"
-            fill="#FFFFFF"
-          />
+          <G transform="translate(2.4 2.4) scale(0.8)">
+            <Path
+              fill="#FFFFFF"
+              d="M23.189 14.02c-1.592 6.38-8.061 10.265-14.442 8.673C2.365 21.101-1.52 14.632.072 8.252C1.663 1.872 8.132-2.013 14.513-.421c6.381 1.592 10.266 8.06 8.676 14.441zM16.62 10.912c.231-1.543-.943-2.372-2.549-2.925l.521-2.09-1.273-.317-.507 2.035c-.335-.084-.678-.163-1.021-.241l.51-2.048-1.272-.317-.521 2.09c-.276-.063-.548-.125-.812-.19l.002-.006-1.755-.438-.339 1.36s.944.216.924.23c.516.128.609.47.593.74l-.594 2.385c.036.009.082.022.133.042l-.135-.034-.833 3.342c-.063.157-.223.392-.583.303.013.018-.925-.23-.925-.23l-.632 1.457 1.656.413c.308.077.61.158.907.234l-.526 2.114 1.271.317.521-2.091c.348.094.685.181 1.015.263l-.52 2.08 1.272.317.526-2.11c2.169.41 3.799.245 4.486-1.717.553-1.58-.027-2.492-1.17-3.086.832-.192 1.459-.74 1.626-1.869zm-2.9 4.091c-.394 1.58-3.055.727-3.918.512l.697-2.798c.863.216 3.632.643 3.221 2.286zm.394-4.121c-.36 1.438-2.574.708-3.292.529l.632-2.538c.718.179 3.035.514 2.66 2.009z"
+            />
+          </G>
         </Svg>
       );
+
     case "eth":
       return (
         <Svg width={size} height={size} viewBox={vb}>
           <Circle cx="12" cy="12" r="12" fill="#627EEA" />
-          <G fill="#FFFFFF">
-            <Path d="M12 4v6l5 2.2z" opacity="0.7" />
-            <Path d="M12 4L7 12.2 12 10z" opacity="0.9" />
-            <Path d="M12 16.5V20l5-7z" opacity="0.7" />
-            <Path d="M12 20v-3.5L7 13z" opacity="0.9" />
-            <Path d="M12 15.4l5-2.9-5-2.3z" opacity="0.6" />
+          <G transform="translate(2.4 2.4) scale(0.8)">
+            <Path fill="#FFFFFF" fillOpacity="0.602" d="M11.998 3v6.652l5.623 2.512z" />
+            <Path fill="#FFFFFF" d="M11.998 3 6.375 12.164l5.623-2.512z" />
+            <Path fill="#FFFFFF" fillOpacity="0.602" d="M11.998 16.476v4.52l5.627-7.784z" />
+            <Path fill="#FFFFFF" d="M11.998 20.996v-4.52L6.375 13.212z" />
+            <Path fill="#FFFFFF" fillOpacity="0.2" d="m11.998 15.429 5.623-3.265-5.623-2.51z" />
+            <Path fill="#FFFFFF" fillOpacity="0.602" d="m6.375 12.164 5.623 3.265v-5.775z" />
           </G>
         </Svg>
       );
+
     case "usdt":
       return (
         <Svg width={size} height={size} viewBox={vb}>
           <Circle cx="12" cy="12" r="12" fill="#26A17B" />
-          <Path
-            d="M13.4 10.4V8.9h3.2V6.5H7.4v2.4h3.2v1.5c-2.7.1-4.7.7-4.7 1.4s2 1.3 4.7 1.4v4.4h2.8v-4.4c2.7-.1 4.7-.7 4.7-1.4s-2-1.3-4.7-1.4zm0 2.4c-.1 0-.5 0-1 .1-.8 0-1.3-.1-1.3-.1-2-.2-3.4-.6-3.4-1s1.5-.8 3.4-1v1.5c.4 0 .8.1 1.3.1.5 0 .9 0 1-.1v-1.5c1.9.2 3.3.6 3.3 1s-1.4.8-3.3 1z"
-            fill="#FFFFFF"
-          />
-        </Svg>
-      );
-    case "sol":
-      return (
-        <Svg width={size} height={size} viewBox={vb}>
-          <Circle cx="12" cy="12" r="12" fill="#000000" />
-          <G>
+          <G transform="translate(2.4 2.4) scale(0.8)">
             <Path
-              d="M6.5 8.5h8.6l2.2-2.2H8.7L6.5 8.5z"
-              fill="#00FFA3"
-            />
-            <Path
-              d="M6.5 13.3h8.6l2.2-2.2H8.7L6.5 13.3z"
-              fill="#00FFA3"
-            />
-            <Path
-              d="M6.5 18.1h8.6l2.2-2.2H8.7L6.5 18.1z"
-              fill="#00FFA3"
+              fill="#FFFFFF"
+              d="M12.978 10.475v-1.68h3.785V6.16H7.238v2.635h3.785v1.68c-3.077.14-5.39.75-5.39 1.48 0 .73 2.313 1.34 5.39 1.48v5.408h3.955v-5.41c3.07-.14 5.376-.75 5.376-1.478 0-.728-2.305-1.336-5.376-1.48zm0 2.517v-.002c-.069.005-.42.026-1.075.026-.522 0-.887-.015-1.017-.024l-.001.001c-3.31-.148-5.787-.72-5.787-1.41 0-.69 2.477-1.262 5.787-1.41v2.244c.132.009.505.03 1.03.03.633 0 1.0-.026 1.063-.03v-2.243c3.304.148 5.771.722 5.771 1.409 0 .687-2.467 1.26-5.771 1.409z"
             />
           </G>
         </Svg>
       );
+
+    case "sol":
+      return (
+        <Svg width={size} height={size} viewBox={vb}>
+          <Defs>
+            <LinearGradient id="solGlyph" x1="0" y1="1" x2="1" y2="0">
+              <Stop offset="0" stopColor="#00FFA3" />
+              <Stop offset="1" stopColor="#DC1FFF" />
+            </LinearGradient>
+          </Defs>
+          <Circle cx="12" cy="12" r="12" fill="#000000" />
+          <G transform="translate(2.4 2.4) scale(0.8)">
+            <Path
+              fill="url(#solGlyph)"
+              d="M17.75 6.65a.43.43 0 0 1 .3-.13h7.34c.22 0 .34.26.18.42l-1.42 1.42a.43.43 0 0 1-.3.13h-7.34a.3.3 0 0 1-.18-.42z"
+              transform="translate(-3.3 -1)"
+            />
+            <Path
+              fill="url(#solGlyph)"
+              d="M17.75 6.65a.43.43 0 0 1 .3-.13h7.34c.22 0 .34.26.18.42l-1.42 1.42a.43.43 0 0 1-.3.13h-7.34a.3.3 0 0 1-.18-.42z"
+              transform="translate(-5.6 3.6) scale(0.92)"
+            />
+            <Path
+              fill="url(#solGlyph)"
+              d="M17.75 6.65a.43.43 0 0 1 .3-.13h7.34c.22 0 .34.26.18.42l-1.42 1.42a.43.43 0 0 1-.3.13h-7.34a.3.3 0 0 1-.18-.42z"
+              transform="translate(-5.6 8.2) scale(1.08)"
+            />
+          </G>
+        </Svg>
+      );
+
     case "bnb":
       return (
         <Svg width={size} height={size} viewBox={vb}>
           <Circle cx="12" cy="12" r="12" fill="#F3BA2F" />
-          <G fill="#FFFFFF">
-            <Path d="M12 4.5l2.6 2.6L12 9.7 9.4 7.1z" />
-            <Path d="M7 9.5l2.6 2.6L7 14.7 4.4 12.1z" />
-            <Path d="M17 9.5l2.6 2.6L17 14.7l-2.6-2.6z" />
-            <Path d="M12 14.3l2.6 2.6L12 19.5l-2.6-2.6z" />
-            <Path d="M12 10.3l1.7 1.7L12 13.7l-1.7-1.7z" />
+          <G transform="translate(2.4 2.4) scale(0.8)">
+            <Path
+              fill="#FFFFFF"
+              d="M7.3 9.6 9.6 7.3 12 9.6l-2.4 2.4zM4.6 12.3 6.9 10l2.4 2.3-2.4 2.4zM9.6 14.6l2.4-2.3 2.4 2.3-2.4 2.4zM14.7 9.6 17.1 7.3l2.3 2.3-2.3 2.4zM11.7 12.3l2.4-2.3 2.3 2.3-2.3 2.4zM9.6 12.3l2.4-2.3 2.4 2.3-2.4 2.4z"
+            />
           </G>
         </Svg>
       );
+
     case "ton":
       return (
         <Svg width={size} height={size} viewBox={vb}>
           <Circle cx="12" cy="12" r="12" fill="#0098EA" />
-          <Path
-            d="M8.3 7h7.4c.6 0 1 .6.7 1.1l-3.4 6.6c-.4.7-1.4.7-1.8 0L7.6 8.1C7.3 7.6 7.7 7 8.3 7z"
-            fill="#FFFFFF"
-            opacity="0.4"
-          />
-          <Path
-            d="M8.3 7h7.4c.6 0 1 .6.7 1.1l-3.4 6.6c-.4.7-1.4.7-1.8 0L7.6 8.1C7.3 7.6 7.7 7 8.3 7z"
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth="1.1"
-          />
-          <Path d="M12 7v9.5" stroke="#FFFFFF" strokeWidth="1" />
+          <G transform="translate(2.4 2.4) scale(0.8)">
+            <Path
+              fill="#FFFFFF"
+              d="M16.375 4.5H7.625a.75.75 0 0 0-.643 1.135l4.375 7.5a.75.75 0 0 0 1.286 0l4.375-7.5A.75.75 0 0 0 16.375 4.5zM11.25 8.5h1.5v6.55l-1.5-2.57z"
+            />
+          </G>
         </Svg>
       );
+
     default:
       return (
         <Svg width={size} height={size} viewBox={vb}>
           <Circle cx="12" cy="12" r="12" fill="#94A3B8" />
-          <Polygon points="12,6 18,12 12,18 6,12" fill="#FFFFFF" opacity="0.85" />
+          <Path fill="#FFFFFF" d="M12 5 19 12 12 19 5 12z" opacity="0.9" />
         </Svg>
       );
   }
