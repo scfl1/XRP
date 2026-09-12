@@ -39,10 +39,11 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
 }
 
 /* ================================================================ */
-/*  CoinMark — يستخدم NetworkIcon لكل أكواد الشبكات المعروفة        */
+/*  CoinMark — يستخدم NetworkIcon لكل العملات والشبكات المعروفة     */
 /* ================================================================ */
 
-const KNOWN_NETWORK_CODES = new Set([
+const KNOWN_CODES = new Set([
+  // شبكات
   "TRC20", "TRON",
   "ERC20", "ETH", "ETHEREUM",
   "OPTIMISM", "OP",
@@ -53,13 +54,14 @@ const KNOWN_NETWORK_CODES = new Set([
   "TON",
   "POLYGON", "MATIC",
   "CELO",
-  "USDT",
+  // عملات
+  "USDT", "BTC", "BITCOIN", "XRP", "RIPPLE",
 ]);
 
 export function CoinMark({ mark, color, size = 42 }: { mark: string; color: string; size?: number }) {
   const upper = (mark || "").toUpperCase();
 
-  if (KNOWN_NETWORK_CODES.has(upper)) {
+  if (KNOWN_CODES.has(upper)) {
     return (
       <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <NetworkIcon code={upper} size={size} />
