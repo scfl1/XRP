@@ -261,7 +261,24 @@ class SDKServer {
     const signedInAt = new Date();
     let user = await db.getUserByOpenId(sessionUserId);
 
+    // Local (email/username) accounts never go through the OAuth server, so
+    // their JWT is not something GetUserInfoWithJwt can ever resolve. Retry
+    // the DB read a couple of times (covers any brief read-after-write lag)
+    // instead of falling through to an OAuth resync that is guaranteed to
+    // fail and would otherwise wipe a perfectly valid session.
+    if (!user && sessionUserId.startsWith(LOCAL_OPEN_ID_PREFIX)) {
+      for (let attempt = 0; attempt < 2 && !user; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        user = await db.getUserByOpenId(sessionUserId);
+      }
+      if (!user) {
+        console.error("[Auth] Local user not found after retry:", sessionUserId);
+        throw ForbiddenError("Local user not found");
+      }
+    }
+
     // If user not in DB, sync from OAuth server automatically
+    // (only relevant for accounts that actually originated from Manus OAuth)
     if (!user) {
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
@@ -293,6 +310,7 @@ class SDKServer {
 }
 
 const CRON_OPEN_ID_PREFIX = "cron_";
+const LOCAL_OPEN_ID_PREFIX = "local_";
 
 /** Result of `sdk.authenticateRequest`. Cron callbacks set `isCron=true` and `taskUid`; see `/home/ubuntu/skills/webdev-periodic-updates/SKILL.md`. */
 export type AuthenticatedUser = User & {
