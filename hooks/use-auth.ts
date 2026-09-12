@@ -47,10 +47,12 @@ export function useAuth(options?: UseAuthOptions) {
       const error = err instanceof Error ? err : new Error("Failed to fetch user");
       console.error("[useAuth] fetchUser error:", error);
       setError(error);
-      // Keep the cached user during transient/network failures. A real invalid
-      // session is handled by the successful null response branch above.
-      const storedUser = await Auth.getUserInfo();
-      if (storedUser) setUser(storedUser);
+      // The request itself failed (network/DB issue) — this is NOT a
+      // confirmed "logged out" response from the server. Do not fall back
+      // to any locally cached data and do not clear the session either;
+      // simply surface the error so the UI can show a retry state. The
+      // `user` state stays as it currently is (whatever the last confirmed
+      // server response was, or null if none yet).
     } finally {
       setLoading(false);
       console.log("[useAuth] fetchUser completed, loading:", false);
