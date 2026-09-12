@@ -4,6 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { CoinMark } from "@/components/cwaax-ui";
+import { NetworkIcon } from "@/components/network-icon";
 import { CWAAX } from "@/constants/cwaax";
 import { getNetwork } from "@/constants/networks";
 import { notify } from "@/lib/_core/native-alert";
@@ -133,7 +134,7 @@ export default function SendScreen() {
             <Text style={styles.networkLabel}>الشبكة/السلسلة</Text>
             <Text style={styles.networkValue}>{network.name}</Text>
           </View>
-          <View style={[styles.networkDot, { backgroundColor: network.color }]} />
+          <NetworkIcon network={network} size={20} />
         </Pressable>
 
         <Pressable onPress={() => router.back()} hitSlop={10}>
