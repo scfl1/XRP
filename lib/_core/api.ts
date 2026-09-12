@@ -155,6 +155,13 @@ export async function logout(): Promise<void> {
 }
 
 // Get current authenticated user (web uses cookie-based auth)
+//
+// IMPORTANT: this must distinguish two very different outcomes:
+//   1) The server responded successfully and confirmed there is no user
+//      (the session really is invalid) -> resolve to null.
+//   2) The request itself failed (network blip, DB connection exhausted,
+//      timeout, etc.) -> throw, so the caller does NOT treat it as
+//      "you are logged out" and wipe a perfectly valid session.
 export async function getMe(): Promise<{
   id: number;
   openId: string;
@@ -165,23 +172,8 @@ export async function getMe(): Promise<{
   loginMethod: string | null;
   lastSignedIn: string;
 } | null> {
-  try {
-    const user = await getVanillaTrpc().auth.me.query();
-    if (!user && Platform.OS === "web") {
-      window.alert("[تشخيص مؤقت] auth.me نجح لكن رجع بدون مستخدم (الجلسة اعتُبرت غير صالحة من طرف السيرفر).");
-    }
-    return (user as any) || null;
-  } catch (error) {
-    console.error("[API] getMe failed:", error);
-    // TEMPORARY diagnostic: show the raw failure reason on-screen so it
-    // can be reported without needing access to Cloudflare's dashboard.
-    // Remove this once the root cause is confirmed.
-    if (Platform.OS === "web") {
-      const message = error instanceof Error ? error.message : String(error);
-      window.alert(`[تشخيص مؤقت] فشل التحقق من الجلسة:\n\n${message}`);
-    }
-    return null;
-  }
+  const user = await getVanillaTrpc().auth.me.query();
+  return (user as any) || null;
 }
 
 // Establish session cookie on the backend (3000-xxx domain)
