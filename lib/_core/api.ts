@@ -167,9 +167,19 @@ export async function getMe(): Promise<{
 } | null> {
   try {
     const user = await getVanillaTrpc().auth.me.query();
+    if (!user && Platform.OS === "web") {
+      window.alert("[تشخيص مؤقت] auth.me نجح لكن رجع بدون مستخدم (الجلسة اعتُبرت غير صالحة من طرف السيرفر).");
+    }
     return (user as any) || null;
   } catch (error) {
     console.error("[API] getMe failed:", error);
+    // TEMPORARY diagnostic: show the raw failure reason on-screen so it
+    // can be reported without needing access to Cloudflare's dashboard.
+    // Remove this once the root cause is confirmed.
+    if (Platform.OS === "web") {
+      const message = error instanceof Error ? error.message : String(error);
+      window.alert(`[تشخيص مؤقت] فشل التحقق من الجلسة:\n\n${message}`);
+    }
     return null;
   }
 }
