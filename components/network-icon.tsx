@@ -1,5 +1,4 @@
-import { View } from "react-native";
-import { SvgUri } from "react-native-svg";
+import { Image, View } from "react-native";
 
 export type NetworkIconProps = {
   code: string;
@@ -9,7 +8,6 @@ export type NetworkIconProps = {
 /*
  * خرائط الأكواد إلى slugs الخاصة بـ Simple Icons
  * المصدر: https://simpleicons.org — رخصة CC0 (مفتوحة، مجانية)
- * الروابط تأتي بصيغة SVG نصية، وليست صور PNG/JPG
  */
 const SLUG_MAP: Record<string, { slug: string; color: string }> = {
   // ============ شبكات ============
@@ -60,7 +58,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  // رابط SVG الرسمي من Simple Icons (نصي، وليس صورة نقطية)
+  // رابط PNG الرسمي من Simple Icons CDN
   const url = `https://cdn.simpleicons.org/${entry.slug}/FFFFFF`;
 
   return (
@@ -75,10 +73,13 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
         justifyContent: "center",
       }}
     >
-      <SvgUri
-        width={size * 0.65}
-        height={size * 0.65}
-        uri={url}
+      <Image
+        source={{ uri: url }}
+        style={{
+          width: size * 0.6,
+          height: size * 0.6,
+        }}
+        resizeMode="contain"
       />
     </View>
   );
