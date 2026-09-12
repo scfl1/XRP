@@ -1,10 +1,10 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, CwaLogo, IconButton, SectionTitle, TrendLine } from "@/components/cwaax-ui";
-import { CWAAX, MARKETS, quickActions } from "@/constants/cwaax";
+import { Card, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
+import { CWAAX, quickActions } from "@/constants/cwaax";
 import { formatAmount } from "@/constants/currencies";
 import type { CurrencyCode } from "@/lib/_core/preferences";
 import * as Preferences from "@/lib/_core/preferences";
@@ -18,6 +18,7 @@ export default function HomeScreen() {
   const [hidden, setHidden] = useState(false);
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user });
+  const markets = trpc.market.top.useQuery(undefined, { refetchInterval: 45000 });
   const usdt = Number(balances.data?.find((b:any) => b.currency === "USDT")?.amount ?? 0);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
@@ -57,7 +58,33 @@ export default function HomeScreen() {
         <View style={styles.startRow}><Card style={styles.startCard} onPress={() => router.push("/deposit")}><View style={[styles.startIcon, { backgroundColor: "#E9F7EF" }]}><MaterialIcons name="call-received" size={21} color={CWAAX.green}/></View><Text style={styles.startTitle}>استقبل عملة</Text><Text style={styles.startSub}>أضف أول أصل لمحفظتك</Text></Card><Card style={styles.startCard} onPress={() => router.push("/trade")}><View style={[styles.startIcon, { backgroundColor: "#FFF3DD" }]}><MaterialIcons name="swap-horizontal-circle" size={21} color={CWAAX.gold}/></View><Text style={styles.startTitle}>جرّب التبديل</Text><Text style={styles.startSub}>بدّل أصولك بسهولة</Text></Card></View>
 
         <SectionTitle title="الأسواق" action="كل الأسواق" onAction={() => router.push("/trade")} />
-        <Card style={styles.marketCard}>{MARKETS.map((market, index) => <Pressable key={market.symbol} onPress={() => router.push("/trade")} style={({ pressed }) => [styles.marketRow, index < MARKETS.length - 1 && styles.marketBorder, pressed && styles.pressed]}><View style={[styles.marketDot, { backgroundColor: market.color }]}><Text style={styles.marketDotText}>{market.symbol[0]}</Text></View><View style={styles.marketName}><Text style={styles.marketSymbol}>{market.symbol}</Text><Text style={styles.marketMeta}>24 ساعة</Text></View><TrendLine color={market.color}/><View style={styles.marketPrice}><Text style={styles.priceText}>{market.price}</Text><Text style={styles.positive}>{market.change}</Text></View></Pressable>)}</Card>
+        <Card style={styles.marketCard}>
+          {markets.isLoading ? (
+            <Text style={styles.marketLoading}>جاري تحميل الأسعار...</Text>
+          ) : !markets.data || markets.data.length === 0 ? (
+            <Text style={styles.marketLoading}>تعذر تحميل الأسعار حالياً، حاول لاحقاً.</Text>
+          ) : (
+            markets.data.map((coin, index) => (
+              <Pressable
+                key={coin.id}
+                onPress={() => router.push("/trade")}
+                style={({ pressed }) => [styles.marketRow, index < markets.data!.length - 1 && styles.marketBorder, pressed && styles.pressed]}
+              >
+                <Image source={{ uri: coin.image }} style={styles.marketIcon} />
+                <View style={styles.marketName}>
+                  <Text style={styles.marketSymbol}>{coin.symbol}/USDT</Text>
+                  <Text style={styles.marketMeta} numberOfLines={1}>{coin.name}</Text>
+                </View>
+                <View style={styles.marketPrice}>
+                  <Text style={styles.priceText}>{formatAmount(coin.price, currency)}</Text>
+                  <Text style={coin.change24h >= 0 ? styles.positive : styles.negative}>
+                    {coin.change24h >= 0 ? "+" : ""}{coin.change24h.toFixed(2)}%
+                  </Text>
+                </View>
+              </Pressable>
+            ))
+          )}
+        </Card>
         <View style={{ height: 24 }} />
       </ScrollView>
       {notice ? <View style={styles.toast}><MaterialIcons name="info-outline" size={18} color={CWAAX.white}/><Text style={styles.toastText}>{notice}</Text></View> : null}
@@ -87,5 +114,5 @@ const styles = StyleSheet.create({
   quickItem: { alignItems: "center", width: "19%" }, quickIcon: { width: 44, height: 44, borderRadius: 15, backgroundColor: CWAAX.greenSoft, justifyContent: "center", alignItems: "center", marginBottom: 7 }, quickLabel: { color: CWAAX.ink, fontSize: 11, fontWeight: "700", textAlign: "center" },
   promo: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "#FFF9EC", padding: 13, borderRadius: 17, marginBottom: 24, borderWidth: 1, borderColor: "#F8E6BA" }, promoIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: "#FFF1CC", justifyContent: "center", alignItems: "center" }, promoCopy: { flex: 1 }, promoTitle: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", textAlign: "right" }, promoSubtitle: { color: CWAAX.muted, fontSize: 11, marginTop: 4, textAlign: "right" },
   startRow: { flexDirection: "row", gap: 10, marginBottom: 25 }, startCard: { flex: 1, borderRadius: 18, padding: 14 }, startIcon: { width: 38, height: 38, borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 12 }, startTitle: { fontSize: 13, color: CWAAX.ink, fontWeight: "800", textAlign: "right" }, startSub: { color: CWAAX.muted, fontSize: 10, marginTop: 5, lineHeight: 15, textAlign: "right" },
-  marketCard: { paddingVertical: 3 }, marketRow: { minHeight: 65, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 }, marketBorder: { borderBottomWidth: 1, borderBottomColor: CWAAX.line }, marketDot: { width: 33, height: 33, borderRadius: 12, alignItems: "center", justifyContent: "center" }, marketDotText: { color: CWAAX.white, fontWeight: "900" }, marketName: { flex: 1 }, marketSymbol: { color: CWAAX.ink, fontWeight: "800", fontSize: 12 }, marketMeta: { color: CWAAX.muted, fontSize: 10, marginTop: 2 }, marketPrice: { alignItems: "flex-end" }, priceText: { color: CWAAX.ink, fontSize: 12, fontWeight: "800" }, positive: { color: CWAAX.green, fontSize: 11, fontWeight: "700", marginTop: 3 }, pressed: { opacity: 0.62 }, toast: { position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: CWAAX.ink, padding: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }, toastText: { color: CWAAX.white, fontSize: 12, fontWeight: "700" },
+  marketCard: { paddingVertical: 3 }, marketRow: { minHeight: 65, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 }, marketBorder: { borderBottomWidth: 1, borderBottomColor: CWAAX.line }, marketIcon: { width: 33, height: 33, borderRadius: 16 }, marketName: { flex: 1 }, marketSymbol: { color: CWAAX.ink, fontWeight: "800", fontSize: 12 }, marketMeta: { color: CWAAX.muted, fontSize: 10, marginTop: 2 }, marketPrice: { alignItems: "flex-end" }, priceText: { color: CWAAX.ink, fontSize: 12, fontWeight: "800" }, positive: { color: CWAAX.green, fontSize: 11, fontWeight: "700", marginTop: 3 }, negative: { color: "#D95C55", fontSize: 11, fontWeight: "700", marginTop: 3 }, marketLoading: { color: CWAAX.muted, fontSize: 12, textAlign: "center", paddingVertical: 24 }, pressed: { opacity: 0.62 }, toast: { position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: CWAAX.ink, padding: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }, toastText: { color: CWAAX.white, fontSize: 12, fontWeight: "700" },
 });
