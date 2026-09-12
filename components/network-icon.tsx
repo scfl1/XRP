@@ -17,7 +17,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
   const vb = "0 0 24 24";
   const upper = (code || "").toUpperCase();
 
-  /* ---------------- TRON / TRC20 ---------------- */
+  /* ================= TRON / TRC20 ================= */
   if (upper === "TRC20" || upper === "TRON") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -32,7 +32,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Ethereum ---------------- */
+  /* ================= ETHEREUM / ERC20 ================= */
   if (upper === "ERC20" || upper === "ETH" || upper === "ETHEREUM") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -49,7 +49,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Optimism ---------------- */
+  /* ================= OPTIMISM ================= */
   if (upper === "OPTIMISM" || upper === "OP") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -64,11 +64,11 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Arbitrum ---------------- */
+  /* ================= ARBITRUM / ARETH ================= */
   if (upper === "ARETH" || upper === "ARBITRUM" || upper === "ARB") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
-        <Circle cx="12" cy="12" r="12" fill="#213147" />
+        <Circle cx="12" cy="12" r="12" fill="#2D374B" />
         <G transform="translate(2.4 2.4) scale(0.8)">
           <Path
             fill="#12AAFF"
@@ -88,7 +88,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Avalanche ---------------- */
+  /* ================= AVALANCHE ================= */
   if (upper === "AVAX" || upper === "AVALANCHE") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -103,7 +103,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- BNB / BEP20 / opBNB ---------------- */
+  /* ================= BNB / BEP20 / OPBNB ================= */
   if (upper === "OPBNB" || upper === "BEP20" || upper === "BNB") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -118,12 +118,12 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Solana ---------------- */
+  /* ================= SOLANA ================= */
   if (upper === "SOL" || upper === "SOLANA") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
         <Defs>
-          <LinearGradient id="solGrad" x1="0" y1="1" x2="1" y2="0">
+          <LinearGradient id="solGradA" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0" stopColor="#00FFA3" />
             <Stop offset="1" stopColor="#DC1FFF" />
           </LinearGradient>
@@ -131,26 +131,23 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
         <Circle cx="12" cy="12" r="12" fill="#000000" />
         <G transform="translate(2.4 2.4) scale(0.8)">
           <Path
-            fill="url(#solGrad)"
-            d="M17.75 6.65a.43.43 0 0 1 .3-.13h7.34c.22 0 .34.26.18.42l-1.42 1.42a.43.43 0 0 1-.3.13h-7.34a.3.3 0 0 1-.18-.42z"
-            transform="translate(-3.3 -1)"
+            fill="url(#solGradA)"
+            d="M6.15 16.42a.55.55 0 0 1 .39-.16h11.06c.25 0 .37.3.2.47l-2.17 2.17a.55.55 0 0 1-.39.16H4.18c-.25 0-.37-.3-.2-.47z"
           />
           <Path
-            fill="url(#solGrad)"
-            d="M17.75 6.65a.43.43 0 0 1 .3-.13h7.34c.22 0 .34.26.18.42l-1.42 1.42a.43.43 0 0 1-.3.13h-7.34a.3.3 0 0 1-.18-.42z"
-            transform="translate(-5.6 3.6) scale(0.92)"
+            fill="url(#solGradA)"
+            d="M6.15 5.14a.55.55 0 0 1 .39-.16h11.06c.25 0 .37.3.2.47l-2.17 2.17a.55.55 0 0 1-.39.16H4.18c-.25 0-.37-.3-.2-.47z"
           />
           <Path
-            fill="url(#solGrad)"
-            d="M17.75 6.65a.43.43 0 0 1 .3-.13h7.34c.22 0 .34.26.18.42l-1.42 1.42a.43.43 0 0 1-.3.13h-7.34a.3.3 0 0 1-.18-.42z"
-            transform="translate(-5.6 8.2) scale(1.08)"
+            fill="url(#solGradA)"
+            d="M17.85 10.72a.55.55 0 0 0-.39-.16H6.4c-.25 0-.37.3-.2.47l2.17 2.17a.55.55 0 0 0 .39.16h11.06c.25 0 .37-.3.2-.47z"
           />
         </G>
       </Svg>
     );
   }
 
-  /* ---------------- TON ---------------- */
+  /* ================= TON ================= */
   if (upper === "TON") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -165,11 +162,11 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Polygon ---------------- */
+  /* ================= POLYGON ================= */
   if (upper === "POLYGON" || upper === "MATIC") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
-        <Circle cx="12" cy="12" r="12" fill="#7B3FE4" />
+        <Circle cx="12" cy="12" r="12" fill="#8247E5" />
         <G transform="translate(2.4 2.4) scale(0.8)">
           <Path
             fill="#FFFFFF"
@@ -180,7 +177,7 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Celo ---------------- */
+  /* ================= CELO ================= */
   if (upper === "CELO") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -188,19 +185,19 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
         <G transform="translate(2.4 2.4) scale(0.8)">
           <Path
             fill="#35D07F"
-            d="M12 3a9 9 0 0 0-9 9 9 9 0 0 0 9 9 9 9 0 0 0 9-9 9 9 0 0 0-9-9zm0 1.8a7.2 7.2 0 1 1 0 14.4A7.2 7.2 0 0 1 12 4.8z"
+            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
           />
           <Path
             fill="#FBCC5C"
-            d="M12 6.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zm0 1.8a3.7 3.7 0 1 1 0 7.4 3.7 3.7 0 0 1 0-7.4z"
+            d="M12 5c-3.87 0-7 3.13-7 7s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 12c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"
           />
-          <Path fill="#35D07F" d="M12 9.6a2.4 2.4 0 1 0 0 4.8 2.4 2.4 0 0 0 0-4.8z" />
+          <Path fill="#35D07F" d="M12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
         </G>
       </Svg>
     );
   }
 
-  /* ---------------- USDT ---------------- */
+  /* ================= USDT ================= */
   if (upper === "USDT") {
     return (
       <Svg width={s} height={s} viewBox={vb}>
@@ -215,7 +212,37 @@ export function NetworkIcon({ code, size = 40 }: NetworkIconProps) {
     );
   }
 
-  /* ---------------- Fallback ---------------- */
+  /* ================= BITCOIN ================= */
+  if (upper === "BTC" || upper === "BITCOIN") {
+    return (
+      <Svg width={s} height={s} viewBox={vb}>
+        <Circle cx="12" cy="12" r="12" fill="#F7931A" />
+        <G transform="translate(2.4 2.4) scale(0.8)">
+          <Path
+            fill="#FFFFFF"
+            d="M23.189 14.02c-1.592 6.38-8.061 10.265-14.442 8.673C2.365 21.101-1.52 14.632.072 8.252C1.663 1.872 8.132-2.013 14.513-.421c6.381 1.592 10.266 8.06 8.676 14.441zM16.62 10.912c.231-1.543-.943-2.372-2.549-2.925l.521-2.09-1.273-.317-.507 2.035c-.335-.084-.678-.163-1.021-.241l.51-2.048-1.272-.317-.521 2.09c-.276-.063-.548-.125-.812-.19l.002-.006-1.755-.438-.339 1.36s.944.216.924.23c.516.128.609.47.593.74l-.594 2.385c.036.009.082.022.133.042l-.135-.034-.833 3.342c-.063.157-.223.392-.583.303.013.018-.925-.23-.925-.23l-.632 1.457 1.656.413c.308.077.61.158.907.234l-.526 2.114 1.271.317.521-2.091c.348.094.685.181 1.015.263l-.52 2.08 1.272.317.526-2.11c2.169.41 3.799.245 4.486-1.717.553-1.58-.027-2.492-1.17-3.086.832-.192 1.459-.74 1.626-1.869zm-2.9 4.091c-.394 1.58-3.055.727-3.918.512l.697-2.798c.863.216 3.632.643 3.221 2.286zm.394-4.121c-.36 1.438-2.574.708-3.292.529l.632-2.538c.718.179 3.035.514 2.66 2.009z"
+          />
+        </G>
+      </Svg>
+    );
+  }
+
+  /* ================= XRP ================= */
+  if (upper === "XRP" || upper === "RIPPLE") {
+    return (
+      <Svg width={s} height={s} viewBox={vb}>
+        <Circle cx="12" cy="12" r="12" fill="#23292F" />
+        <G transform="translate(2.4 2.4) scale(0.8)">
+          <Path
+            fill="#FFFFFF"
+            d="M22 3h-2.6l-4.5 4.5a4.2 4.2 0 0 1-5.8 0L4.6 3H2l6 6a6.6 6.6 0 0 0 9.9 0l6.1-6zm-6 15.9 4.4-4.4h2.6L16.6 21a6.6 6.6 0 0 1-9.9 0L2 14.5h2.6l4.4 4.4a4.2 4.2 0 0 0 6 0z"
+          />
+        </G>
+      </Svg>
+    );
+  }
+
+  /* ================= Fallback ================= */
   return (
     <Svg width={s} height={s} viewBox={vb}>
       <Circle cx="12" cy="12" r="12" fill="#94A3B8" />
