@@ -11,7 +11,8 @@ export async function createContext(opts: { req: Request }): Promise<TrpcContext
 
   try {
     user = await sdk.authenticateRequest(opts.req);
-  } catch {
+  } catch (error) {
+    console.error("[Auth] authenticateRequest failed:", error);
     user = null;
   }
 
