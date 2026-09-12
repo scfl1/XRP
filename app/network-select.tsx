@@ -7,6 +7,34 @@ import { CWAAX } from "@/constants/cwaax";
 import { NETWORKS } from "@/constants/networks";
 import { getSelectedNetwork, setSelectedNetwork } from "@/lib/_core/network-store";
 
+/* -------------------------------------------------------------- */
+/*  استخراج أول رقم من feeToken (مثل "0.00045 AVAX" → 0.00045)   */
+/* -------------------------------------------------------------- */
+function parseFirstNumber(text: string | undefined | null): number | null {
+  if (!text) return null;
+  const match = text.match(/[\d.]+/);
+  if (!match) return null;
+  const n = Number(match[0]);
+  return isNaN(n) ? null : n;
+}
+
+/* -------------------------------------------------------------- */
+/*  تنسيق الرسوم: يمنع ظهور $0 للقيم الصغيرة جداً                */
+/* -------------------------------------------------------------- */
+function formatFee(item: { feeUsd: number; feeToken: string }): string {
+  let value = item.feeUsd;
+
+  // إذا كان feeUsd صفراً، استخرج القيمة من feeToken
+  if (!value || value <= 0) {
+    const parsed = parseFirstNumber(item.feeToken);
+    if (parsed !== null) value = parsed;
+  }
+
+  if (!value || value <= 0) return "0";
+  if (value < 0.01) return "<0.01";
+  return value.toFixed(2);
+}
+
 export default function NetworkSelectScreen() {
   const router = useRouter();
   const current = getSelectedNetwork();
@@ -69,7 +97,7 @@ export default function NetworkSelectScreen() {
               ) : (
                 <>
                   <Text style={styles.feeUsd}>
-                    ${formatFee(item.feeUsd)}
+                    ${formatFee(item)}
                   </Text>
                   <Text style={styles.feeToken}>{item.feeToken}</Text>
                 </>
@@ -80,15 +108,6 @@ export default function NetworkSelectScreen() {
       />
     </ScreenContainer>
   );
-}
-
-/* -------------------------------------------------------------- */
-/*  تنسيق الرسوم بشكل صحيح (يعرض <0.01 بدل 0.00)                  */
-/* -------------------------------------------------------------- */
-function formatFee(value: number): string {
-  if (!value || value <= 0) return "0";
-  if (value < 0.01) return "<0.01";
-  return value.toFixed(2);
 }
 
 const styles = StyleSheet.create({
