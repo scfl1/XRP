@@ -7,34 +7,6 @@ import { CWAAX } from "@/constants/cwaax";
 import { NETWORKS } from "@/constants/networks";
 import { getSelectedNetwork, setSelectedNetwork } from "@/lib/_core/network-store";
 
-/* -------------------------------------------------------------- */
-/*  استخراج أول رقم من feeToken (مثل "0.00045 AVAX" → 0.00045)   */
-/* -------------------------------------------------------------- */
-function parseFirstNumber(text: string | undefined | null): number | null {
-  if (!text) return null;
-  const match = text.match(/[\d.]+/);
-  if (!match) return null;
-  const n = Number(match[0]);
-  return isNaN(n) ? null : n;
-}
-
-/* -------------------------------------------------------------- */
-/*  تنسيق الرسوم: يمنع ظهور $0 للقيم الصغيرة جداً                */
-/* -------------------------------------------------------------- */
-function formatFee(item: { feeUsd: number; feeToken: string }): string {
-  let value = item.feeUsd;
-
-  // إذا كان feeUsd صفراً، استخرج القيمة من feeToken
-  if (!value || value <= 0) {
-    const parsed = parseFirstNumber(item.feeToken);
-    if (parsed !== null) value = parsed;
-  }
-
-  if (!value || value <= 0) return "0";
-  if (value < 0.01) return "<0.01";
-  return value.toFixed(2);
-}
-
 export default function NetworkSelectScreen() {
   const router = useRouter();
   const current = getSelectedNetwork();
@@ -71,13 +43,8 @@ export default function NetworkSelectScreen() {
         keyExtractor={(n) => n.code}
         contentContainerStyle={{ paddingBottom: 30 }}
         renderItem={({ item }) => (
-          <Pressable
-            onPress={() => choose(item.code)}
-            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-          >
-            <View style={styles.icon}>
-              <NetworkIcon code={item.code} size={40} />
-            </View>
+          <Pressable onPress={() => choose(item.code)} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+            <NetworkIcon network={item} size={40} />
 
             <View style={styles.copy}>
               <View style={styles.nameRow}>
@@ -92,16 +59,8 @@ export default function NetworkSelectScreen() {
             </View>
 
             <View style={styles.feeCol}>
-              {item.internal ? (
-                <Text style={styles.feeUsd}>مجاني</Text>
-              ) : (
-                <>
-                  <Text style={styles.feeUsd}>
-                    ${formatFee(item)}
-                  </Text>
-                  <Text style={styles.feeToken}>{item.feeToken}</Text>
-                </>
-              )}
+              <Text style={styles.feeUsd}>{item.internal ? "مجاني" : `$${item.feeUsd.toFixed(2)}`}</Text>
+              {!item.internal && <Text style={styles.feeToken}>{item.feeToken}</Text>}
             </View>
           </Pressable>
         )}
@@ -111,67 +70,19 @@ export default function NetworkSelectScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 12,
-    marginBottom: 20,
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12, marginBottom: 20 },
   title: { color: CWAAX.ink, fontSize: 17, fontWeight: "900" },
-  warning: {
-    flexDirection: "row-reverse",
-    gap: 8,
-    backgroundColor: CWAAX.surface,
-    borderRadius: 12,
-    padding: 13,
-    marginBottom: 22,
-  },
-  warningText: {
-    flex: 1,
-    color: CWAAX.muted,
-    fontSize: 11,
-    lineHeight: 18,
-    textAlign: "right",
-  },
-  colHeader: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
+  warning: { flexDirection: "row-reverse", gap: 8, backgroundColor: CWAAX.surface, borderRadius: 12, padding: 13, marginBottom: 22 },
+  warningText: { flex: 1, color: CWAAX.muted, fontSize: 11, lineHeight: 18, textAlign: "right" },
+  colHeader: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 10 },
   colHeaderText: { color: CWAAX.muted, fontSize: 10 },
-  row: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: CWAAX.line,
-  },
-  icon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
+  row: { flexDirection: "row-reverse", alignItems: "center", gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
   copy: { flex: 1 },
   nameRow: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   name: { color: CWAAX.ink, fontSize: 14, fontWeight: "900" },
-  selectedTag: {
-    backgroundColor: "#E4F7E9",
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
+  selectedTag: { backgroundColor: "#E4F7E9", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   selectedTagText: { color: CWAAX.green, fontSize: 9, fontWeight: "800" },
-  chain: {
-    color: CWAAX.muted,
-    fontSize: 12,
-    marginTop: 4,
-    textAlign: "right",
-  },
+  chain: { color: CWAAX.muted, fontSize: 12, marginTop: 4, textAlign: "right" },
   feeCol: { alignItems: "flex-start" },
   feeUsd: { color: CWAAX.ink, fontSize: 13, fontWeight: "800" },
   feeToken: { color: CWAAX.muted, fontSize: 10, marginTop: 4 },
