@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { CoinMark } from "@/components/cwaax-ui";
+import { UsdtIcon } from "@/components/usdt-icon";
 import { NetworkIcon } from "@/components/network-icon";
 import { CWAAX } from "@/constants/cwaax";
 import { getNetwork } from "@/constants/networks";
@@ -144,7 +144,7 @@ export default function SendScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.currencyRow}>
-          <CoinMark mark="₮" color="#26A17B" size={22} />
+          <UsdtIcon size={22} />
           <Text style={styles.currencyText}>USDT</Text>
           <Text style={styles.sendLabel}>إرسال</Text>
         </View>
@@ -186,7 +186,7 @@ export default function SendScreen() {
 
         <View style={styles.balanceRow}>
           <View style={styles.balancePill}>
-            <CoinMark mark="₮" color="#26A17B" size={16} />
+            <UsdtIcon size={16} />
             <Text style={styles.balanceText}>{usdt.toFixed(2)} USDT</Text>
           </View>
           <Text style={styles.balanceLabel}>رصيد المحفظة</Text>
