@@ -10,6 +10,7 @@ import type { CurrencyCode } from "@/lib/_core/preferences";
 import * as Preferences from "@/lib/_core/preferences";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
+import { useLiveMarkets } from "@/hooks/use-live-markets";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 
@@ -18,7 +19,7 @@ export default function HomeScreen() {
   const [hidden, setHidden] = useState(false);
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user });
-  const markets = trpc.market.top.useQuery(undefined, { refetchInterval: 45000 });
+  const markets = useLiveMarkets();
   const usdt = Number(balances.data?.find((b:any) => b.currency === "USDT")?.amount ?? 0);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
@@ -59,10 +60,10 @@ export default function HomeScreen() {
 
         <SectionTitle title="الأسواق" action="كل الأسواق" onAction={() => router.push("/trade")} />
         <Card style={styles.marketCard}>
-          {markets.isLoading ? (
+          {markets.loading ? (
             <Text style={styles.marketLoading}>جاري تحميل الأسعار...</Text>
           ) : markets.error ? (
-            <Text style={styles.marketLoading}>{markets.error.message}</Text>
+            <Text style={styles.marketLoading}>{markets.error}</Text>
           ) : !markets.data || markets.data.length === 0 ? (
             <Text style={styles.marketLoading}>تعذر تحميل الأسعار حالياً، حاول لاحقاً.</Text>
           ) : (
