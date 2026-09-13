@@ -61,6 +61,8 @@ export default function HomeScreen() {
         <Card style={styles.marketCard}>
           {markets.isLoading ? (
             <Text style={styles.marketLoading}>جاري تحميل الأسعار...</Text>
+          ) : markets.error ? (
+            <Text style={styles.marketLoading}>{markets.error.message}</Text>
           ) : !markets.data || markets.data.length === 0 ? (
             <Text style={styles.marketLoading}>تعذر تحميل الأسعار حالياً، حاول لاحقاً.</Text>
           ) : (
