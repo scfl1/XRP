@@ -18,6 +18,8 @@ import {
   InsertUser,
   auditLogs,
   depositRequests,
+  notificationReads,
+  notifications,
   referralRewards,
   transactions,
   users,
@@ -441,39 +443,363 @@ export async function listUsers(
   }
 
   const term = search?.trim();
+  const pattern = term ? `%${term}%` : null;
 
-  if (!term) {
-    return db
-      .select()
-      .from(users)
-      .orderBy(
-        desc(users.createdAt),
-      );
+  const rows = await (pattern
+    ? db
+        .select()
+        .from(users)
+        .where(
+          or(
+            like(users.name, pattern),
+            like(users.username, pattern),
+            like(users.email, pattern),
+            like(users.openId, pattern),
+          ),
+        )
+        .orderBy(desc(users.createdAt))
+    : db.select().from(users).orderBy(desc(users.createdAt)));
+
+  if (!rows.length) {
+    return [];
   }
 
-  const pattern =
-    `%${term}%`;
+  const ids = rows.map((u) => u.id);
 
-  return db
-    .select()
+  // Direct (level-1) referral count per user, in a single grouped query
+  // instead of one query per row.
+  const referralCounts = await db
+    .select({
+      referredById: users.referredById,
+      count: sql<string>`count(*)`,
+    })
     .from(users)
+    .where(inArray(users.referredById, ids))
+    .groupBy(users.referredById);
+
+  const referralCountMap = new Map<number, number>();
+  for (const row of referralCounts) {
+    if (row.referredById != null) {
+      referralCountMap.set(row.referredById, Number(row.count));
+    }
+  }
+
+  // Total referral earnings (all 3 levels combined) per user.
+  const earnings = await db
+    .select({
+      referrerId: referralRewards.referrerId,
+      total: sql<string>`coalesce(sum(${referralRewards.commission}), 0)`,
+    })
+    .from(referralRewards)
+    .where(inArray(referralRewards.referrerId, ids))
+    .groupBy(referralRewards.referrerId);
+
+  const earningsMap = new Map<number, number>();
+  for (const row of earnings) {
+    earningsMap.set(row.referrerId, Number(row.total));
+  }
+
+  // Wallet balances per user (small table, fine to fetch in bulk).
+  const balances = await db
+    .select()
+    .from(walletBalances)
+    .where(inArray(walletBalances.userId, ids));
+
+  const balanceMap = new Map<number, { currency: string; amount: string }[]>();
+  for (const b of balances) {
+    const list = balanceMap.get(b.userId) ?? [];
+    list.push({ currency: b.currency, amount: b.amount });
+    balanceMap.set(b.userId, list);
+  }
+
+  return rows.map((u) => ({
+    ...u,
+    directReferrals: referralCountMap.get(u.id) ?? 0,
+    totalReferralEarnings: earningsMap.get(u.id) ?? 0,
+    balances: balanceMap.get(u.id) ?? [],
+  }));
+}
+
+/* =========================
+   ADMIN: USER DETAIL
+========================= */
+
+export async function getAdminUserDetail(userId: number) {
+  const db = await getDb();
+
+  if (!db) {
+    return null;
+  }
+
+  const user = (
+    await db.select().from(users).where(eq(users.id, userId)).limit(1)
+  )[0];
+
+  if (!user) {
+    return null;
+  }
+
+  const [referral, balances, recentTransactions] = await Promise.all([
+    getReferralStats(userId),
+    db
+      .select()
+      .from(walletBalances)
+      .where(eq(walletBalances.userId, userId)),
+    db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.userId, userId))
+      .orderBy(desc(transactions.createdAt))
+      .limit(20),
+  ]);
+
+  return { user, referral, balances, recentTransactions };
+}
+
+/* =========================
+   ADMIN: BAN / UNBAN
+========================= */
+
+export async function banUser(userId: number, reason?: string) {
+  const db = await getDb();
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(users)
+    .set({
+      isBanned: true,
+      bannedReason: reason ?? null,
+      bannedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+export async function unbanUser(userId: number) {
+  const db = await getDb();
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  await db
+    .update(users)
+    .set({
+      isBanned: false,
+      bannedReason: null,
+      bannedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
+}
+
+/* =========================
+   ADMIN: BALANCE ADJUSTMENT
+========================= */
+
+export async function adminAdjustBalance(params: {
+  userId: number;
+  currency: string;
+  amount: number;
+  direction: "credit" | "debit";
+  adminId: number;
+  note?: string;
+}) {
+  const db = await getDb();
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const currency = params.currency.toUpperCase();
+
+  return db.transaction(async (tx) => {
+    const balance = (
+      await tx
+        .select()
+        .from(walletBalances)
+        .where(
+          and(
+            eq(walletBalances.userId, params.userId),
+            eq(walletBalances.currency, currency),
+          ),
+        )
+        .limit(1)
+    )[0];
+
+    if (params.direction === "debit") {
+      const current = Number(balance?.amount ?? 0);
+      if (!balance || current < params.amount) {
+        throw new Error("رصيد المستخدم غير كافٍ لإتمام هذا السحب");
+      }
+    }
+
+    const signedAmount =
+      params.direction === "credit" ? params.amount : -params.amount;
+
+    if (balance) {
+      await tx
+        .update(walletBalances)
+        .set({
+          amount: sql`${walletBalances.amount} + ${signedAmount}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(walletBalances.id, balance.id));
+    } else {
+      await tx.insert(walletBalances).values({
+        userId: params.userId,
+        currency,
+        amount: params.amount.toFixed(8),
+      });
+    }
+
+    await tx.insert(transactions).values({
+      transactionId: `ADJ-${params.userId}-${Date.now()}`,
+      userId: params.userId,
+      type: params.direction === "credit" ? "deposit" : "withdrawal",
+      amount: params.amount.toFixed(8),
+      currency,
+      status: "completed",
+      adminId: params.adminId,
+    });
+
+    await tx.insert(auditLogs).values({
+      adminId: params.adminId,
+      action:
+        params.direction === "credit"
+          ? "admin_credit_balance"
+          : "admin_debit_balance",
+      entity: "user",
+      entityId: params.userId,
+      metadata: JSON.stringify({
+        currency,
+        amount: params.amount,
+        note: params.note ?? null,
+      }),
+    });
+
+    return { success: true };
+  });
+}
+
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+export async function sendNotification(params: {
+  userId: number | null;
+  title: string;
+  message: string;
+  sentBy: number;
+}) {
+  const db = await getDb();
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  const result = await db
+    .insert(notifications)
+    .values({
+      userId: params.userId,
+      title: params.title,
+      message: params.message,
+      sentBy: params.sentBy,
+    })
+    .returning({ id: notifications.id });
+
+  await db.insert(auditLogs).values({
+    adminId: params.sentBy,
+    action: params.userId ? "send_notification" : "broadcast_notification",
+    entity: "notification",
+    entityId: result[0]?.id ?? 0,
+    metadata: JSON.stringify({
+      userId: params.userId,
+      title: params.title,
+    }),
+  });
+
+  return result[0]?.id ?? 0;
+}
+
+export async function listNotificationsForUser(userId: number) {
+  const db = await getDb();
+
+  if (!db) {
+    return [];
+  }
+
+  const rows = await db
+    .select()
+    .from(notifications)
     .where(
       or(
-        like(users.name, pattern),
-        like(
-          users.username,
-          pattern,
-        ),
-        like(users.email, pattern),
-        like(
-          users.openId,
-          pattern,
-        ),
+        eq(notifications.userId, userId),
+        sql`${notifications.userId} is null`,
       ),
     )
-    .orderBy(
-      desc(users.createdAt),
+    .orderBy(desc(notifications.createdAt))
+    .limit(50);
+
+  if (!rows.length) {
+    return [];
+  }
+
+  const reads = await db
+    .select()
+    .from(notificationReads)
+    .where(
+      and(
+        eq(notificationReads.userId, userId),
+        inArray(
+          notificationReads.notificationId,
+          rows.map((r) => r.id),
+        ),
+      ),
     );
+
+  const readSet = new Set(reads.map((r) => r.notificationId));
+
+  return rows.map((n) => ({
+    ...n,
+    read: readSet.has(n.id),
+  }));
+}
+
+export async function markNotificationRead(
+  notificationId: number,
+  userId: number,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return;
+  }
+
+  const existing = (
+    await db
+      .select()
+      .from(notificationReads)
+      .where(
+        and(
+          eq(notificationReads.notificationId, notificationId),
+          eq(notificationReads.userId, userId),
+        ),
+      )
+      .limit(1)
+  )[0];
+
+  if (existing) {
+    return;
+  }
+
+  await db.insert(notificationReads).values({
+    notificationId,
+    userId,
+  });
 }
 
 /* =========================
@@ -488,6 +814,8 @@ export async function getAdminStats() {
       users: 0,
       pendingDeposits: 0,
       pendingWithdrawals: 0,
+      bannedUsers: 0,
+      totalReferralPayout: 0,
     };
   }
 
@@ -524,6 +852,17 @@ export async function getAdminStats() {
         ),
       );
 
+  const bannedRows = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(eq(users.isBanned, true));
+
+  const referralPayoutRows = await db
+    .select({
+      total: sql<string>`coalesce(sum(${referralRewards.commission}), 0)`,
+    })
+    .from(referralRewards);
+
   return {
     users: Number(
       userRows[0]?.count ?? 0,
@@ -536,6 +875,10 @@ export async function getAdminStats() {
     pendingWithdrawals: Number(
       withdrawals[0]?.count ?? 0,
     ),
+
+    bannedUsers: Number(bannedRows[0]?.count ?? 0),
+
+    totalReferralPayout: Number(referralPayoutRows[0]?.total ?? 0),
   };
 }
 
