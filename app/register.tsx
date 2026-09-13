@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,17 +10,26 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { trpc } from "@/lib/trpc";
 import * as Auth from "@/lib/_core/auth";
 
 export default function RegisterScreen() {
+  const params = useLocalSearchParams<{ ref?: string }>();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
+
+  // Pre-fill the referral code when someone opens a shared referral link
+  // like /register?ref=CWAAX-AHMED928, so they don't have to type it in.
+  useEffect(() => {
+    if (params.ref && !referralCode) {
+      setReferralCode(String(params.ref));
+    }
+  }, [params.ref]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -93,6 +102,7 @@ export default function RegisterScreen() {
       username: username.trim(),
       email: email.trim(),
       password,
+      referralCode: referralCode.trim() || undefined,
     });
   };
 
