@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
@@ -7,7 +6,6 @@ import { hashPassword, verifyPassword } from "./auth-local";
 import { sdk } from "./_core/sdk";
 import { ONE_YEAR_MS } from "../shared/const.js";
 import { ENV } from "./_core/env";
-import { getTopMarkets } from "./market";
 
 const requestInput = z.object({ currency: z.string().min(2).max(16), amount: z.number().positive().finite(), network: z.string().max(32).optional() });
 
@@ -51,18 +49,6 @@ export const appRouter = router({
       if (!user || !user.passwordHash || !verifyPassword(input.currentPassword, user.passwordHash)) throw new Error("كلمة المرور الحالية غير صحيحة");
       await db.updateUserPassword(user.id, hashPassword(input.newPassword));
       return { success: true } as const;
-    }),
-  }),
-  market: router({
-    top: publicProcedure.query(async () => {
-      try {
-        return await getTopMarkets();
-      } catch (error) {
-        // Temporary: use a non-"INTERNAL_SERVER_ERROR" code so the
-        // errorFormatter doesn't replace this diagnostic message with
-        // the generic one.
-        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : String(error) });
-      }
     }),
   }),
   wallet: router({
