@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
@@ -53,7 +54,16 @@ export const appRouter = router({
     }),
   }),
   market: router({
-    top: publicProcedure.query(() => getTopMarkets()),
+    top: publicProcedure.query(async () => {
+      try {
+        return await getTopMarkets();
+      } catch (error) {
+        // Temporary: use a non-"INTERNAL_SERVER_ERROR" code so the
+        // errorFormatter doesn't replace this diagnostic message with
+        // the generic one.
+        throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : String(error) });
+      }
+    }),
   }),
   wallet: router({
     balances: protectedProcedure.query(({ ctx }) => db.getWalletBalances(ctx.user.id)),
