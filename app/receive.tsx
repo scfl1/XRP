@@ -42,6 +42,46 @@ export default function ReceiveScreen() {
     }
   };
 
+  const handleShare = async () => {
+    if (!address) return;
+
+    const shareText = `عنواني لاستقبال USDT على شبكة ${network.name}:\n${address}`;
+
+    if (typeof navigator === "undefined" || !("share" in navigator)) {
+      // Native share isn't available on this browser (e.g. desktop
+      // Safari) — fall back to copying the address instead.
+      copyAddress();
+      return;
+    }
+
+    try {
+      const shareData: ShareData & { files?: File[] } = {
+        title: "عنوان استقبال CwaAX",
+        text: shareText,
+      };
+
+      if (qrUri) {
+        try {
+          const blob = await (await fetch(qrUri)).blob();
+          const file = new File([blob], "cwaax-address-qr.png", { type: "image/png" });
+          if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+            shareData.files = [file];
+          }
+        } catch {
+          // sharing without the image file is still fine
+        }
+      }
+
+      await navigator.share(shareData);
+    } catch (error) {
+      // AbortError just means the person closed the share sheet — not
+      // an actual failure, so stay silent.
+      if (error instanceof Error && error.name !== "AbortError") {
+        copyAddress();
+      }
+    }
+  };
+
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -96,7 +136,7 @@ export default function ReceiveScreen() {
 
             <View style={styles.qrCard}>
               <View style={styles.qrBrandRow}>
-                <Pressable onPress={copyAddress} hitSlop={8}>
+                <Pressable onPress={handleShare} hitSlop={8}>
                   <MaterialIcons name="ios-share" size={20} color={CWAAX.ink} />
                 </Pressable>
                 <View style={{ alignItems: "flex-end" }}>
