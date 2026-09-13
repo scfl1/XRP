@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import QRCode from "qrcode";
@@ -12,17 +12,43 @@ import { getNetwork } from "@/constants/networks";
 import { DEPOSIT_ADDRESSES } from "@/constants/receive-addresses";
 import { notify } from "@/lib/_core/native-alert";
 import { getSelectedNetwork, subscribeNetwork } from "@/lib/_core/network-store";
+import { trpc } from "@/lib/trpc";
 
 export default function ReceiveScreen() {
   const router = useRouter();
   const [networkCode, setNetworkCode] = useState(getSelectedNetwork());
   const [mode, setMode] = useState<"offchain" | "onchain">("onchain");
   const [qrUri, setQrUri] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [sentAmount, setSentAmount] = useState("");
 
   useEffect(() => subscribeNetwork(setNetworkCode), []);
 
   const network = getNetwork(networkCode === "internal" ? "TRC20" : networkCode);
   const address = DEPOSIT_ADDRESSES[network.code];
+
+  const createDeposit = trpc.wallet.createDeposit.useMutation({
+    onSuccess: () => {
+      notify("تم إرسال الإشعار", "تم إبلاغ فريقنا بعملية الإيداع، سيراجعها الأدمن ويعتمدها قريباً.");
+      setShowConfirm(false);
+      setSentAmount("");
+    },
+    onError: (err) => notify("تعذر الإرسال", err.message || "حاول مرة أخرى."),
+  });
+
+  const handleConfirmSent = () => {
+    const amount = Number(sentAmount);
+    if (!amount || amount <= 0) {
+      notify("تحقق من المبلغ", "أدخل المبلغ الذي أرسلته بالضبط.");
+      return;
+    }
+    createDeposit.mutate({
+      currency: "USDT",
+      amount,
+      network: network.code,
+      paymentMethod: "on-chain-transfer",
+    });
+  };
 
   useEffect(() => {
     setQrUri(null);
@@ -175,12 +201,54 @@ export default function ReceiveScreen() {
             </View>
 
             {address && (
-              <View style={styles.noteRow}>
-                <MaterialIcons name="info-outline" size={16} color={CWAAX.muted} />
-                <Text style={styles.note}>
-                  فقط رمز USDT على شبكة {network.name} المُرسل إلى هذا العنوان سيصل إلى محفظتك. إرسال أي عملة أو شبكة أخرى قد يؤدي لفقدانها.
-                </Text>
-              </View>
+              <>
+                <View style={styles.noteRow}>
+                  <MaterialIcons name="info-outline" size={16} color={CWAAX.muted} />
+                  <Text style={styles.note}>
+                    فقط رمز USDT على شبكة {network.name} المُرسل إلى هذا العنوان سيصل إلى محفظتك. إرسال أي عملة أو شبكة أخرى قد يؤدي لفقدانها.
+                  </Text>
+                </View>
+
+                {!showConfirm ? (
+                  <Pressable
+                    onPress={() => setShowConfirm(true)}
+                    style={({ pressed }) => [styles.sentBtn, pressed && styles.pressed]}
+                  >
+                    <MaterialIcons name="check-circle-outline" size={17} color={CWAAX.white} />
+                    <Text style={styles.sentBtnText}>لقد أرسلت المبلغ بالفعل</Text>
+                  </Pressable>
+                ) : (
+                  <View style={styles.confirmBox}>
+                    <Text style={styles.confirmLabel}>كم المبلغ الذي أرسلته؟ (USDT)</Text>
+                    <TextInput
+                      value={sentAmount}
+                      onChangeText={setSentAmount}
+                      placeholder="مثال: 50"
+                      placeholderTextColor="#9CA8A1"
+                      keyboardType="decimal-pad"
+                      style={styles.confirmInput}
+                      textAlign="center"
+                    />
+                    <Text style={styles.confirmHint}>
+                      سيصل إشعار للأدمن ببريدك الإلكتروني والمبلغ ليتحقق من العملية ويعتمدها.
+                    </Text>
+                    <View style={styles.confirmActions}>
+                      <Pressable onPress={() => setShowConfirm(false)} style={styles.confirmCancel}>
+                        <Text style={styles.confirmCancelText}>إلغاء</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={handleConfirmSent}
+                        disabled={createDeposit.isPending}
+                        style={({ pressed }) => [styles.confirmSubmit, (pressed || createDeposit.isPending) && styles.pressed]}
+                      >
+                        <Text style={styles.confirmSubmitText}>
+                          {createDeposit.isPending ? "جاري الإرسال..." : "تأكيد الإرسال"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
+              </>
             )}
           </>
         )}
@@ -224,4 +292,15 @@ const styles = StyleSheet.create({
   noteRow: { flexDirection: "row-reverse", gap: 8, marginTop: 18, paddingHorizontal: 4 },
   note: { flex: 1, color: CWAAX.muted, fontSize: 10.5, lineHeight: 17, textAlign: "right" },
   pressed: { opacity: 0.6 },
+  sentBtn: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: CWAAX.green, borderRadius: 14, height: 50, marginTop: 20 },
+  sentBtnText: { color: CWAAX.white, fontSize: 13, fontWeight: "800" },
+  confirmBox: { backgroundColor: CWAAX.surface, borderRadius: 16, padding: 16, marginTop: 20 },
+  confirmLabel: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "center", marginBottom: 10 },
+  confirmInput: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: CWAAX.line, height: 46, fontSize: 15, fontWeight: "800", color: CWAAX.ink },
+  confirmHint: { color: CWAAX.muted, fontSize: 10, textAlign: "center", marginTop: 10, lineHeight: 16 },
+  confirmActions: { flexDirection: "row", gap: 8, marginTop: 14 },
+  confirmCancel: { flex: 1, height: 44, borderRadius: 12, borderWidth: 1, borderColor: CWAAX.line, alignItems: "center", justifyContent: "center" },
+  confirmCancelText: { color: CWAAX.ink, fontSize: 12, fontWeight: "800" },
+  confirmSubmit: { flex: 2, height: 44, borderRadius: 12, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center" },
+  confirmSubmitText: { color: CWAAX.white, fontSize: 12, fontWeight: "800" },
 });
