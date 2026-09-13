@@ -10,43 +10,120 @@ export type MarketCoin = {
 let _cache: { data: MarketCoin[]; ts: number } | null = null;
 const TTL_MS = 60_000;
 
+const TOP_SYMBOLS = [
+  "BTC", "ETH", "BNB", "XRP", "SOL", "DOGE", "ADA", "TRX", "TON", "AVAX",
+  "DOT", "LINK", "MATIC", "LTC", "SHIB", "BCH", "NEAR", "UNI", "ICP", "ETC",
+];
+
+const COIN_NAMES: Record<string, string> = {
+  BTC: "Bitcoin", ETH: "Ethereum", BNB: "BNB", XRP: "XRP", SOL: "Solana",
+  DOGE: "Dogecoin", ADA: "Cardano", TRX: "TRON", TON: "Toncoin", AVAX: "Avalanche",
+  DOT: "Polkadot", LINK: "Chainlink", MATIC: "Polygon", LTC: "Litecoin", SHIB: "Shiba Inu",
+  BCH: "Bitcoin Cash", NEAR: "NEAR Protocol", UNI: "Uniswap", ICP: "Internet Computer", ETC: "Ethereum Classic",
+};
+
+const COINCAP_IDS: Record<string, string> = {
+  BTC: "bitcoin", ETH: "ethereum", BNB: "binance-coin", XRP: "xrp", SOL: "solana",
+  DOGE: "dogecoin", ADA: "cardano", TRX: "tron", TON: "the-open-network", AVAX: "avalanche",
+  DOT: "polkadot", LINK: "chainlink", MATIC: "polygon", LTC: "litecoin", SHIB: "shiba-inu",
+  BCH: "bitcoin-cash", NEAR: "near-protocol", UNI: "uniswap", ICP: "internet-computer", ETC: "ethereum-classic",
+};
+
+function icon(sym: string): string {
+  return `https://assets.coincap.io/assets/icons/${sym.toLowerCase()}@2x.png`;
+}
+
 /*
- * Real, live top-20 cryptocurrency prices from CoinGecko's public API
- * (no API key required for this endpoint). Cached in-memory for 60s
- * per Worker isolate to stay well within CoinGecko's free-tier rate
- * limits even under load. If the fetch fails (rate limit, network
- * blip), we serve the last good cache instead of breaking the page.
+ * Two independent upstream sources are tried in order, each with its
+ * own short timeout, so a single blocked/geo-restricted provider
+ * (Binance blocks some regions; CoinGecko has been seen to throttle
+ * Cloudflare's own IP ranges) can't take the whole feature down or
+ * stall the Worker isolate.
  */
+
+async function fromBinance(): Promise<MarketCoin[]> {
+  const symbolsParam = encodeURIComponent(JSON.stringify(TOP_SYMBOLS.map((s) => `${s}USDT`)));
+
+  const res = await fetch(
+    `https://api.binance.com/api/v3/ticker/24hr?symbols=${symbolsParam}`,
+    { headers: { accept: "application/json" }, signal: AbortSignal.timeout(4000) },
+  );
+
+  if (!res.ok) throw new Error(`Binance responded ${res.status}`);
+
+  const rows = (await res.json()) as any[];
+  const bySymbol = new Map(rows.map((r) => [r.symbol, r]));
+
+  return TOP_SYMBOLS
+    .map((sym) => {
+      const row = bySymbol.get(`${sym}USDT`);
+      if (!row) return null;
+      return {
+        id: sym.toLowerCase(),
+        symbol: sym,
+        name: COIN_NAMES[sym] || sym,
+        image: icon(sym),
+        price: Number(row.lastPrice) || 0,
+        change24h: Number(row.priceChangePercent) || 0,
+      };
+    })
+    .filter((c): c is MarketCoin => c !== null && c.price > 0);
+}
+
+async function fromCoinCap(): Promise<MarketCoin[]> {
+  const ids = TOP_SYMBOLS.map((s) => COINCAP_IDS[s]).join(",");
+
+  const res = await fetch(
+    `https://api.coincap.io/v2/assets?ids=${ids}`,
+    { headers: { accept: "application/json" }, signal: AbortSignal.timeout(4000) },
+  );
+
+  if (!res.ok) throw new Error(`CoinCap responded ${res.status}`);
+
+  const json = (await res.json()) as { data: any[] };
+  const byId = new Map(json.data.map((r) => [r.id, r]));
+
+  return TOP_SYMBOLS
+    .map((sym) => {
+      const row = byId.get(COINCAP_IDS[sym]);
+      if (!row) return null;
+      return {
+        id: sym.toLowerCase(),
+        symbol: sym,
+        name: COIN_NAMES[sym] || sym,
+        image: icon(sym),
+        price: Number(row.priceUsd) || 0,
+        change24h: Number(row.changePercent24Hr) || 0,
+      };
+    })
+    .filter((c): c is MarketCoin => c !== null && c.price > 0);
+}
+
 export async function getTopMarkets(): Promise<MarketCoin[]> {
   if (_cache && Date.now() - _cache.ts < TTL_MS) {
     return _cache.data;
   }
 
-  try {
-    const res = await fetch(
-      "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false&price_change_percentage=24h",
-      { headers: { accept: "application/json" } },
-    );
+  const failures: string[] = [];
 
-    if (!res.ok) {
-      throw new Error(`CoinGecko responded ${res.status}`);
+  for (const source of [fromBinance, fromCoinCap]) {
+    try {
+      const data = await source();
+      if (data.length > 0) {
+        _cache = { data, ts: Date.now() };
+        return data;
+      }
+      failures.push(`${source.name}: empty result`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[Market] ${source.name} failed:`, error);
+      failures.push(`${source.name}: ${message}`);
     }
-
-    const rows = (await res.json()) as any[];
-
-    const data: MarketCoin[] = rows.map((c) => ({
-      id: c.id,
-      symbol: String(c.symbol || "").toUpperCase(),
-      name: c.name,
-      image: c.image,
-      price: Number(c.current_price) || 0,
-      change24h: Number(c.price_change_percentage_24h) || 0,
-    }));
-
-    _cache = { data, ts: Date.now() };
-    return data;
-  } catch (error) {
-    console.error("[Market] Failed to fetch live prices:", error);
-    return _cache?.data ?? [];
   }
+
+  if (_cache) return _cache.data;
+
+  // TEMPORARY diagnostic: surface exactly why every provider failed
+  // instead of silently returning an empty list. Remove once confirmed.
+  throw new Error(`[تشخيص مؤقت] فشل كل مصادر الأسعار: ${failures.join(" | ")}`);
 }
