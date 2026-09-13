@@ -283,6 +283,13 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
+    if (user.isBanned) {
+      // A confirmed, deliberate admin action — safe to treat as a real
+      // "no session" outcome (forces logout on the client) rather than
+      // an infra hiccup.
+      throw ForbiddenError("Account is banned");
+    }
+
     // Updating "last signed in" is a non-critical side effect. Two
     // protections here:
     // 1. Throttled to once per 5 minutes per user (instead of on every
