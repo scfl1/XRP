@@ -618,31 +618,46 @@ export async function createWithdrawalRequest(
 
   return db.transaction(
     async (tx) => {
-      const balance =
-        (
-          await tx
-            .select()
-            .from(walletBalances)
-            .where(
-              and(
-                eq(
-                  walletBalances.userId,
-                  data.userId,
-                ),
-                eq(
-                  walletBalances.currency,
-                  data.currency,
-                ),
+      // Hold the funds immediately: atomically debit the balance only if
+      // enough is available. Using a conditional UPDATE (amount >= data.amount)
+      // instead of a separate SELECT-then-UPDATE prevents a race where two
+      // simultaneous withdrawal requests could both pass a balance check
+      // before either debit lands.
+      const debited =
+        await tx
+          .update(
+            walletBalances,
+          )
+          .set({
+            amount: sql`
+              ${walletBalances.amount}
+              - ${data.amount}
+            `,
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            and(
+              eq(
+                walletBalances.userId,
+                data.userId,
               ),
-            )
-            .limit(1)
-        )[0];
+              eq(
+                walletBalances.currency,
+                data.currency,
+              ),
+              gte(
+                walletBalances.amount,
+                data.amount,
+              ),
+            ),
+          )
+          .returning({
+            id:
+              walletBalances.id,
+          });
 
-      if (
-        !balance ||
-        Number(balance.amount) <
-          data.amount
-      ) {
+      if (!debited.length) {
         throw new Error(
           "Insufficient balance",
         );
@@ -671,9 +686,35 @@ export async function createWithdrawalRequest(
               withdrawalRequests.id,
           });
 
-      return (
-        result[0]?.id ?? 0
-      );
+      const requestId =
+        result[0]?.id ?? 0;
+
+      // Record the withdrawal in the transactions ledger right away, as
+      // "pending" — this is what makes it show up immediately in the
+      // user's transaction history while it awaits admin review. The
+      // transactionId embeds the request id (no timestamp suffix here) so
+      // approveWithdrawal/rejectWithdrawal can find and update this exact
+      // row later instead of inserting a duplicate one.
+      await tx
+        .insert(transactions)
+        .values({
+          transactionId:
+            `WTH-${requestId}`,
+          userId:
+            data.userId,
+          type:
+            "withdrawal",
+          amount:
+            data.amount.toFixed(
+              8,
+            ),
+          currency:
+            data.currency,
+          status:
+            "pending",
+        });
+
+      return requestId;
     },
   );
 }
@@ -1100,63 +1141,26 @@ export async function approveWithdrawal(
         };
       }
 
-      const debited =
-        await tx
-          .update(
-            walletBalances,
-          )
-          .set({
-            amount: sql`
-              ${walletBalances.amount}
-              - ${request.amount}
-            `,
-            updatedAt:
-              new Date(),
-          })
-          .where(
-            and(
-              eq(
-                walletBalances.userId,
-                request.userId,
-              ),
-              eq(
-                walletBalances.currency,
-                request.currency,
-              ),
-              gte(
-                walletBalances.amount,
-                request.amount,
-              ),
-            ),
-          )
-          .returning({
-            id:
-              walletBalances.id,
-          });
-
-      if (!debited.length) {
-        throw new Error(
-          "Insufficient balance",
-        );
-      }
+      // Balance was already debited when the user submitted the request
+      // (funds are held pending review), so approval does NOT touch
+      // walletBalances again — it only finalizes the request and flips the
+      // pending transaction row (created at request time) to completed.
 
       await tx
-        .insert(transactions)
-        .values({
-          transactionId:
-            `WTH-${request.id}-${Date.now()}`,
-          userId:
-            request.userId,
-          type:
-            "withdrawal",
-          amount:
-            request.amount,
-          currency:
-            request.currency,
+        .update(transactions)
+        .set({
           status:
             "completed",
           adminId,
-        });
+          updatedAt:
+            new Date(),
+        })
+        .where(
+          eq(
+            transactions.transactionId,
+            `WTH-${request.id}`,
+          ),
+        );
 
       await tx
         .insert(auditLogs)
@@ -1202,7 +1206,40 @@ export async function rejectWithdrawal(
 
   return db.transaction(
     async (tx) => {
-      const result =
+      // Select-then-claim: only a still-pending request can be claimed, so
+      // two concurrent admin actions on the same request can't both apply
+      // (and can't both refund the same funds twice).
+      const request =
+        (
+          await tx
+            .select()
+            .from(
+              withdrawalRequests,
+            )
+            .where(
+              and(
+                eq(
+                  withdrawalRequests.id,
+                  requestId,
+                ),
+                eq(
+                  withdrawalRequests.status,
+                  "pending",
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
+
+      if (!request) {
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
+      }
+
+      const claimed =
         await tx
           .update(
             withdrawalRequests,
@@ -1233,13 +1270,55 @@ export async function rejectWithdrawal(
               withdrawalRequests.id,
           });
 
-      if (!result.length) {
+      if (!claimed.length) {
         return {
           changed: false,
           reason:
             "already_processed" as const,
         };
       }
+
+      // Refund the held funds back to the user's balance since the
+      // withdrawal did not go through.
+      await tx
+        .update(
+          walletBalances,
+        )
+        .set({
+          amount: sql`
+            ${walletBalances.amount}
+            + ${request.amount}
+          `,
+          updatedAt:
+            new Date(),
+        })
+        .where(
+          and(
+            eq(
+              walletBalances.userId,
+              request.userId,
+            ),
+            eq(
+              walletBalances.currency,
+              request.currency,
+            ),
+          ),
+        );
+
+      await tx
+        .update(transactions)
+        .set({
+          status: "failed",
+          adminId,
+          updatedAt:
+            new Date(),
+        })
+        .where(
+          eq(
+            transactions.transactionId,
+            `WTH-${request.id}`,
+          ),
+        );
 
       await tx
         .insert(auditLogs)
@@ -1251,6 +1330,14 @@ export async function rejectWithdrawal(
             "withdrawal_request",
           entityId:
             requestId,
+          metadata:
+            JSON.stringify({
+              currency:
+                request.currency,
+              amount:
+                request.amount,
+              refunded: true,
+            }),
         });
 
       return {
