@@ -1,4 +1,5 @@
 import {
+  boolean,
   integer,
   numeric,
   pgEnum,
@@ -78,6 +79,14 @@ export const users = pgTable("users", {
   }).unique(),
 
   referredById: integer("referredById"),
+
+  isBanned: boolean("isBanned")
+    .default(false)
+    .notNull(),
+
+  bannedReason: text("bannedReason"),
+
+  bannedAt: timestamp("bannedAt"),
 
   createdAt: timestamp("createdAt")
     .defaultNow()
@@ -353,3 +362,59 @@ export const auditLogs = pgTable(
       .notNull(),
   },
 );
+
+/* =========================
+   NOTIFICATIONS
+========================= */
+
+// userId = null means a broadcast notification shown to every user.
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: serial("id").primaryKey(),
+
+    userId: integer("userId"),
+
+    title: varchar("title", {
+      length: 160,
+    }).notNull(),
+
+    message: text("message").notNull(),
+
+    sentBy: integer("sentBy"),
+
+    createdAt: timestamp("createdAt")
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+export type Notification =
+  typeof notifications.$inferSelect;
+
+/* =========================
+   NOTIFICATION READS
+========================= */
+
+// One row per (user, notification) once that user has read it. Kept
+// separate from `notifications` itself so a single broadcast row can be
+// read/unread independently per user.
+export const notificationReads = pgTable(
+  "notification_reads",
+  {
+    id: serial("id").primaryKey(),
+
+    notificationId: integer("notificationId")
+      .notNull(),
+
+    userId: integer("userId")
+      .notNull(),
+
+    readAt: timestamp("readAt")
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+export type NotificationRead =
+  typeof notificationReads.$inferSelect;
