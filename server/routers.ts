@@ -39,6 +39,7 @@ export const appRouter = router({
     login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3).max(320), password: z.string().min(1).max(128) })).mutation(async ({ ctx, input }) => {
       const user = await db.getUserByEmailOrUsername(input.identifier.includes("@") ? input.identifier.toLowerCase() : input.identifier);
       if (!user || !user.passwordHash || !verifyPassword(input.password, user.passwordHash)) throw new Error("بيانات تسجيل الدخول غير صحيحة");
+      if (user.isBanned) throw new Error(user.bannedReason ? `تم حظر هذا الحساب: ${user.bannedReason}` : "تم حظر هذا الحساب. تواصل مع الدعم.");
       await db.updateUserLastSignedIn(user.id);
       const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: new Date() } };
@@ -61,12 +62,22 @@ export const appRouter = router({
   admin: router({
     stats: adminProcedure.query(() => db.getAdminStats()),
     users: adminProcedure.input(z.object({ search: z.string().max(320).optional() }).optional()).query(({ input }) => db.listUsers(input?.search)),
+    userDetail: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => db.getAdminUserDetail(input.userId)),
     deposits: adminProcedure.query(() => db.listDepositRequests()),
     withdrawals: adminProcedure.query(() => db.listWithdrawalRequests()),
     approveDeposit: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.approveDeposit(input.requestId, ctx.user.id)),
     rejectDeposit: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.rejectDeposit(input.requestId, ctx.user.id)),
     approveWithdrawal: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.approveWithdrawal(input.requestId, ctx.user.id)),
     rejectWithdrawal: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.rejectWithdrawal(input.requestId, ctx.user.id)),
+    banUser: adminProcedure.input(z.object({ userId: z.number().int().positive(), reason: z.string().max(300).optional() })).mutation(({ input }) => db.banUser(input.userId, input.reason)),
+    unbanUser: adminProcedure.input(z.object({ userId: z.number().int().positive() })).mutation(({ input }) => db.unbanUser(input.userId)),
+    setUserPassword: adminProcedure.input(z.object({ userId: z.number().int().positive(), newPassword: z.string().min(8).max(128) })).mutation(async ({ input }) => { await db.updateUserPassword(input.userId, hashPassword(input.newPassword)); return { success: true } as const; }),
+    adjustBalance: adminProcedure.input(z.object({ userId: z.number().int().positive(), currency: z.string().min(2).max(16), amount: z.number().positive().finite(), direction: z.enum(["credit", "debit"]), note: z.string().max(300).optional() })).mutation(({ ctx, input }) => db.adminAdjustBalance({ ...input, adminId: ctx.user.id })),
+    sendNotification: adminProcedure.input(z.object({ userId: z.number().int().positive().nullable(), title: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(2000) })).mutation(({ ctx, input }) => db.sendNotification({ ...input, sentBy: ctx.user.id })),
+  }),
+  notifications: router({
+    list: protectedProcedure.query(({ ctx }) => db.listNotificationsForUser(ctx.user.id)),
+    markRead: protectedProcedure.input(z.object({ notificationId: z.number().int().positive() })).mutation(({ ctx, input }) => db.markNotificationRead(input.notificationId, ctx.user.id)),
   }),
 });
 export type AppRouter = typeof appRouter;
