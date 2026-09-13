@@ -73,6 +73,12 @@ export const users = pgTable("users", {
     .default("user")
     .notNull(),
 
+  referralCode: varchar("referralCode", {
+    length: 32,
+  }).unique(),
+
+  referredById: integer("referredById"),
+
   createdAt: timestamp("createdAt")
     .defaultNow()
     .notNull(),
@@ -268,6 +274,54 @@ export const transactions = pgTable(
 
 export type Transaction =
   typeof transactions.$inferSelect;
+
+/* =========================
+   REFERRAL REWARDS
+========================= */
+
+// Every time a deposit is approved, up to 3 ancestor referrers get credited
+// a percentage of that deposit (level 1 = direct inviter, level 2 = their
+// inviter, level 3 = that person's inviter). One row per credited level per
+// deposit, so history and per-level totals can be reconstructed exactly.
+export const referralRewards = pgTable(
+  "referral_rewards",
+  {
+    id: serial("id").primaryKey(),
+
+    referrerId: integer("referrerId")
+      .notNull(),
+
+    sourceUserId: integer("sourceUserId")
+      .notNull(),
+
+    depositRequestId: integer("depositRequestId")
+      .notNull(),
+
+    level: integer("level")
+      .notNull(),
+
+    depositAmount: numeric("depositAmount", {
+      precision: 24,
+      scale: 8,
+    }).notNull(),
+
+    commission: numeric("commission", {
+      precision: 24,
+      scale: 8,
+    }).notNull(),
+
+    currency: varchar("currency", {
+      length: 16,
+    }).notNull(),
+
+    createdAt: timestamp("createdAt")
+      .defaultNow()
+      .notNull(),
+  },
+);
+
+export type ReferralReward =
+  typeof referralRewards.$inferSelect;
 
 /* =========================
    AUDIT LOGS
