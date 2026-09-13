@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   gte,
+  inArray,
   like,
   or,
   sql,
@@ -17,6 +18,7 @@ import {
   InsertUser,
   auditLogs,
   depositRequests,
+  referralRewards,
   transactions,
   users,
   walletBalances,
@@ -271,12 +273,36 @@ export async function getUserByUsername(
   )[0];
 }
 
+export async function getUserByReferralCode(
+  code: string,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return undefined;
+  }
+
+  return (
+    await db
+      .select()
+      .from(users)
+      .where(
+        eq(
+          users.referralCode,
+          code.trim().toUpperCase(),
+        ),
+      )
+      .limit(1)
+  )[0];
+}
+
 export async function createLocalUser(
   data: {
     name: string;
     username: string;
     email: string;
     passwordHash: string;
+    referralCode?: string;
   },
 ) {
   const db = await getDb();
@@ -289,6 +315,25 @@ export async function createLocalUser(
 
   const openId =
     `local_${randomUUID()}`;
+
+  // The user's own referral code is derived from their (already unique,
+  // alphanumeric) username, uppercased, prefixed like the rest of the
+  // brand's codes (e.g. "CWAAX-AHMED928"). Reusing the username guarantees
+  // uniqueness without a extra collision-retry loop.
+  const ownReferralCode =
+    `CWAAX-${data.username.toUpperCase()}`;
+
+  let referredById: number | undefined;
+
+  if (data.referralCode?.trim()) {
+    const inviter =
+      await getUserByReferralCode(
+        data.referralCode,
+      );
+    if (inviter) {
+      referredById = inviter.id;
+    }
+  }
 
   const inserted =
     await db
@@ -303,6 +348,9 @@ export async function createLocalUser(
           data.passwordHash,
         loginMethod: "email",
         role: "user",
+        referralCode:
+          ownReferralCode,
+        referredById,
       })
       .returning({
         id: users.id,
@@ -798,6 +846,325 @@ export async function listTransactions(
    APPROVE DEPOSIT
 ========================= */
 
+const REFERRAL_RATES = [0.10, 0.05, 0.025];
+
+// Walks up to 3 levels of the referral chain starting from the person who
+// deposited, and credits each ancestor referrer a percentage of the
+// deposit directly into their wallet balance:
+//   level 1 (direct inviter)        -> 10%
+//   level 2 (inviter's inviter)     -> 5%
+//   level 3 (that person's inviter) -> 2.5%
+// Must be called from inside the same db transaction as the deposit
+// approval so the commission and the deposit either both land or neither
+// does. Silently does nothing for levels that don't have an inviter (e.g.
+// a user who signed up without a referral code stops the chain there).
+async function creditReferralChain(
+  tx: any,
+  params: {
+    sourceUserId: number;
+    depositRequestId: number;
+    depositAmount: number;
+    currency: string;
+  },
+) {
+  let childId =
+    params.sourceUserId;
+
+  for (
+    let level = 1;
+    level <= REFERRAL_RATES.length;
+    level++
+  ) {
+    const child =
+      (
+        await tx
+          .select({
+            referredById:
+              users.referredById,
+          })
+          .from(users)
+          .where(
+            eq(
+              users.id,
+              childId,
+            ),
+          )
+          .limit(1)
+      )[0];
+
+    if (!child?.referredById) {
+      break;
+    }
+
+    const referrerId =
+      child.referredById as number;
+
+    const commission =
+      params.depositAmount *
+      REFERRAL_RATES[level - 1];
+
+    if (commission > 0) {
+      const balance =
+        (
+          await tx
+            .select()
+            .from(walletBalances)
+            .where(
+              and(
+                eq(
+                  walletBalances.userId,
+                  referrerId,
+                ),
+                eq(
+                  walletBalances.currency,
+                  params.currency,
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
+
+      if (balance) {
+        await tx
+          .update(
+            walletBalances,
+          )
+          .set({
+            amount: sql`
+              ${walletBalances.amount}
+              + ${commission.toFixed(8)}
+            `,
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            eq(
+              walletBalances.id,
+              balance.id,
+            ),
+          );
+      } else {
+        await tx
+          .insert(
+            walletBalances,
+          )
+          .values({
+            userId:
+              referrerId,
+            currency:
+              params.currency,
+            amount:
+              commission.toFixed(
+                8,
+              ),
+          });
+      }
+
+      await tx
+        .insert(
+          referralRewards,
+        )
+        .values({
+          referrerId,
+          sourceUserId:
+            params.sourceUserId,
+          depositRequestId:
+            params.depositRequestId,
+          level,
+          depositAmount:
+            params.depositAmount.toFixed(
+              8,
+            ),
+          commission:
+            commission.toFixed(
+              8,
+            ),
+          currency:
+            params.currency,
+        });
+    }
+
+    // Climb one level up the chain for the next iteration.
+    childId = referrerId;
+  }
+}
+
+export async function getReferralStats(
+  userId: number,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return {
+      referralCode: null,
+      levelCounts: [0, 0, 0],
+      levelEarnings: [0, 0, 0],
+      totalReferred: 0,
+      totalEarned: 0,
+      history: [],
+    };
+  }
+
+  const me =
+    (
+      await db
+        .select({
+          referralCode:
+            users.referralCode,
+        })
+        .from(users)
+        .where(
+          eq(users.id, userId),
+        )
+        .limit(1)
+    )[0];
+
+  const level1 =
+    await db
+      .select({ id: users.id })
+      .from(users)
+      .where(
+        eq(
+          users.referredById,
+          userId,
+        ),
+      );
+
+  const level1Ids =
+    level1.map((u) => u.id);
+
+  const level2 =
+    level1Ids.length
+      ? await db
+          .select({
+            id: users.id,
+          })
+          .from(users)
+          .where(
+            inArray(
+              users.referredById,
+              level1Ids,
+            ),
+          )
+      : [];
+
+  const level2Ids =
+    level2.map((u) => u.id);
+
+  const level3 =
+    level2Ids.length
+      ? await db
+          .select({
+            id: users.id,
+          })
+          .from(users)
+          .where(
+            inArray(
+              users.referredById,
+              level2Ids,
+            ),
+          )
+      : [];
+
+  const earningsByLevel =
+    await db
+      .select({
+        level:
+          referralRewards.level,
+        total: sql<string>`
+          coalesce(
+            sum(${referralRewards.commission}),
+            0
+          )
+        `,
+      })
+      .from(referralRewards)
+      .where(
+        eq(
+          referralRewards.referrerId,
+          userId,
+        ),
+      )
+      .groupBy(
+        referralRewards.level,
+      );
+
+  const levelEarnings: [
+    number,
+    number,
+    number,
+  ] = [0, 0, 0];
+
+  for (const row of earningsByLevel) {
+    if (
+      row.level >= 1 &&
+      row.level <= 3
+    ) {
+      levelEarnings[
+        row.level - 1
+      ] = Number(row.total);
+    }
+  }
+
+  const history =
+    await db
+      .select({
+        id: referralRewards.id,
+        level:
+          referralRewards.level,
+        commission:
+          referralRewards.commission,
+        currency:
+          referralRewards.currency,
+        createdAt:
+          referralRewards.createdAt,
+        sourceUsername:
+          users.username,
+        sourceName:
+          users.name,
+      })
+      .from(referralRewards)
+      .leftJoin(
+        users,
+        eq(
+          referralRewards.sourceUserId,
+          users.id,
+        ),
+      )
+      .where(
+        eq(
+          referralRewards.referrerId,
+          userId,
+        ),
+      )
+      .orderBy(
+        desc(
+          referralRewards.createdAt,
+        ),
+      )
+      .limit(30);
+
+  return {
+    referralCode:
+      me?.referralCode ?? null,
+    levelCounts: [
+      level1Ids.length,
+      level2Ids.length,
+      level3.length,
+    ],
+    levelEarnings,
+    totalReferred:
+      level1Ids.length +
+      level2Ids.length +
+      level3.length,
+    totalEarned:
+      levelEarnings[0] +
+      levelEarnings[1] +
+      levelEarnings[2],
+    history,
+  };
+}
+
 export async function approveDeposit(
   requestId: number,
   adminId: number,
@@ -951,6 +1318,22 @@ export async function approveDeposit(
             "completed",
           adminId,
         });
+
+      await creditReferralChain(
+        tx,
+        {
+          sourceUserId:
+            request.userId,
+          depositRequestId:
+            request.id,
+          depositAmount:
+            Number(
+              request.amount,
+            ),
+          currency:
+            request.currency,
+        },
+      );
 
       await tx
         .insert(auditLogs)
