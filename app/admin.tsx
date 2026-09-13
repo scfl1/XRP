@@ -1,32 +1,603 @@
-import { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState, type ReactNode } from "react";
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, IconButton, StatusPill } from "@/components/cwaax-ui";
+import { Card, IconButton, StatusPill, type IconName } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 
-export default function AdminScreen() {
-  const router=useRouter(); const {user,loading:authLoading}=useAuth(); const [tab,setTab]=useState("نظرة عامة"); const [query,setQuery]=useState("");
-  const stats=trpc.admin.stats.useQuery(undefined,{enabled:user?.role==="admin"});
-  const users=trpc.admin.users.useQuery({search:query||undefined},{enabled:user?.role==="admin"});
-  const deposits=trpc.admin.deposits.useQuery(undefined,{enabled:user?.role==="admin"});
-  const withdrawals=trpc.admin.withdrawals.useQuery(undefined,{enabled:user?.role==="admin"});
-  const utils=trpc.useUtils();
-  const approveDeposit=trpc.admin.approveDeposit.useMutation({onSuccess:()=>{utils.admin.deposits.invalidate();utils.admin.stats.invalidate();utils.wallet.balances.invalidate();}});
-  const rejectDeposit=trpc.admin.rejectDeposit.useMutation({onSuccess:()=>{utils.admin.deposits.invalidate();utils.admin.stats.invalidate();}});
-  const approveWithdrawal=trpc.admin.approveWithdrawal.useMutation({onSuccess:()=>{utils.admin.withdrawals.invalidate();utils.admin.stats.invalidate();utils.wallet.balances.invalidate();}});
-  const rejectWithdrawal=trpc.admin.rejectWithdrawal.useMutation({onSuccess:()=>{utils.admin.withdrawals.invalidate();utils.admin.stats.invalidate();}});
-  if(authLoading||!user)return <ScreenContainer><View style={styles.center}><ActivityIndicator color={CWAAX.green}/></View></ScreenContainer>;
-  if(user.role!=="admin")return <ScreenContainer><View style={styles.center}><Text style={styles.denied}>ليس لديك صلاحية الوصول إلى لوحة الإدارة.</Text><Pressable onPress={()=>router.replace("/(tabs)")} style={styles.button}><Text style={styles.buttonText}>العودة للرئيسية</Text></Pressable></View></ScreenContainer>;
-  const pendingDeposits=(deposits.data||[]).filter((x:any)=>x.request.status==="pending"); const pendingWithdrawals=(withdrawals.data||[]).filter((x:any)=>x.request.status==="pending");
-  const action=(kind:string,id:number)=>{const fn=kind==="dep"?approveDeposit:approveWithdrawal; fn.mutate({requestId:id},{onError:e=>Alert.alert("تعذر التنفيذ",e.message)});};
-  const reject=(kind:string,id:number)=>{const fn=kind==="dep"?rejectDeposit:rejectWithdrawal; fn.mutate({requestId:id},{onError:e=>Alert.alert("تعذر التنفيذ",e.message)});};
-  return <ScreenContainer className="px-5" edges={["top","left","right"]}><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}><View style={styles.header}><IconButton icon="arrow-forward" label="رجوع" onPress={()=>router.back()}/><View><Text style={styles.kicker}>CwaAX Control Center</Text><Text style={styles.title}>لوحة الإدارة</Text></View><View style={styles.adminBadge}><MaterialIcons name="admin-panel-settings" size={20} color={CWAAX.green}/></View></View><View style={styles.tabs}>{["نظرة عامة","المستخدمون","الإيداعات","السحوبات"].map(item=><Pressable key={item} onPress={()=>setTab(item)} style={[styles.tab,tab===item&&styles.tabActive]}><Text style={[styles.tabText,tab===item&&styles.tabTextActive]}>{item}</Text></Pressable>)}</View>{tab==="نظرة عامة"?<><View style={styles.grid}><Metric icon="people" label="إجمالي المستخدمين" value={String(stats.data?.users??0)}/><Metric icon="south-west" label="إيداعات معلقة" value={String(stats.data?.pendingDeposits??0)}/><Metric icon="north-east" label="سحوبات معلقة" value={String(stats.data?.pendingWithdrawals??0)}/><Metric icon="security" label="الحساب الحالي" value={user.username||user.email||"Admin"}/></View><Text style={styles.section}>طلبات الإيداع المعلقة</Text><Card>{pendingDeposits.length?pendingDeposits.slice(0,8).map((x:any)=><RequestRow key={x.request.id} row={x} type="dep" onApprove={()=>action("dep",x.request.id)} onReject={()=>reject("dep",x.request.id)}/>):<Text style={styles.empty}>لا توجد طلبات معلقة.</Text>}</Card><Text style={styles.section}>طلبات السحب المعلقة</Text><Card>{pendingWithdrawals.length?pendingWithdrawals.slice(0,8).map((x:any)=><RequestRow key={x.request.id} row={x} type="wd" onApprove={()=>action("wd",x.request.id)} onReject={()=>reject("wd",x.request.id)}/>):<Text style={styles.empty}>لا توجد طلبات معلقة.</Text>}</Card></>:<><View style={styles.search}><MaterialIcons name="search" size={19} color={CWAAX.muted}/><TextInput value={query} onChangeText={setQuery} placeholder={tab==="المستخدمون"?"ابحث بالاسم أو البريد أو اسم المستخدم":"ابحث برقم الطلب"} placeholderTextColor="#9CA8A1" style={styles.searchInput}/></View>{tab==="المستخدمون"?<Card>{(users.data||[]).map((u:any)=><UserRow key={u.id} user={u}/>)}</Card>:<Card>{(tab==="الإيداعات"?deposits.data||[]:withdrawals.data||[]).map((x:any)=><RequestRow key={x.request.id} row={x} type={tab==="الإيداعات"?"dep":"wd"} onApprove={()=>action(tab==="الإيداعات"?"dep":"wd",x.request.id)} onReject={()=>reject(tab==="الإيداعات"?"dep":"wd",x.request.id)}/>)}</Card>}</>}</ScrollView></ScreenContainer>
+const TABS = ["نظرة عامة", "المستخدمون", "الإيداعات", "السحوبات"] as const;
+type Tab = (typeof TABS)[number];
+
+const LEVEL_COLORS = [CWAAX.green, CWAAX.gold, CWAAX.purple];
+
+function fmt(n: number | string | undefined | null) {
+  const v = Number(n ?? 0);
+  return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
 }
-function Metric({icon,label,value}:{icon:any;label:string;value:string}){return <Card style={styles.metric}><View style={styles.metricIcon}><MaterialIcons name={icon} size={18} color={CWAAX.green}/></View><Text style={styles.metricLabel}>{label}</Text><Text style={styles.metricValue} numberOfLines={1}>{value}</Text></Card>}
-function RequestRow({row,type,onApprove,onReject}:{row:any;type:"dep"|"wd";onApprove:()=>void;onReject:()=>void}){const r=row.request; const u=row.user; const pending=r.status==="pending"; return <View style={styles.request}><View style={styles.requestIcon}><MaterialIcons name={type==="dep"?"south-west":"north-east"} size={18} color={type==="dep"?CWAAX.green:CWAAX.red}/></View><View style={styles.requestCopy}><Text style={styles.requestId}>#{r.id} · {type==="dep"?"إيداع":"سحب"}</Text><Text style={styles.requestUser}>{u?.name||u?.username||"مستخدم"} · {u?.email||""}</Text><Text style={styles.requestAmount}>{String(r.amount)} {r.currency}{r.network?` · ${r.network}`:""}</Text>{type==="wd"&&<Text style={styles.requestAddress}>{r.address}</Text>}</View><View style={styles.requestActions}>{pending?<><Pressable onPress={onApprove} style={styles.approve}><Text style={styles.approveText}>قبول</Text></Pressable><Pressable onPress={onReject} style={styles.reject}><Text style={styles.rejectText}>رفض</Text></Pressable></>:<StatusPill tone={r.status==="approved"?"success":"danger"}>{r.status}</StatusPill>}</View></View>}
-function UserRow({user}:{user:any}){return <View style={styles.userRow}><View style={styles.userAvatar}><Text style={styles.userLetter}>{(user.name||user.username||user.email||"U")[0].toUpperCase()}</Text></View><View style={styles.userCopy}><Text style={styles.userName}>{user.name||user.username||"بدون اسم"}{user.role==="admin"?" · Admin":""}</Text><Text style={styles.userEmail}>{user.email||"بدون بريد"}</Text><Text style={styles.userEmail}>{user.openId}</Text></View><Text style={styles.userStatus}>{user.role}</Text></View>}
-const styles=StyleSheet.create({content:{paddingTop:12,paddingBottom:30},center:{flex:1,alignItems:"center",justifyContent:"center",padding:30},denied:{textAlign:"center",color:CWAAX.ink,fontSize:15,fontWeight:"800",marginBottom:18},button:{backgroundColor:CWAAX.green,borderRadius:14,paddingHorizontal:20,paddingVertical:12},buttonText:{color:CWAAX.white,fontWeight:"900"},header:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",marginBottom:21},kicker:{color:CWAAX.green,textAlign:"right",fontSize:10,fontWeight:"800"},title:{color:CWAAX.ink,fontSize:22,fontWeight:"900",textAlign:"right",marginTop:3},adminBadge:{width:42,height:42,borderRadius:14,backgroundColor:CWAAX.greenSoft,alignItems:"center",justifyContent:"center"},tabs:{flexDirection:"row-reverse",gap:6,marginBottom:16},tab:{flex:1,alignItems:"center",paddingVertical:8,borderRadius:9,backgroundColor:CWAAX.surface},tabActive:{backgroundColor:CWAAX.green},tabText:{color:CWAAX.muted,fontSize:9,fontWeight:"800"},tabTextActive:{color:CWAAX.white},grid:{flexDirection:"row",flexWrap:"wrap",gap:9,marginBottom:16},metric:{width:"48%",borderRadius:17,padding:12},metricIcon:{width:31,height:31,borderRadius:10,backgroundColor:CWAAX.greenSoft,alignItems:"center",justifyContent:"center",marginBottom:8},metricLabel:{color:CWAAX.muted,fontSize:9,textAlign:"right"},metricValue:{color:CWAAX.ink,fontSize:16,fontWeight:"900",textAlign:"right",marginTop:5},section:{color:CWAAX.muted,fontSize:12,fontWeight:"800",textAlign:"right",marginTop:14,marginBottom:9},empty:{color:CWAAX.muted,textAlign:"center",padding:20,fontSize:11},request:{flexDirection:"row",alignItems:"center",gap:9,borderBottomWidth:1,borderBottomColor:CWAAX.line,paddingVertical:12},requestIcon:{width:34,height:34,borderRadius:11,backgroundColor:CWAAX.surface,alignItems:"center",justifyContent:"center"},requestCopy:{flex:1},requestId:{color:CWAAX.ink,fontSize:11,fontWeight:"900",textAlign:"right"},requestUser:{color:CWAAX.muted,fontSize:9,textAlign:"right",marginTop:3},requestAmount:{color:CWAAX.ink,fontSize:10,fontWeight:"800",textAlign:"right",marginTop:3},requestAddress:{color:CWAAX.muted,fontSize:8,textAlign:"right",marginTop:3},requestActions:{alignItems:"flex-end",gap:5},approve:{backgroundColor:CWAAX.greenSoft,borderRadius:7,paddingHorizontal:8,paddingVertical:5},approveText:{color:CWAAX.green,fontSize:9,fontWeight:"900"},reject:{paddingHorizontal:8,paddingVertical:2},rejectText:{color:CWAAX.red,fontSize:9,fontWeight:"800"},search:{height:47,borderWidth:1,borderColor:CWAAX.line,borderRadius:14,paddingHorizontal:12,flexDirection:"row",alignItems:"center",gap:8,marginBottom:12},searchInput:{flex:1,color:CWAAX.ink,fontSize:11,textAlign:"right"},userRow:{flexDirection:"row",alignItems:"center",gap:9,paddingVertical:12,borderBottomWidth:1,borderBottomColor:CWAAX.line},userAvatar:{width:35,height:35,borderRadius:12,backgroundColor:CWAAX.green,justifyContent:"center",alignItems:"center"},userLetter:{color:CWAAX.white,fontWeight:"900"},userCopy:{flex:1},userName:{color:CWAAX.ink,textAlign:"right",fontSize:11,fontWeight:"800"},userEmail:{color:CWAAX.muted,textAlign:"right",fontSize:8,marginTop:2},userStatus:{color:CWAAX.green,fontSize:9,fontWeight:"800"}});
+
+export default function AdminScreen() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [tab, setTab] = useState<Tab>("نظرة عامة");
+  const [query, setQuery] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+
+  const isAdmin = user?.role === "admin";
+  const stats = trpc.admin.stats.useQuery(undefined, { enabled: isAdmin });
+  const users = trpc.admin.users.useQuery({ search: query || undefined }, { enabled: isAdmin });
+  const deposits = trpc.admin.deposits.useQuery(undefined, { enabled: isAdmin });
+  const withdrawals = trpc.admin.withdrawals.useQuery(undefined, { enabled: isAdmin });
+  const utils = trpc.useUtils();
+
+  const approveDeposit = trpc.admin.approveDeposit.useMutation({ onSuccess: () => { utils.admin.deposits.invalidate(); utils.admin.stats.invalidate(); utils.wallet.balances.invalidate(); } });
+  const rejectDeposit = trpc.admin.rejectDeposit.useMutation({ onSuccess: () => { utils.admin.deposits.invalidate(); utils.admin.stats.invalidate(); } });
+  const approveWithdrawal = trpc.admin.approveWithdrawal.useMutation({ onSuccess: () => { utils.admin.withdrawals.invalidate(); utils.admin.stats.invalidate(); utils.wallet.balances.invalidate(); } });
+  const rejectWithdrawal = trpc.admin.rejectWithdrawal.useMutation({ onSuccess: () => { utils.admin.withdrawals.invalidate(); utils.admin.stats.invalidate(); } });
+
+  if (authLoading || !user) {
+    return <ScreenContainer><View style={styles.center}><ActivityIndicator color={CWAAX.green} /></View></ScreenContainer>;
+  }
+  if (!isAdmin) {
+    return (
+      <ScreenContainer>
+        <View style={styles.center}>
+          <Text style={styles.denied}>ليس لديك صلاحية الوصول إلى لوحة الإدارة.</Text>
+          <Pressable onPress={() => router.replace("/(tabs)")} style={styles.button}><Text style={styles.buttonText}>العودة للرئيسية</Text></Pressable>
+        </View>
+      </ScreenContainer>
+    );
+  }
+
+  const pendingDeposits = (deposits.data || []).filter((x: any) => x.request.status === "pending");
+  const pendingWithdrawals = (withdrawals.data || []).filter((x: any) => x.request.status === "pending");
+
+  const action = (kind: "dep" | "wd", id: number) => {
+    const fn = kind === "dep" ? approveDeposit : approveWithdrawal;
+    fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
+  };
+  const reject = (kind: "dep" | "wd", id: number) => {
+    const fn = kind === "dep" ? rejectDeposit : rejectWithdrawal;
+    fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
+  };
+
+  return (
+    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <IconButton icon="arrow-forward" label="رجوع" onPress={() => router.back()} />
+          <View>
+            <Text style={styles.kicker}>CwaAX Control Center</Text>
+            <Text style={styles.title}>لوحة الإدارة</Text>
+          </View>
+          <View style={styles.adminBadge}><MaterialIcons name="admin-panel-settings" size={20} color={CWAAX.green} /></View>
+        </View>
+
+        <View style={styles.tabs}>
+          {TABS.map((item) => (
+            <Pressable key={item} onPress={() => setTab(item)} style={[styles.tab, tab === item && styles.tabActive]}>
+              <Text style={[styles.tabText, tab === item && styles.tabTextActive]}>{item}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {tab === "نظرة عامة" ? (
+          <>
+            <View style={styles.grid}>
+              <Metric icon="people" label="إجمالي المستخدمين" value={String(stats.data?.users ?? 0)} />
+              <Metric icon="block" label="حسابات محظورة" value={String(stats.data?.bannedUsers ?? 0)} tone={CWAAX.red} />
+              <Metric icon="south-west" label="إيداعات معلقة" value={String(stats.data?.pendingDeposits ?? 0)} />
+              <Metric icon="north-east" label="سحوبات معلقة" value={String(stats.data?.pendingWithdrawals ?? 0)} />
+              <Metric icon="card-giftcard" label="إجمالي أرباح الإحالة" value={fmt(stats.data?.totalReferralPayout)} tone={CWAAX.gold} wide />
+              <Metric icon="security" label="الحساب الحالي" value={user.username || user.email || "Admin"} />
+            </View>
+
+            <Pressable onPress={() => setBroadcastOpen(true)} style={({ pressed }) => [styles.broadcastBtn, pressed && styles.pressed]}>
+              <MaterialIcons name="campaign" size={19} color={CWAAX.white} />
+              <Text style={styles.broadcastText}>إرسال إشعار لجميع المستخدمين</Text>
+            </Pressable>
+
+            <Text style={styles.section}>طلبات الإيداع المعلقة</Text>
+            <Card>
+              {pendingDeposits.length ? pendingDeposits.slice(0, 8).map((x: any) => (
+                <RequestRow key={x.request.id} row={x} type="dep" onApprove={() => action("dep", x.request.id)} onReject={() => reject("dep", x.request.id)} />
+              )) : <Text style={styles.empty}>لا توجد طلبات معلقة.</Text>}
+            </Card>
+
+            <Text style={styles.section}>طلبات السحب المعلقة</Text>
+            <Card>
+              {pendingWithdrawals.length ? pendingWithdrawals.slice(0, 8).map((x: any) => (
+                <RequestRow key={x.request.id} row={x} type="wd" onApprove={() => action("wd", x.request.id)} onReject={() => reject("wd", x.request.id)} />
+              )) : <Text style={styles.empty}>لا توجد طلبات معلقة.</Text>}
+            </Card>
+          </>
+        ) : tab === "المستخدمون" ? (
+          <>
+            <View style={styles.search}>
+              <MaterialIcons name="search" size={19} color={CWAAX.muted} />
+              <TextInput value={query} onChangeText={setQuery} placeholder="ابحث بالاسم أو البريد أو اسم المستخدم" placeholderTextColor="#9CA8A1" style={styles.searchInput} />
+            </View>
+            <Card>
+              {(users.data || []).length ? (users.data as any[]).map((u) => (
+                <UserRow key={u.id} user={u} onPress={() => setSelectedUserId(u.id)} />
+              )) : <Text style={styles.empty}>لا يوجد مستخدمون مطابقون.</Text>}
+            </Card>
+          </>
+        ) : (
+          <>
+            <View style={styles.search}>
+              <MaterialIcons name="search" size={19} color={CWAAX.muted} />
+              <TextInput value={query} onChangeText={setQuery} placeholder="ابحث برقم الطلب" placeholderTextColor="#9CA8A1" style={styles.searchInput} />
+            </View>
+            <Card>
+              {(tab === "الإيداعات" ? deposits.data || [] : withdrawals.data || []).map((x: any) => (
+                <RequestRow
+                  key={x.request.id}
+                  row={x}
+                  type={tab === "الإيداعات" ? "dep" : "wd"}
+                  onApprove={() => action(tab === "الإيداعات" ? "dep" : "wd", x.request.id)}
+                  onReject={() => reject(tab === "الإيداعات" ? "dep" : "wd", x.request.id)}
+                />
+              ))}
+            </Card>
+          </>
+        )}
+      </ScrollView>
+
+      {selectedUserId != null && (
+        <UserDetailModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
+      )}
+      <BroadcastModal visible={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
+    </ScreenContainer>
+  );
+}
+
+function Metric({ icon, label, value, tone, wide }: { icon: IconName; label: string; value: string; tone?: string; wide?: boolean }) {
+  return (
+    <Card style={[styles.metric, wide && styles.metricWide]}>
+      <View style={[styles.metricIcon, tone ? { backgroundColor: `${tone}22` } : null]}>
+        <MaterialIcons name={icon} size={18} color={tone || CWAAX.green} />
+      </View>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue} numberOfLines={1}>{value}</Text>
+    </Card>
+  );
+}
+
+function RequestRow({ row, type, onApprove, onReject }: { row: any; type: "dep" | "wd"; onApprove: () => void; onReject: () => void }) {
+  const r = row.request;
+  const u = row.user;
+  const pending = r.status === "pending";
+  return (
+    <View style={styles.request}>
+      <View style={styles.requestIcon}>
+        <MaterialIcons name={type === "dep" ? "south-west" : "north-east"} size={18} color={type === "dep" ? CWAAX.green : CWAAX.red} />
+      </View>
+      <View style={styles.requestCopy}>
+        <Text style={styles.requestId}>#{r.id} · {type === "dep" ? "إيداع" : "سحب"}</Text>
+        <Text style={styles.requestUser}>{u?.name || u?.username || "مستخدم"} · {u?.email || ""}</Text>
+        <Text style={styles.requestAmount}>{String(r.amount)} {r.currency}{r.network ? ` · ${r.network}` : ""}</Text>
+        {type === "wd" && <Text style={styles.requestAddress}>{r.address}</Text>}
+      </View>
+      <View style={styles.requestActions}>
+        {pending ? (
+          <>
+            <Pressable onPress={onApprove} style={styles.approve}><Text style={styles.approveText}>قبول</Text></Pressable>
+            <Pressable onPress={onReject} style={styles.reject}><Text style={styles.rejectText}>رفض</Text></Pressable>
+          </>
+        ) : (
+          <StatusPill tone={r.status === "approved" ? "success" : "danger"}>{r.status}</StatusPill>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function UserRow({ user, onPress }: { user: any; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.userRow, pressed && styles.pressed]}>
+      <View style={[styles.userAvatar, user.isBanned && styles.userAvatarBanned]}>
+        <Text style={styles.userLetter}>{(user.name || user.username || user.email || "U")[0].toUpperCase()}</Text>
+      </View>
+      <View style={styles.userCopy}>
+        <Text style={styles.userName} numberOfLines={1}>
+          {user.name || user.username || "بدون اسم"}{user.role === "admin" ? " · Admin" : ""}
+        </Text>
+        <Text style={styles.userEmail} numberOfLines={1}>{user.email || user.openId}</Text>
+        <View style={styles.userChips}>
+          <View style={styles.chip}>
+            <MaterialIcons name="group-add" size={11} color={CWAAX.green} />
+            <Text style={styles.chipText}>{user.directReferrals ?? 0} إحالة</Text>
+          </View>
+          <View style={[styles.chip, styles.chipGold]}>
+            <MaterialIcons name="paid" size={11} color={CWAAX.gold} />
+            <Text style={[styles.chipText, { color: CWAAX.gold }]}>{fmt(user.totalReferralEarnings)}</Text>
+          </View>
+          {user.isBanned && (
+            <View style={[styles.chip, styles.chipRed]}>
+              <MaterialIcons name="block" size={11} color={CWAAX.red} />
+              <Text style={[styles.chipText, { color: CWAAX.red }]}>محظور</Text>
+            </View>
+          )}
+        </View>
+      </View>
+      <MaterialIcons name="chevron-left" size={20} color={CWAAX.muted} />
+    </Pressable>
+  );
+}
+
+/* =========================
+   USER DETAIL MODAL
+========================= */
+
+type PanelMode = "detail" | "ban" | "password" | "balance" | "notify";
+
+function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => void }) {
+  const [mode, setMode] = useState<PanelMode>("detail");
+  const detail = trpc.admin.userDetail.useQuery({ userId });
+  const utils = trpc.useUtils();
+
+  const refreshAll = () => {
+    utils.admin.userDetail.invalidate({ userId });
+    utils.admin.users.invalidate();
+    utils.admin.stats.invalidate();
+  };
+
+  const banMutation = trpc.admin.banUser.useMutation({ onSuccess: () => { refreshAll(); setMode("detail"); } });
+  const unbanMutation = trpc.admin.unbanUser.useMutation({ onSuccess: refreshAll });
+  const passwordMutation = trpc.admin.setUserPassword.useMutation({ onSuccess: () => setMode("detail") });
+  const balanceMutation = trpc.admin.adjustBalance.useMutation({ onSuccess: () => { refreshAll(); setMode("detail"); } });
+  const notifyMutation = trpc.admin.sendNotification.useMutation({ onSuccess: () => setMode("detail") });
+
+  const u = detail.data?.user;
+  const referral = detail.data?.referral;
+  const balances = detail.data?.balances || [];
+
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.sheetOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          {detail.isLoading || !u ? (
+            <View style={styles.center}><ActivityIndicator color={CWAAX.green} /></View>
+          ) : mode === "detail" ? (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.sheetHeader}>
+                <View style={[styles.userAvatar, styles.avatarLg, u.isBanned && styles.userAvatarBanned]}>
+                  <Text style={[styles.userLetter, { fontSize: 20 }]}>{(u.name || u.username || "U")[0].toUpperCase()}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.sheetName}>{u.name || u.username || "بدون اسم"}</Text>
+                  <Text style={styles.sheetSub}>{u.email || u.openId}</Text>
+                  <View style={styles.userChips}>
+                    <StatusPill tone={u.role === "admin" ? "success" : "warning"}>{u.role}</StatusPill>
+                    {u.isBanned && <StatusPill tone="danger">محظور</StatusPill>}
+                  </View>
+                </View>
+                <Pressable onPress={onClose} hitSlop={10}><MaterialIcons name="close" size={22} color={CWAAX.muted} /></Pressable>
+              </View>
+
+              {u.isBanned && !!u.bannedReason && (
+                <View style={styles.banNotice}><Text style={styles.banNoticeText}>سبب الحظر: {u.bannedReason}</Text></View>
+              )}
+
+              <Text style={styles.sheetSection}>الإحالات</Text>
+              <View style={styles.levelRow}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={[styles.levelCard, { borderColor: `${LEVEL_COLORS[i]}33` }]}>
+                    <Text style={[styles.levelTitle, { color: LEVEL_COLORS[i] }]}>مستوى {i + 1}</Text>
+                    <Text style={styles.levelCount}>{referral?.levelCounts?.[i] ?? 0}</Text>
+                    <Text style={styles.levelEarn}>{fmt(referral?.levelEarnings?.[i])}</Text>
+                  </View>
+                ))}
+              </View>
+              <View style={styles.totalsRow}>
+                <View style={styles.totalBox}>
+                  <Text style={styles.totalLabel}>إجمالي المُحالين</Text>
+                  <Text style={styles.totalValue}>{referral?.totalReferred ?? 0}</Text>
+                </View>
+                <View style={styles.totalBox}>
+                  <Text style={styles.totalLabel}>إجمالي أرباح الإحالة</Text>
+                  <Text style={[styles.totalValue, { color: CWAAX.gold }]}>{fmt(referral?.totalEarned)}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.sheetSection}>الأرصدة</Text>
+              <Card>
+                {balances.length ? balances.map((b: any) => (
+                  <View key={b.id} style={styles.balanceRow}>
+                    <Text style={styles.balanceCurrency}>{b.currency}</Text>
+                    <Text style={styles.balanceAmount}>{fmt(b.amount)}</Text>
+                  </View>
+                )) : <Text style={styles.empty}>لا يوجد رصيد بعد.</Text>}
+              </Card>
+
+              <Text style={styles.sheetSection}>إجراءات الإدارة</Text>
+              <View style={styles.actionsGrid}>
+                <ActionBtn icon="lock-reset" label="تغيير كلمة المرور" onPress={() => setMode("password")} />
+                <ActionBtn icon="account-balance-wallet" label="تعديل الرصيد" onPress={() => setMode("balance")} />
+                <ActionBtn icon="notifications-active" label="إرسال إشعار" onPress={() => setMode("notify")} />
+                <ActionBtn
+                  icon={u.isBanned ? "lock-open" : "block"}
+                  label={u.isBanned ? "رفع الحظر" : "حظر الحساب"}
+                  tone={u.isBanned ? CWAAX.green : CWAAX.red}
+                  onPress={() => (u.isBanned ? unbanMutation.mutate({ userId }) : setMode("ban"))}
+                />
+              </View>
+            </ScrollView>
+          ) : mode === "ban" ? (
+            <BanPanel
+              busy={banMutation.isPending}
+              onCancel={() => setMode("detail")}
+              onConfirm={(reason) => banMutation.mutate({ userId, reason: reason || undefined }, { onError: (e) => Alert.alert("تعذر الحظر", e.message) })}
+            />
+          ) : mode === "password" ? (
+            <PasswordPanel
+              busy={passwordMutation.isPending}
+              onCancel={() => setMode("detail")}
+              onConfirm={(pw) => passwordMutation.mutate({ userId, newPassword: pw }, { onError: (e) => Alert.alert("تعذر التغيير", e.message) })}
+            />
+          ) : mode === "balance" ? (
+            <BalancePanel
+              busy={balanceMutation.isPending}
+              onCancel={() => setMode("detail")}
+              onConfirm={(v) => balanceMutation.mutate({ userId, ...v }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) })}
+            />
+          ) : (
+            <NotifyPanel
+              busy={notifyMutation.isPending}
+              onCancel={() => setMode("detail")}
+              onConfirm={(title, message) => notifyMutation.mutate({ userId, title, message }, { onError: (e) => Alert.alert("تعذر الإرسال", e.message) })}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ActionBtn({ icon, label, onPress, tone }: { icon: IconName; label: string; onPress: () => void; tone?: string }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionBtn, pressed && styles.pressed]}>
+      <MaterialIcons name={icon} size={18} color={tone || CWAAX.ink} />
+      <Text style={[styles.actionBtnText, tone ? { color: tone } : null]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function PanelShell({ title, children, onCancel, onConfirm, confirmLabel = "تأكيد", busy, danger }: { title: string; children: ReactNode; onCancel: () => void; onConfirm: () => void; confirmLabel?: string; busy?: boolean; danger?: boolean }) {
+  return (
+    <View>
+      <View style={styles.panelHeader}>
+        <Pressable onPress={onCancel} hitSlop={10}><MaterialIcons name="arrow-forward" size={20} color={CWAAX.ink} /></Pressable>
+        <Text style={styles.panelTitle}>{title}</Text>
+        <View style={{ width: 20 }} />
+      </View>
+      <View style={styles.panelBody}>{children}</View>
+      <View style={styles.panelActions}>
+        <Pressable onPress={onConfirm} disabled={busy} style={[styles.panelConfirm, danger && styles.panelConfirmDanger, busy && { opacity: 0.6 }]}>
+          {busy ? <ActivityIndicator color={CWAAX.white} size="small" /> : <Text style={styles.panelConfirmText}>{confirmLabel}</Text>}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function BanPanel({ onCancel, onConfirm, busy }: { onCancel: () => void; onConfirm: (reason: string) => void; busy?: boolean }) {
+  const [reason, setReason] = useState("");
+  return (
+    <PanelShell title="حظر الحساب" onCancel={onCancel} onConfirm={() => onConfirm(reason.trim())} confirmLabel="تأكيد الحظر" danger busy={busy}>
+      <Text style={styles.fieldLabel}>سبب الحظر (اختياري)</Text>
+      <TextInput value={reason} onChangeText={setReason} placeholder="مثال: مخالفة شروط الاستخدام" placeholderTextColor="#9CA8A1" style={[styles.input, styles.inputMultiline]} multiline />
+    </PanelShell>
+  );
+}
+
+function PasswordPanel({ onCancel, onConfirm, busy }: { onCancel: () => void; onConfirm: (pw: string) => void; busy?: boolean }) {
+  const [pw, setPw] = useState("");
+  const valid = pw.length >= 8;
+  return (
+    <PanelShell title="تغيير كلمة المرور" onCancel={onCancel} onConfirm={() => valid && onConfirm(pw)} confirmLabel="حفظ" busy={busy}>
+      <Text style={styles.fieldLabel}>كلمة المرور الجديدة</Text>
+      <TextInput value={pw} onChangeText={setPw} placeholder="8 أحرف على الأقل" placeholderTextColor="#9CA8A1" secureTextEntry style={styles.input} />
+      {!!pw && !valid && <Text style={styles.fieldError}>يجب أن تكون 8 أحرف على الأقل.</Text>}
+    </PanelShell>
+  );
+}
+
+const CURRENCIES = ["USDT", "TRX", "XRP", "DOGE", "XLM", "BTC"];
+
+function BalancePanel({ onCancel, onConfirm, busy }: { onCancel: () => void; onConfirm: (v: { currency: string; amount: number; direction: "credit" | "debit"; note?: string }) => void; busy?: boolean }) {
+  const [currency, setCurrency] = useState("USDT");
+  const [amount, setAmount] = useState("");
+  const [direction, setDirection] = useState<"credit" | "debit">("credit");
+  const [note, setNote] = useState("");
+  const parsed = Number(amount);
+  const valid = parsed > 0;
+  return (
+    <PanelShell
+      title="تعديل الرصيد"
+      onCancel={onCancel}
+      onConfirm={() => valid && onConfirm({ currency, amount: parsed, direction, note: note.trim() || undefined })}
+      confirmLabel={direction === "credit" ? "تعبئة الرصيد" : "سحب من الرصيد"}
+      busy={busy}
+    >
+      <View style={styles.directionRow}>
+        <Pressable onPress={() => setDirection("credit")} style={[styles.directionBtn, direction === "credit" && styles.directionActiveGreen]}>
+          <MaterialIcons name="add-circle-outline" size={16} color={direction === "credit" ? CWAAX.white : CWAAX.green} />
+          <Text style={[styles.directionText, direction === "credit" && { color: CWAAX.white }]}>تعبئة</Text>
+        </Pressable>
+        <Pressable onPress={() => setDirection("debit")} style={[styles.directionBtn, direction === "debit" && styles.directionActiveRed]}>
+          <MaterialIcons name="remove-circle-outline" size={16} color={direction === "debit" ? CWAAX.white : CWAAX.red} />
+          <Text style={[styles.directionText, direction === "debit" && { color: CWAAX.white }]}>سحب</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.fieldLabel}>العملة</Text>
+      <View style={styles.currencyRow}>
+        {CURRENCIES.map((c) => (
+          <Pressable key={c} onPress={() => setCurrency(c)} style={[styles.currencyChip, currency === c && styles.currencyChipActive]}>
+            <Text style={[styles.currencyChipText, currency === c && styles.currencyChipTextActive]}>{c}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={styles.fieldLabel}>المبلغ</Text>
+      <TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#9CA8A1" keyboardType="decimal-pad" style={styles.input} />
+
+      <Text style={styles.fieldLabel}>ملاحظة (اختياري)</Text>
+      <TextInput value={note} onChangeText={setNote} placeholder="سبب التعديل" placeholderTextColor="#9CA8A1" style={[styles.input, styles.inputMultiline]} multiline />
+    </PanelShell>
+  );
+}
+
+function NotifyPanel({ onCancel, onConfirm, busy }: { onCancel: () => void; onConfirm: (title: string, message: string) => void; busy?: boolean }) {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const valid = title.trim().length > 0 && message.trim().length > 0;
+  return (
+    <PanelShell title="إرسال إشعار" onCancel={onCancel} onConfirm={() => valid && onConfirm(title.trim(), message.trim())} confirmLabel="إرسال" busy={busy}>
+      <Text style={styles.fieldLabel}>العنوان</Text>
+      <TextInput value={title} onChangeText={setTitle} placeholder="عنوان الإشعار" placeholderTextColor="#9CA8A1" style={styles.input} />
+      <Text style={styles.fieldLabel}>الرسالة</Text>
+      <TextInput value={message} onChangeText={setMessage} placeholder="نص الإشعار" placeholderTextColor="#9CA8A1" style={[styles.input, styles.inputMultiline]} multiline />
+    </PanelShell>
+  );
+}
+
+function BroadcastModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const [title, setTitle] = useState("");
+  const [message, setMessage] = useState("");
+  const mutation = trpc.admin.sendNotification.useMutation({
+    onSuccess: () => { setTitle(""); setMessage(""); onClose(); },
+    onError: (e) => Alert.alert("تعذر الإرسال", e.message),
+  });
+  const valid = title.trim().length > 0 && message.trim().length > 0;
+  if (!visible) return null;
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.sheetOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <View style={styles.sheet}>
+          <View style={styles.sheetHandle} />
+          <PanelShell
+            title="إشعار لجميع المستخدمين"
+            onCancel={onClose}
+            onConfirm={() => valid && mutation.mutate({ userId: null, title: title.trim(), message: message.trim() })}
+            confirmLabel="إرسال للجميع"
+            busy={mutation.isPending}
+          >
+            <Text style={styles.fieldLabel}>العنوان</Text>
+            <TextInput value={title} onChangeText={setTitle} placeholder="عنوان الإشعار" placeholderTextColor="#9CA8A1" style={styles.input} />
+            <Text style={styles.fieldLabel}>الرسالة</Text>
+            <TextInput value={message} onChangeText={setMessage} placeholder="نص الإشعار" placeholderTextColor="#9CA8A1" style={[styles.input, styles.inputMultiline]} multiline />
+          </PanelShell>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { paddingTop: 12, paddingBottom: 30 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30 },
+  denied: { textAlign: "center", color: CWAAX.ink, fontSize: 15, fontWeight: "800", marginBottom: 18 },
+  button: { backgroundColor: CWAAX.green, borderRadius: 14, paddingHorizontal: 20, paddingVertical: 12 },
+  buttonText: { color: CWAAX.white, fontWeight: "900" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 21 },
+  kicker: { color: CWAAX.green, textAlign: "right", fontSize: 10, fontWeight: "800" },
+  title: { color: CWAAX.ink, fontSize: 22, fontWeight: "900", textAlign: "right", marginTop: 3 },
+  adminBadge: { width: 42, height: 42, borderRadius: 14, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center" },
+  tabs: { flexDirection: "row-reverse", gap: 6, marginBottom: 16 },
+  tab: { flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 9, backgroundColor: CWAAX.surface },
+  tabActive: { backgroundColor: CWAAX.green },
+  tabText: { color: CWAAX.muted, fontSize: 9, fontWeight: "800" },
+  tabTextActive: { color: CWAAX.white },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 9, marginBottom: 14 },
+  metric: { width: "48%", borderRadius: 17, padding: 12 },
+  metricWide: { width: "100%" },
+  metricIcon: { width: 31, height: 31, borderRadius: 10, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  metricLabel: { color: CWAAX.muted, fontSize: 9, textAlign: "right" },
+  metricValue: { color: CWAAX.ink, fontSize: 16, fontWeight: "900", textAlign: "right", marginTop: 5 },
+  broadcastBtn: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: CWAAX.green, borderRadius: 14, paddingVertical: 13, marginBottom: 18 },
+  broadcastText: { color: CWAAX.white, fontWeight: "900", fontSize: 12 },
+  section: { color: CWAAX.muted, fontSize: 12, fontWeight: "800", textAlign: "right", marginTop: 14, marginBottom: 9 },
+  empty: { color: CWAAX.muted, textAlign: "center", padding: 20, fontSize: 11 },
+  request: { flexDirection: "row", alignItems: "center", gap: 9, borderBottomWidth: 1, borderBottomColor: CWAAX.line, paddingVertical: 12 },
+  requestIcon: { width: 34, height: 34, borderRadius: 11, backgroundColor: CWAAX.surface, alignItems: "center", justifyContent: "center" },
+  requestCopy: { flex: 1 },
+  requestId: { color: CWAAX.ink, fontSize: 11, fontWeight: "900", textAlign: "right" },
+  requestUser: { color: CWAAX.muted, fontSize: 9, textAlign: "right", marginTop: 3 },
+  requestAmount: { color: CWAAX.ink, fontSize: 10, fontWeight: "800", textAlign: "right", marginTop: 3 },
+  requestAddress: { color: CWAAX.muted, fontSize: 8, textAlign: "right", marginTop: 3 },
+  requestActions: { alignItems: "flex-end", gap: 5 },
+  approve: { backgroundColor: CWAAX.greenSoft, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 5 },
+  approveText: { color: CWAAX.green, fontSize: 9, fontWeight: "900" },
+  reject: { paddingHorizontal: 8, paddingVertical: 2 },
+  rejectText: { color: CWAAX.red, fontSize: 9, fontWeight: "800" },
+  search: { height: 47, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 14, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  searchInput: { flex: 1, color: CWAAX.ink, fontSize: 11, textAlign: "right" },
+  userRow: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
+  userAvatar: { width: 35, height: 35, borderRadius: 12, backgroundColor: CWAAX.green, justifyContent: "center", alignItems: "center" },
+  userAvatarBanned: { backgroundColor: CWAAX.red },
+  avatarLg: { width: 48, height: 48, borderRadius: 16 },
+  userLetter: { color: CWAAX.white, fontWeight: "900" },
+  userCopy: { flex: 1 },
+  userName: { color: CWAAX.ink, textAlign: "right", fontSize: 11, fontWeight: "800" },
+  userEmail: { color: CWAAX.muted, textAlign: "right", fontSize: 8, marginTop: 2 },
+  userChips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginTop: 6 },
+  chip: { flexDirection: "row-reverse", alignItems: "center", gap: 3, backgroundColor: CWAAX.greenSoft, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3 },
+  chipGold: { backgroundColor: "#FFF5DE" },
+  chipRed: { backgroundColor: "#FBE8E7" },
+  chipText: { color: CWAAX.green, fontSize: 8, fontWeight: "800" },
+  pressed: { opacity: 0.6 },
+  sheetOverlay: { flex: 1, backgroundColor: "rgba(16,26,22,0.45)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: CWAAX.white, borderTopLeftRadius: 26, borderTopRightRadius: 26, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 26, maxHeight: "88%" },
+  sheetHandle: { width: 40, height: 4, borderRadius: 2, backgroundColor: CWAAX.line, alignSelf: "center", marginBottom: 14 },
+  sheetHeader: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 12 },
+  sheetName: { color: CWAAX.ink, fontSize: 16, fontWeight: "900", textAlign: "right" },
+  sheetSub: { color: CWAAX.muted, fontSize: 10, textAlign: "right", marginTop: 2 },
+  sheetSection: { color: CWAAX.muted, fontSize: 11, fontWeight: "800", textAlign: "right", marginTop: 16, marginBottom: 8 },
+  banNotice: { backgroundColor: "#FBE8E7", borderRadius: 12, padding: 10, marginBottom: 4 },
+  banNoticeText: { color: CWAAX.red, fontSize: 10, textAlign: "right", fontWeight: "700" },
+  levelRow: { flexDirection: "row", gap: 8 },
+  levelCard: { flex: 1, borderWidth: 1, borderRadius: 14, padding: 10, alignItems: "center", backgroundColor: CWAAX.surface },
+  levelTitle: { fontSize: 9, fontWeight: "900", marginBottom: 4 },
+  levelCount: { color: CWAAX.ink, fontSize: 15, fontWeight: "900" },
+  levelEarn: { color: CWAAX.muted, fontSize: 9, marginTop: 2 },
+  totalsRow: { flexDirection: "row", gap: 8, marginTop: 8 },
+  totalBox: { flex: 1, backgroundColor: CWAAX.surface, borderRadius: 14, padding: 12, alignItems: "center" },
+  totalLabel: { color: CWAAX.muted, fontSize: 9, textAlign: "center" },
+  totalValue: { color: CWAAX.ink, fontSize: 16, fontWeight: "900", marginTop: 4 },
+  balanceRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
+  balanceCurrency: { color: CWAAX.ink, fontWeight: "800", fontSize: 11 },
+  balanceAmount: { color: CWAAX.ink, fontWeight: "800", fontSize: 11 },
+  actionsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  actionBtn: { width: "48%", flexDirection: "row-reverse", alignItems: "center", gap: 8, backgroundColor: CWAAX.surface, borderRadius: 13, paddingHorizontal: 12, paddingVertical: 13 },
+  actionBtnText: { color: CWAAX.ink, fontSize: 10.5, fontWeight: "800" },
+  panelHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  panelTitle: { color: CWAAX.ink, fontSize: 15, fontWeight: "900" },
+  panelBody: { gap: 4 },
+  fieldLabel: { color: CWAAX.muted, fontSize: 10, fontWeight: "800", textAlign: "right", marginTop: 10, marginBottom: 6 },
+  fieldError: { color: CWAAX.red, fontSize: 9, textAlign: "right", marginTop: 4 },
+  input: { borderWidth: 1, borderColor: CWAAX.line, borderRadius: 13, paddingHorizontal: 13, paddingVertical: 12, color: CWAAX.ink, fontSize: 12, textAlign: "right" },
+  inputMultiline: { minHeight: 70, textAlignVertical: "top" },
+  panelActions: { marginTop: 18 },
+  panelConfirm: { backgroundColor: CWAAX.green, borderRadius: 14, alignItems: "center", paddingVertical: 14 },
+  panelConfirmDanger: { backgroundColor: CWAAX.red },
+  panelConfirmText: { color: CWAAX.white, fontWeight: "900", fontSize: 12 },
+  directionRow: { flexDirection: "row", gap: 8, marginBottom: 4 },
+  directionBtn: { flex: 1, flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 6, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 12, paddingVertical: 11 },
+  directionActiveGreen: { backgroundColor: CWAAX.green, borderColor: CWAAX.green },
+  directionActiveRed: { backgroundColor: CWAAX.red, borderColor: CWAAX.red },
+  directionText: { fontSize: 11, fontWeight: "800", color: CWAAX.ink },
+  currencyRow: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  currencyChip: { borderWidth: 1, borderColor: CWAAX.line, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7 },
+  currencyChipActive: { backgroundColor: CWAAX.green, borderColor: CWAAX.green },
+  currencyChipText: { color: CWAAX.ink, fontSize: 10, fontWeight: "800" },
+  currencyChipTextActive: { color: CWAAX.white },
+});
