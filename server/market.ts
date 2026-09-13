@@ -34,12 +34,42 @@ function icon(sym: string): string {
 }
 
 /*
- * Two independent upstream sources are tried in order, each with its
- * own short timeout, so a single blocked/geo-restricted provider
- * (Binance blocks some regions; CoinGecko has been seen to throttle
- * Cloudflare's own IP ranges) can't take the whole feature down or
- * stall the Worker isolate.
+ * Multiple independent upstream sources are tried in order, each with
+ * its own short timeout, so a single blocked/geo-restricted provider
+ * can't take the whole feature down. In practice, several well-known
+ * exchange/aggregator APIs (Binance, CoinCap) block or throttle
+ * requests coming from Cloudflare's own IP ranges (Workers included)
+ * — confirmed here with Binance returning 403 and CoinCap returning
+ * 530. CryptoCompare is tried first because it's commonly reported to
+ * work reliably from Cloudflare Workers specifically for this reason.
  */
+
+async function fromCryptoCompare(): Promise<MarketCoin[]> {
+  const res = await fetch(
+    `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${TOP_SYMBOLS.join(",")}&tsyms=USD`,
+    { headers: { accept: "application/json" }, signal: AbortSignal.timeout(4000) },
+  );
+
+  if (!res.ok) throw new Error(`CryptoCompare responded ${res.status}`);
+
+  const json = (await res.json()) as { RAW?: Record<string, any> };
+  if (!json.RAW) throw new Error("CryptoCompare returned no RAW data");
+
+  return TOP_SYMBOLS
+    .map((sym) => {
+      const row = json.RAW?.[sym]?.USD;
+      if (!row) return null;
+      return {
+        id: sym.toLowerCase(),
+        symbol: sym,
+        name: COIN_NAMES[sym] || sym,
+        image: icon(sym),
+        price: Number(row.PRICE) || 0,
+        change24h: Number(row.CHANGEPCT24HOUR) || 0,
+      };
+    })
+    .filter((c): c is MarketCoin => c !== null && c.price > 0);
+}
 
 async function fromBinance(): Promise<MarketCoin[]> {
   const symbolsParam = encodeURIComponent(JSON.stringify(TOP_SYMBOLS.map((s) => `${s}USDT`)));
@@ -106,7 +136,7 @@ export async function getTopMarkets(): Promise<MarketCoin[]> {
 
   const failures: string[] = [];
 
-  for (const source of [fromBinance, fromCoinCap]) {
+  for (const source of [fromCryptoCompare, fromBinance, fromCoinCap]) {
     try {
       const data = await source();
       if (data.length > 0) {
