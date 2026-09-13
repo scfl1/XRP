@@ -17,6 +17,7 @@ export default function ReceiveScreen() {
   const [networkCode, setNetworkCode] = useState(getSelectedNetwork());
   const [mode, setMode] = useState<"offchain" | "onchain">("onchain");
   const [qrUri, setQrUri] = useState<string | null>(null);
+  const [usdtIconFailed, setUsdtIconFailed] = useState(false);
 
   useEffect(() => subscribeNetwork(setNetworkCode), []);
 
@@ -78,9 +79,17 @@ export default function ReceiveScreen() {
               <View style={styles.selectorCol}>
                 <Text style={styles.selectorLabel}>استقبال</Text>
                 <View style={styles.selectorPill}>
-                  <View style={styles.usdtIcon}>
-                    <Text style={styles.usdtIconText}>₮</Text>
-                  </View>
+                  {usdtIconFailed ? (
+                    <View style={styles.usdtIcon}>
+                      <Text style={styles.usdtIconText}>₮</Text>
+                    </View>
+                  ) : (
+                    <Image
+                      source={{ uri: "https://assets.coincap.io/assets/icons/usdt@2x.png" }}
+                      style={styles.usdtLogo}
+                      onError={() => setUsdtIconFailed(true)}
+                    />
+                  )}
                   <Text style={styles.selectorValue}>USDT</Text>
                 </View>
               </View>
@@ -164,6 +173,7 @@ const styles = StyleSheet.create({
   selectorLabel: { color: CWAAX.muted, fontSize: 10, textAlign: "right", marginBottom: 6 },
   selectorPill: { flexDirection: "row-reverse", alignItems: "center", gap: 6, backgroundColor: CWAAX.surface, borderRadius: 12, paddingHorizontal: 10, height: 42 },
   usdtIcon: { width: 20, height: 20, borderRadius: 10, backgroundColor: "#26A17B", alignItems: "center", justifyContent: "center" },
+  usdtLogo: { width: 20, height: 20, borderRadius: 10 },
   usdtIconText: { color: "#fff", fontSize: 11, fontWeight: "900" },
   selectorValue: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", flex: 1, textAlign: "right" },
   qrCard: { backgroundColor: CWAAX.surface, borderRadius: 22, padding: 18, alignItems: "center" },
