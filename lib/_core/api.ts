@@ -155,13 +155,6 @@ export async function logout(): Promise<void> {
 }
 
 // Get current authenticated user (web uses cookie-based auth)
-//
-// IMPORTANT: this must distinguish two very different outcomes:
-//   1) The server responded successfully and confirmed there is no user
-//      (the session really is invalid) -> resolve to null.
-//   2) The request itself failed (network blip, DB connection exhausted,
-//      timeout, etc.) -> throw, so the caller does NOT treat it as
-//      "you are logged out" and wipe a perfectly valid session.
 export async function getMe(): Promise<{
   id: number;
   openId: string;
@@ -172,8 +165,13 @@ export async function getMe(): Promise<{
   loginMethod: string | null;
   lastSignedIn: string;
 } | null> {
-  const user = await getVanillaTrpc().auth.me.query();
-  return (user as any) || null;
+  try {
+    const user = await getVanillaTrpc().auth.me.query();
+    return (user as any) || null;
+  } catch (error) {
+    console.error("[API] getMe failed:", error);
+    return null;
+  }
 }
 
 // Establish session cookie on the backend (3000-xxx domain)
