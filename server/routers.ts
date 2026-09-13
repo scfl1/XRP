@@ -27,11 +27,11 @@ export const appRouter = router({
         lastSignedIn: user.lastSignedIn,
       };
     }),
-    register: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(120), username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_]+$/), email: z.string().trim().email().max(320), password: z.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
+    register: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(120), username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_]+$/), email: z.string().trim().email().max(320), password: z.string().min(8).max(128), referralCode: z.string().trim().max(32).optional() })).mutation(async ({ ctx, input }) => {
       const email = input.email.toLowerCase();
       if (await db.getUserByEmail(email)) throw new Error("البريد الإلكتروني مستخدم بالفعل");
       if (await db.getUserByUsername(input.username)) throw new Error("اسم المستخدم مستخدم بالفعل");
-      const user = await db.createLocalUser({ name: input.name, username: input.username, email, passwordHash: hashPassword(input.password) });
+      const user = await db.createLocalUser({ name: input.name, username: input.username, email, passwordHash: hashPassword(input.password), referralCode: input.referralCode });
       if (!user) throw new Error("تعذر إنشاء الحساب");
       const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: user.lastSignedIn } };
@@ -56,6 +56,7 @@ export const appRouter = router({
     transactions: protectedProcedure.query(({ ctx }) => db.listTransactions(ctx.user.id)),
     createDeposit: protectedProcedure.input(requestInput.extend({ paymentMethod: z.string().max(64).optional() })).mutation(({ ctx, input }) => db.createDepositRequest({ userId: ctx.user.id, ...input })),
     createWithdrawal: protectedProcedure.input(requestInput.extend({ address: z.string().min(20).max(500) })).mutation(({ ctx, input }) => db.createWithdrawalRequest({ userId: ctx.user.id, ...input })),
+    referralStats: protectedProcedure.query(({ ctx }) => db.getReferralStats(ctx.user.id)),
   }),
   admin: router({
     stats: adminProcedure.query(() => db.getAdminStats()),
