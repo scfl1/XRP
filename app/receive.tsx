@@ -165,6 +165,11 @@ export default function ReceiveScreen() {
                   <Pressable onPress={copyAddress}>
                     <Text style={styles.address}>{address}</Text>
                   </Pressable>
+
+                  <Pressable onPress={copyAddress} style={({ pressed }) => [styles.copyBtn, pressed && styles.pressed]}>
+                    <MaterialIcons name="content-copy" size={16} color={CWAAX.green} />
+                    <Text style={styles.copyBtnText}>نسخ العنوان</Text>
+                  </Pressable>
                 </>
               )}
             </View>
@@ -212,8 +217,11 @@ const styles = StyleSheet.create({
   qrBadge: { position: "absolute", width: 34, height: 34, borderRadius: 17, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff" },
   addressLabel: { color: CWAAX.muted, fontSize: 10, marginBottom: 8 },
   address: { color: CWAAX.green, fontSize: 13, fontWeight: "800", textAlign: "center", lineHeight: 20 },
+  copyBtn: { flexDirection: "row-reverse", alignItems: "center", gap: 6, marginTop: 14, backgroundColor: "#fff", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 9, borderWidth: 1, borderColor: CWAAX.line },
+  copyBtnText: { color: CWAAX.green, fontSize: 12, fontWeight: "800" },
   noAddress: { alignItems: "center", paddingVertical: 40, gap: 10 },
   noAddressText: { color: CWAAX.muted, fontSize: 12, textAlign: "center", paddingHorizontal: 20 },
   noteRow: { flexDirection: "row-reverse", gap: 8, marginTop: 18, paddingHorizontal: 4 },
   note: { flex: 1, color: CWAAX.muted, fontSize: 10.5, lineHeight: 17, textAlign: "right" },
+  pressed: { opacity: 0.6 },
 });
