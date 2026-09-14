@@ -25,13 +25,16 @@ export default function AdminScreen() {
   const [query, setQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
-  const [confirm, setConfirm] = useState<{
+  type PendingRequestAction = {
+    kind: "approveDeposit" | "rejectDeposit" | "approveWithdrawal" | "rejectWithdrawal";
+    id: number;
     title: string;
     message: string;
-    action: () => void;
     danger?: boolean;
-  } | null>(null);
-  const [actionBusy, setActionBusy] = useState(false);
+  };
+  const [pendingRequestAction, setPendingRequestAction] = useState<PendingRequestAction | null>(null);
+  const [busyRequestKey, setBusyRequestKey] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ title: string; message: string } | null>(null);
 
   const isAdmin = user?.role === "admin";
   const stats = trpc.admin.stats.useQuery(undefined, { enabled: isAdmin });
@@ -62,45 +65,46 @@ export default function AdminScreen() {
   const pendingDeposits = (deposits.data || []).filter((x: any) => x.request.status === "pending");
   const pendingWithdrawals = (withdrawals.data || []).filter((x: any) => x.request.status === "pending");
 
-  const action = (kind: "dep" | "wd", id: number) => {
+  const requestAction = (kind: "dep" | "wd", id: number, operation: "approve" | "reject") => {
     const label = kind === "dep" ? "الإيداع" : "السحب";
-    setConfirm({
-      title: `تأكيد قبول ${label}`,
-      message: `هل أنت متأكد من قبول الطلب رقم #${id}؟ سيتم تنفيذ العملية وتحديث البيانات.`,
-      action: () => {
-        setActionBusy(true);
-        const fn = kind === "dep" ? approveDeposit : approveWithdrawal;
-        fn.mutate(
-          { requestId: id },
-          {
-            onSuccess: () => setConfirm(null),
-            onError: (e) => Alert.alert("تعذر التنفيذ", e.message),
-            onSettled: () => setActionBusy(false),
-          }
-        );
-      },
+    const verb = operation === "approve" ? "قبول" : "رفض";
+    setPendingRequestAction({
+      kind: operation === "approve"
+        ? (kind === "dep" ? "approveDeposit" : "approveWithdrawal")
+        : (kind === "dep" ? "rejectDeposit" : "rejectWithdrawal"),
+      id,
+      title: `تأكيد ${verb} ${label}`,
+      message: `هل أنت متأكد من ${verb} الطلب رقم #${id}؟${operation === "approve" ? " سيتم تنفيذ العملية وتحديث البيانات." : ""}`,
+      danger: operation === "reject",
     });
   };
 
-  const reject = (kind: "dep" | "wd", id: number) => {
-    const label = kind === "dep" ? "الإيداع" : "السحب";
-    setConfirm({
-      title: `تأكيد رفض ${label}`,
-      message: `هل أنت متأكد من رفض الطلب رقم #${id}؟`,
-      danger: true,
-      action: () => {
-        setActionBusy(true);
-        const fn = kind === "dep" ? rejectDeposit : rejectWithdrawal;
-        fn.mutate(
-          { requestId: id },
-          {
-            onSuccess: () => setConfirm(null),
-            onError: (e) => Alert.alert("تعذر التنفيذ", e.message),
-            onSettled: () => setActionBusy(false),
-          }
-        );
-      },
-    });
+  const executePendingRequest = () => {
+    if (!pendingRequestAction || busyRequestKey) return;
+
+    const current = pendingRequestAction;
+    const key = `${current.kind}:${current.id}`;
+    setBusyRequestKey(key);
+
+    const mutation = current.kind === "approveDeposit" ? approveDeposit
+      : current.kind === "rejectDeposit" ? rejectDeposit
+      : current.kind === "approveWithdrawal" ? approveWithdrawal
+      : rejectWithdrawal;
+
+    mutation.mutate(
+      { requestId: current.id },
+      {
+        onSuccess: () => {
+          setPendingRequestAction(null);
+        },
+        onError: (e) => {
+          setFeedback({ title: "تعذر التنفيذ", message: e.message });
+        },
+        onSettled: () => {
+          setBusyRequestKey(null);
+        },
+      }
+    );
   };
 
   return (
@@ -142,14 +146,14 @@ export default function AdminScreen() {
             <Text style={styles.section}>طلبات الإيداع المعلقة</Text>
             <Card>
               {pendingDeposits.length ? pendingDeposits.slice(0, 8).map((x: any) => (
-                <RequestRow key={x.request.id} row={x} type="dep" onApprove={() => action("dep", x.request.id)} onReject={() => reject("dep", x.request.id)} />
+                <RequestRow key={x.request.id} row={x} type="dep" busyKey={busyRequestKey} onApprove={() => requestAction("dep", x.request.id, "approve")} onReject={() => requestAction("dep", x.request.id, "reject")} />
               )) : <Text style={styles.empty}>لا توجد طلبات معلقة.</Text>}
             </Card>
 
             <Text style={styles.section}>طلبات السحب المعلقة</Text>
             <Card>
               {pendingWithdrawals.length ? pendingWithdrawals.slice(0, 8).map((x: any) => (
-                <RequestRow key={x.request.id} row={x} type="wd" onApprove={() => action("wd", x.request.id)} onReject={() => reject("wd", x.request.id)} />
+                <RequestRow key={x.request.id} row={x} type="wd" busyKey={busyRequestKey} onApprove={() => requestAction("wd", x.request.id, "approve")} onReject={() => requestAction("wd", x.request.id, "reject")} />
               )) : <Text style={styles.empty}>لا توجد طلبات معلقة.</Text>}
             </Card>
           </>
@@ -177,8 +181,9 @@ export default function AdminScreen() {
                   key={x.request.id}
                   row={x}
                   type={tab === "الإيداعات" ? "dep" : "wd"}
-                  onApprove={() => action(tab === "الإيداعات" ? "dep" : "wd", x.request.id)}
-                  onReject={() => reject(tab === "الإيداعات" ? "dep" : "wd", x.request.id)}
+                  busyKey={busyRequestKey}
+                  onApprove={() => requestAction(tab === "الإيداعات" ? "dep" : "wd", x.request.id, "approve")}
+                  onReject={() => requestAction(tab === "الإيداعات" ? "dep" : "wd", x.request.id, "reject")}
                 />
               ))}
             </Card>
@@ -192,13 +197,20 @@ export default function AdminScreen() {
       <BroadcastModal visible={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
 
       <ConfirmModal
-        visible={!!confirm}
-        title={confirm?.title || ""}
-        message={confirm?.message || ""}
-        danger={confirm?.danger}
-        busy={actionBusy}
-        onCancel={() => !actionBusy && setConfirm(null)}
-        onConfirm={() => confirm?.action()}
+        visible={!!pendingRequestAction}
+        title={pendingRequestAction?.title || ""}
+        message={pendingRequestAction?.message || ""}
+        danger={pendingRequestAction?.danger}
+        busy={!!busyRequestKey}
+        onCancel={() => !busyRequestKey && setPendingRequestAction(null)}
+        onConfirm={executePendingRequest}
+      />
+
+      <FeedbackModal
+        visible={!!feedback}
+        title={feedback?.title || ""}
+        message={feedback?.message || ""}
+        onClose={() => setFeedback(null)}
       />
     </ScreenContainer>
   );
@@ -250,6 +262,26 @@ function ConfirmModal({
   );
 }
 
+function FeedbackModal({ visible, title, message, onClose }: { visible: boolean; title: string; message: string; onClose: () => void }) {
+  if (!visible) return null;
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.confirmOverlay}>
+        <View style={styles.confirmCard}>
+          <View style={[styles.confirmIcon, styles.confirmIconDanger]}>
+            <MaterialIcons name="error-outline" size={24} color={CWAAX.red} />
+          </View>
+          <Text style={styles.confirmTitle}>{title}</Text>
+          <Text style={styles.confirmMessage}>{message}</Text>
+          <Pressable onPress={onClose} style={styles.confirmOk}>
+            <Text style={styles.confirmOkText}>حسناً</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function Metric({ icon, label, value, tone, wide }: { icon: IconName; label: string; value: string; tone?: string; wide?: boolean }) {
   return (
     <Card style={[styles.metric, wide && styles.metricWide]}>
@@ -262,10 +294,15 @@ function Metric({ icon, label, value, tone, wide }: { icon: IconName; label: str
   );
 }
 
-function RequestRow({ row, type, onApprove, onReject }: { row: any; type: "dep" | "wd"; onApprove: () => void; onReject: () => void }) {
+function RequestRow({ row, type, busyKey, onApprove, onReject }: { row: any; type: "dep" | "wd"; busyKey?: string | null; onApprove: () => void; onReject: () => void }) {
   const r = row.request;
   const u = row.user;
   const pending = r.status === "pending";
+  const approveKey = `${type === "dep" ? "approveDeposit" : "approveWithdrawal"}:${r.id}`;
+  const rejectKey = `${type === "dep" ? "rejectDeposit" : "rejectWithdrawal"}:${r.id}`;
+  const approveBusy = busyKey === approveKey;
+  const rejectBusy = busyKey === rejectKey;
+  const rowBusy = !!busyKey;
   return (
     <View style={styles.request}>
       <View style={styles.requestIcon}>
@@ -280,8 +317,12 @@ function RequestRow({ row, type, onApprove, onReject }: { row: any; type: "dep" 
       <View style={styles.requestActions}>
         {pending ? (
           <>
-            <Pressable onPress={onApprove} style={styles.approve}><Text style={styles.approveText}>قبول</Text></Pressable>
-            <Pressable onPress={onReject} style={styles.reject}><Text style={styles.rejectText}>رفض</Text></Pressable>
+            <Pressable onPress={onApprove} disabled={rowBusy} style={[styles.approve, rowBusy && styles.disabledButton]}>
+              {approveBusy ? <ActivityIndicator size="small" color={CWAAX.green} /> : <Text style={styles.approveText}>قبول</Text>}
+            </Pressable>
+            <Pressable onPress={onReject} disabled={rowBusy} style={[styles.reject, rowBusy && styles.disabledButton]}>
+              {rejectBusy ? <ActivityIndicator size="small" color={CWAAX.red} /> : <Text style={styles.rejectText}>رفض</Text>}
+            </Pressable>
           </>
         ) : (
           <StatusPill tone={r.status === "approved" ? "success" : "danger"}>{r.status}</StatusPill>
@@ -679,6 +720,7 @@ const styles = StyleSheet.create({
   approveText: { color: CWAAX.green, fontSize: 9, fontWeight: "900" },
   reject: { paddingHorizontal: 8, paddingVertical: 2 },
   rejectText: { color: CWAAX.red, fontSize: 9, fontWeight: "800" },
+  disabledButton: { opacity: 0.55 },
   search: { height: 47, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 14, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
   searchInput: { flex: 1, color: CWAAX.ink, fontSize: 11, textAlign: "right" },
   userRow: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
