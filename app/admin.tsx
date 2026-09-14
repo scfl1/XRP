@@ -7,6 +7,7 @@ import { Card, IconButton, StatusPill, type IconName } from "@/components/cwaax-
 import { CWAAX } from "@/constants/cwaax";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
+import { confirmAsync } from "@/lib/_core/native-alert";
 
 const TABS = ["نظرة عامة", "المستخدمون", "الإيداعات", "السحوبات"] as const;
 type Tab = (typeof TABS)[number];
@@ -16,14 +17,6 @@ const LEVEL_COLORS = [CWAAX.green, CWAAX.gold, CWAAX.purple];
 function fmt(n: number | string | undefined | null) {
   const v = Number(n ?? 0);
   return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
-}
-
-/** Shows a native confirm/cancel dialog before running a sensitive action. */
-function confirmAction(title: string, message: string, onConfirm: () => void, danger = false) {
-  Alert.alert(title, message, [
-    { text: "إلغاء", style: "cancel" },
-    { text: "تأكيد", style: danger ? "destructive" : "default", onPress: onConfirm },
-  ]);
 }
 
 export default function AdminScreen() {
@@ -63,26 +56,29 @@ export default function AdminScreen() {
   const pendingDeposits = (deposits.data || []).filter((x: any) => x.request.status === "pending");
   const pendingWithdrawals = (withdrawals.data || []).filter((x: any) => x.request.status === "pending");
 
-  const action = (kind: "dep" | "wd", id: number) => {
-    confirmAction(
-      kind === "dep" ? "تأكيد قبول الإيداع" : "تأكيد قبول السحب",
-      "هل أنت متأكد أنك تريد قبول هذا الطلب؟",
-      () => {
-        const fn = kind === "dep" ? approveDeposit : approveWithdrawal;
-        fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
-      }
+  const action = async (kind: "dep" | "wd", id: number) => {
+    const isDeposit = kind === "dep";
+    const ok = await confirmAsync(
+      isDeposit ? "تأكيد قبول الإيداع" : "تأكيد قبول السحب",
+      isDeposit
+        ? "هل أنت متأكد من قبول طلب الإيداع؟ سيتم تحديث الرصيد بعد نجاح العملية."
+        : "هل أنت متأكد من قبول طلب السحب؟ سيتم تنفيذ الطلب بعد نجاح العملية.",
+      "تأكيد",
     );
+    if (!ok) return;
+    const fn = isDeposit ? approveDeposit : approveWithdrawal;
+    fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
   };
-  const reject = (kind: "dep" | "wd", id: number) => {
-    confirmAction(
-      kind === "dep" ? "تأكيد رفض الإيداع" : "تأكيد رفض السحب",
-      "هل أنت متأكد أنك تريد رفض هذا الطلب؟",
-      () => {
-        const fn = kind === "dep" ? rejectDeposit : rejectWithdrawal;
-        fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
-      },
-      true
+  const reject = async (kind: "dep" | "wd", id: number) => {
+    const isDeposit = kind === "dep";
+    const ok = await confirmAsync(
+      isDeposit ? "تأكيد رفض الإيداع" : "تأكيد رفض السحب",
+      "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.",
+      "تأكيد الرفض",
     );
+    if (!ok) return;
+    const fn = isDeposit ? rejectDeposit : rejectWithdrawal;
+    fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
   };
 
   return (
@@ -188,7 +184,7 @@ function Metric({ icon, label, value, tone, wide }: { icon: IconName; label: str
   );
 }
 
-function RequestRow({ row, type, onApprove, onReject }: { row: any; type: "dep" | "wd"; onApprove: () => void; onReject: () => void }) {
+function RequestRow({ row, type, onApprove, onReject, busy }: { row: any; type: "dep" | "wd"; onApprove: () => void; onReject: () => void; busy?: boolean }) {
   const r = row.request;
   const u = row.user;
   const pending = r.status === "pending";
@@ -206,8 +202,12 @@ function RequestRow({ row, type, onApprove, onReject }: { row: any; type: "dep" 
       <View style={styles.requestActions}>
         {pending ? (
           <>
-            <Pressable onPress={onApprove} style={styles.approve}><Text style={styles.approveText}>قبول</Text></Pressable>
-            <Pressable onPress={onReject} style={styles.reject}><Text style={styles.rejectText}>رفض</Text></Pressable>
+            <Pressable onPress={onApprove} disabled={busy} style={[styles.approve, busy && { opacity: 0.6 }]}>
+              {busy ? <ActivityIndicator size="small" color={CWAAX.white} /> : <Text style={styles.approveText}>قبول</Text>}
+            </Pressable>
+            <Pressable onPress={onReject} disabled={busy} style={[styles.reject, busy && { opacity: 0.6 }]}>
+              {busy ? <ActivityIndicator size="small" color={CWAAX.white} /> : <Text style={styles.rejectText}>رفض</Text>}
+            </Pressable>
           </>
         ) : (
           <StatusPill tone={r.status === "approved" ? "success" : "danger"}>{r.status}</StatusPill>
@@ -346,11 +346,11 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                   icon={u.isBanned ? "lock-open" : "block"}
                   label={u.isBanned ? "رفع الحظر" : "حظر الحساب"}
                   tone={u.isBanned ? CWAAX.green : CWAAX.red}
-                  onPress={() =>
-                    u.isBanned
-                      ? confirmAction("تأكيد رفع الحظر", "هل تريد رفع الحظر عن هذا المستخدم؟", () => unbanMutation.mutate({ userId }))
-                      : setMode("ban")
-                  }
+                  onPress={async () => {
+                    if (!u.isBanned) { setMode("ban"); return; }
+                    const ok = await confirmAsync("رفع الحظر", "هل أنت متأكد من رفع الحظر عن هذا الحساب؟", "رفع الحظر");
+                    if (ok) unbanMutation.mutate({ userId }, { onError: (e) => Alert.alert("تعذر رفع الحظر", e.message) });
+                  }}
                 />
               </View>
             </ScrollView>
@@ -358,51 +358,25 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
             <BanPanel
               busy={banMutation.isPending}
               onCancel={() => setMode("detail")}
-              onConfirm={(reason) =>
-                confirmAction(
-                  "تأكيد الحظر",
-                  "هل أنت متأكد أنك تريد حظر هذا الحساب؟",
-                  () => banMutation.mutate({ userId, reason: reason || undefined }, { onError: (e) => Alert.alert("تعذر الحظر", e.message) }),
-                  true
-                )
-              }
+              onConfirm={(reason) => banMutation.mutate({ userId, reason: reason || undefined }, { onError: (e) => Alert.alert("تعذر الحظر", e.message) })}
             />
           ) : mode === "password" ? (
             <PasswordPanel
               busy={passwordMutation.isPending}
               onCancel={() => setMode("detail")}
-              onConfirm={(pw) =>
-                confirmAction(
-                  "تأكيد تغيير كلمة المرور",
-                  "هل تريد تعيين كلمة مرور جديدة لهذا المستخدم؟",
-                  () => passwordMutation.mutate({ userId, newPassword: pw }, { onError: (e) => Alert.alert("تعذر التغيير", e.message) })
-                )
-              }
+              onConfirm={(pw) => passwordMutation.mutate({ userId, newPassword: pw }, { onError: (e) => Alert.alert("تعذر التغيير", e.message) })}
             />
           ) : mode === "balance" ? (
             <BalancePanel
               busy={balanceMutation.isPending}
               onCancel={() => setMode("detail")}
-              onConfirm={(v) =>
-                confirmAction(
-                  v.direction === "credit" ? "تأكيد تعبئة الرصيد" : "تأكيد السحب من الرصيد",
-                  `سيتم ${v.direction === "credit" ? "إضافة" : "خصم"} ${v.amount} ${v.currency} ${v.direction === "credit" ? "إلى" : "من"} رصيد المستخدم. هل أنت متأكد؟`,
-                  () => balanceMutation.mutate({ userId, ...v }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) }),
-                  v.direction === "debit"
-                )
-              }
+              onConfirm={(v) => balanceMutation.mutate({ userId, ...v }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) })}
             />
           ) : (
             <NotifyPanel
               busy={notifyMutation.isPending}
               onCancel={() => setMode("detail")}
-              onConfirm={(title, message) =>
-                confirmAction(
-                  "تأكيد إرسال الإشعار",
-                  "هل تريد إرسال هذا الإشعار لهذا المستخدم؟",
-                  () => notifyMutation.mutate({ userId, title, message }, { onError: (e) => Alert.alert("تعذر الإرسال", e.message) })
-                )
-              }
+              onConfirm={(title, message) => notifyMutation.mutate({ userId, title, message }, { onError: (e) => Alert.alert("تعذر الإرسال", e.message) })}
             />
           )}
         </View>
@@ -430,7 +404,19 @@ function PanelShell({ title, children, onCancel, onConfirm, confirmLabel = "تأ
       </View>
       <View style={styles.panelBody}>{children}</View>
       <View style={styles.panelActions}>
-        <Pressable onPress={onConfirm} disabled={busy} style={[styles.panelConfirm, danger && styles.panelConfirmDanger, busy && { opacity: 0.6 }]}>
+        <Pressable
+          onPress={async () => {
+            if (busy) return;
+            const ok = await confirmAsync(
+              "تأكيد العملية",
+              `هل أنت متأكد من تنفيذ "${title}"؟`,
+              confirmLabel,
+            );
+            if (ok) onConfirm();
+          }}
+          disabled={busy}
+          style={[styles.panelConfirm, danger && styles.panelConfirmDanger, busy && { opacity: 0.6 }]}
+        >
           {busy ? <ActivityIndicator color={CWAAX.white} size="small" /> : <Text style={styles.panelConfirmText}>{confirmLabel}</Text>}
         </Pressable>
       </View>
@@ -538,14 +524,7 @@ function BroadcastModal({ visible, onClose }: { visible: boolean; onClose: () =>
           <PanelShell
             title="إشعار لجميع المستخدمين"
             onCancel={onClose}
-            onConfirm={() =>
-              valid &&
-              confirmAction(
-                "تأكيد الإرسال للجميع",
-                "سيتم إرسال هذا الإشعار إلى جميع المستخدمين. هل أنت متأكد؟",
-                () => mutation.mutate({ userId: null, title: title.trim(), message: message.trim() })
-              )
-            }
+            onConfirm={() => valid && mutation.mutate({ userId: null, title: title.trim(), message: message.trim() })}
             confirmLabel="إرسال للجميع"
             busy={mutation.isPending}
           >
