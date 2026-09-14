@@ -7,7 +7,6 @@ import { Card, IconButton, StatusPill, type IconName } from "@/components/cwaax-
 import { CWAAX } from "@/constants/cwaax";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
-import { confirmAsync } from "@/lib/_core/native-alert";
 
 const TABS = ["نظرة عامة", "المستخدمون", "الإيداعات", "السحوبات"] as const;
 type Tab = (typeof TABS)[number];
@@ -26,6 +25,13 @@ export default function AdminScreen() {
   const [query, setQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    message: string;
+    action: () => void;
+    danger?: boolean;
+  } | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
 
   const isAdmin = user?.role === "admin";
   const stats = trpc.admin.stats.useQuery(undefined, { enabled: isAdmin });
@@ -56,29 +62,45 @@ export default function AdminScreen() {
   const pendingDeposits = (deposits.data || []).filter((x: any) => x.request.status === "pending");
   const pendingWithdrawals = (withdrawals.data || []).filter((x: any) => x.request.status === "pending");
 
-  const action = async (kind: "dep" | "wd", id: number) => {
-    const isDeposit = kind === "dep";
-    const ok = await confirmAsync(
-      isDeposit ? "تأكيد قبول الإيداع" : "تأكيد قبول السحب",
-      isDeposit
-        ? "هل أنت متأكد من قبول طلب الإيداع؟ سيتم تحديث الرصيد بعد نجاح العملية."
-        : "هل أنت متأكد من قبول طلب السحب؟ سيتم تنفيذ الطلب بعد نجاح العملية.",
-      "تأكيد",
-    );
-    if (!ok) return;
-    const fn = isDeposit ? approveDeposit : approveWithdrawal;
-    fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
+  const action = (kind: "dep" | "wd", id: number) => {
+    const label = kind === "dep" ? "الإيداع" : "السحب";
+    setConfirm({
+      title: `تأكيد قبول ${label}`,
+      message: `هل أنت متأكد من قبول الطلب رقم #${id}؟ سيتم تنفيذ العملية وتحديث البيانات.`,
+      action: () => {
+        setActionBusy(true);
+        const fn = kind === "dep" ? approveDeposit : approveWithdrawal;
+        fn.mutate(
+          { requestId: id },
+          {
+            onSuccess: () => setConfirm(null),
+            onError: (e) => Alert.alert("تعذر التنفيذ", e.message),
+            onSettled: () => setActionBusy(false),
+          }
+        );
+      },
+    });
   };
-  const reject = async (kind: "dep" | "wd", id: number) => {
-    const isDeposit = kind === "dep";
-    const ok = await confirmAsync(
-      isDeposit ? "تأكيد رفض الإيداع" : "تأكيد رفض السحب",
-      "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء بعد تنفيذه.",
-      "تأكيد الرفض",
-    );
-    if (!ok) return;
-    const fn = isDeposit ? rejectDeposit : rejectWithdrawal;
-    fn.mutate({ requestId: id }, { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) });
+
+  const reject = (kind: "dep" | "wd", id: number) => {
+    const label = kind === "dep" ? "الإيداع" : "السحب";
+    setConfirm({
+      title: `تأكيد رفض ${label}`,
+      message: `هل أنت متأكد من رفض الطلب رقم #${id}؟`,
+      danger: true,
+      action: () => {
+        setActionBusy(true);
+        const fn = kind === "dep" ? rejectDeposit : rejectWithdrawal;
+        fn.mutate(
+          { requestId: id },
+          {
+            onSuccess: () => setConfirm(null),
+            onError: (e) => Alert.alert("تعذر التنفيذ", e.message),
+            onSettled: () => setActionBusy(false),
+          }
+        );
+      },
+    });
   };
 
   return (
@@ -168,7 +190,63 @@ export default function AdminScreen() {
         <UserDetailModal userId={selectedUserId} onClose={() => setSelectedUserId(null)} />
       )}
       <BroadcastModal visible={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
+
+      <ConfirmModal
+        visible={!!confirm}
+        title={confirm?.title || ""}
+        message={confirm?.message || ""}
+        danger={confirm?.danger}
+        busy={actionBusy}
+        onCancel={() => !actionBusy && setConfirm(null)}
+        onConfirm={() => confirm?.action()}
+      />
     </ScreenContainer>
+  );
+}
+
+function ConfirmModal({
+  visible,
+  title,
+  message,
+  onCancel,
+  onConfirm,
+  busy,
+  danger,
+}: {
+  visible: boolean;
+  title: string;
+  message: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  busy?: boolean;
+  danger?: boolean;
+}) {
+  if (!visible) return null;
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.confirmOverlay}>
+        <View style={styles.confirmCard}>
+          <View style={[styles.confirmIcon, danger && styles.confirmIconDanger]}>
+            <MaterialIcons name={danger ? "warning" : "help-outline"} size={24} color={danger ? CWAAX.red : CWAAX.green} />
+          </View>
+          <Text style={styles.confirmTitle}>{title}</Text>
+          <Text style={styles.confirmMessage}>{message}</Text>
+          <View style={styles.confirmActions}>
+            <Pressable onPress={onCancel} disabled={busy} style={styles.confirmCancel}>
+              <Text style={styles.confirmCancelText}>إلغاء</Text>
+            </Pressable>
+            <Pressable
+              onPress={onConfirm}
+              disabled={busy}
+              style={[styles.confirmOk, danger && styles.confirmOkDanger, busy && { opacity: 0.65 }]}
+            >
+              {busy ? <ActivityIndicator color={CWAAX.white} size="small" /> : <Text style={styles.confirmOkText}>تأكيد</Text>}
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -184,7 +262,7 @@ function Metric({ icon, label, value, tone, wide }: { icon: IconName; label: str
   );
 }
 
-function RequestRow({ row, type, onApprove, onReject, busy }: { row: any; type: "dep" | "wd"; onApprove: () => void; onReject: () => void; busy?: boolean }) {
+function RequestRow({ row, type, onApprove, onReject }: { row: any; type: "dep" | "wd"; onApprove: () => void; onReject: () => void }) {
   const r = row.request;
   const u = row.user;
   const pending = r.status === "pending";
@@ -202,12 +280,8 @@ function RequestRow({ row, type, onApprove, onReject, busy }: { row: any; type: 
       <View style={styles.requestActions}>
         {pending ? (
           <>
-            <Pressable onPress={onApprove} disabled={busy} style={[styles.approve, busy && { opacity: 0.6 }]}>
-              {busy ? <ActivityIndicator size="small" color={CWAAX.white} /> : <Text style={styles.approveText}>قبول</Text>}
-            </Pressable>
-            <Pressable onPress={onReject} disabled={busy} style={[styles.reject, busy && { opacity: 0.6 }]}>
-              {busy ? <ActivityIndicator size="small" color={CWAAX.white} /> : <Text style={styles.rejectText}>رفض</Text>}
-            </Pressable>
+            <Pressable onPress={onApprove} style={styles.approve}><Text style={styles.approveText}>قبول</Text></Pressable>
+            <Pressable onPress={onReject} style={styles.reject}><Text style={styles.rejectText}>رفض</Text></Pressable>
           </>
         ) : (
           <StatusPill tone={r.status === "approved" ? "success" : "danger"}>{r.status}</StatusPill>
@@ -258,6 +332,7 @@ type PanelMode = "detail" | "ban" | "password" | "balance" | "notify";
 
 function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => void }) {
   const [mode, setMode] = useState<PanelMode>("detail");
+  const [confirmUnban, setConfirmUnban] = useState(false);
   const detail = trpc.admin.userDetail.useQuery({ userId });
   const utils = trpc.useUtils();
 
@@ -346,11 +421,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                   icon={u.isBanned ? "lock-open" : "block"}
                   label={u.isBanned ? "رفع الحظر" : "حظر الحساب"}
                   tone={u.isBanned ? CWAAX.green : CWAAX.red}
-                  onPress={async () => {
-                    if (!u.isBanned) { setMode("ban"); return; }
-                    const ok = await confirmAsync("رفع الحظر", "هل أنت متأكد من رفع الحظر عن هذا الحساب؟", "رفع الحظر");
-                    if (ok) unbanMutation.mutate({ userId }, { onError: (e) => Alert.alert("تعذر رفع الحظر", e.message) });
-                  }}
+                  onPress={() => (u.isBanned ? setConfirmUnban(true) : setMode("ban"))}
                 />
               </View>
             </ScrollView>
@@ -379,6 +450,23 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
               onConfirm={(title, message) => notifyMutation.mutate({ userId, title, message }, { onError: (e) => Alert.alert("تعذر الإرسال", e.message) })}
             />
           )}
+
+          <ConfirmModal
+            visible={confirmUnban}
+            title="تأكيد رفع الحظر"
+            message="هل أنت متأكد من رفع الحظر عن هذا الحساب؟"
+            busy={unbanMutation.isPending}
+            onCancel={() => !unbanMutation.isPending && setConfirmUnban(false)}
+            onConfirm={() =>
+              unbanMutation.mutate(
+                { userId },
+                {
+                  onSuccess: () => setConfirmUnban(false),
+                  onError: (e) => Alert.alert("تعذر رفع الحظر", e.message),
+                }
+              )
+            }
+          />
         </View>
       </View>
     </Modal>
@@ -395,6 +483,8 @@ function ActionBtn({ icon, label, onPress, tone }: { icon: IconName; label: stri
 }
 
 function PanelShell({ title, children, onCancel, onConfirm, confirmLabel = "تأكيد", busy, danger }: { title: string; children: ReactNode; onCancel: () => void; onConfirm: () => void; confirmLabel?: string; busy?: boolean; danger?: boolean }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
   return (
     <View>
       <View style={styles.panelHeader}>
@@ -404,22 +494,23 @@ function PanelShell({ title, children, onCancel, onConfirm, confirmLabel = "تأ
       </View>
       <View style={styles.panelBody}>{children}</View>
       <View style={styles.panelActions}>
-        <Pressable
-          onPress={async () => {
-            if (busy) return;
-            const ok = await confirmAsync(
-              "تأكيد العملية",
-              `هل أنت متأكد من تنفيذ "${title}"؟`,
-              confirmLabel,
-            );
-            if (ok) onConfirm();
-          }}
-          disabled={busy}
-          style={[styles.panelConfirm, danger && styles.panelConfirmDanger, busy && { opacity: 0.6 }]}
-        >
+        <Pressable onPress={() => setConfirmOpen(true)} disabled={busy} style={[styles.panelConfirm, danger && styles.panelConfirmDanger, busy && { opacity: 0.6 }]}>
           {busy ? <ActivityIndicator color={CWAAX.white} size="small" /> : <Text style={styles.panelConfirmText}>{confirmLabel}</Text>}
         </Pressable>
       </View>
+
+      <ConfirmModal
+        visible={confirmOpen}
+        title={`تأكيد ${confirmLabel}`}
+        message={`هل أنت متأكد من تنفيذ عملية «${confirmLabel}»؟`}
+        danger={danger}
+        busy={!!busy}
+        onCancel={() => !busy && setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          onConfirm();
+        }}
+      />
     </View>
   );
 }
@@ -540,6 +631,18 @@ function BroadcastModal({ visible, onClose }: { visible: boolean; onClose: () =>
 }
 
 const styles = StyleSheet.create({
+  confirmOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.72)", alignItems: "center", justifyContent: "center", padding: 24 },
+  confirmCard: { width: "100%", maxWidth: 430, backgroundColor: CWAAX.surface, borderRadius: 22, padding: 22, borderWidth: 1, borderColor: CWAAX.border },
+  confirmIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 12 },
+  confirmIconDanger: { backgroundColor: `${CWAAX.red}18` },
+  confirmTitle: { color: CWAAX.ink, fontSize: 18, fontWeight: "900", textAlign: "center", marginBottom: 8 },
+  confirmMessage: { color: CWAAX.muted, fontSize: 13, lineHeight: 21, textAlign: "center", marginBottom: 20 },
+  confirmActions: { flexDirection: "row", gap: 10 },
+  confirmCancel: { flex: 1, minHeight: 46, borderRadius: 13, backgroundColor: CWAAX.background, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: CWAAX.border },
+  confirmCancelText: { color: CWAAX.ink, fontWeight: "800" },
+  confirmOk: { flex: 1, minHeight: 46, borderRadius: 13, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center" },
+  confirmOkDanger: { backgroundColor: CWAAX.red },
+  confirmOkText: { color: CWAAX.white, fontWeight: "900" },
   content: { paddingTop: 12, paddingBottom: 30 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 30 },
   denied: { textAlign: "center", color: CWAAX.ink, fontSize: 15, fontWeight: "800", marginBottom: 18 },
