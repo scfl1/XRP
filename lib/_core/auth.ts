@@ -13,45 +13,66 @@ export type User = {
   lastSignedIn: Date;
 };
 
+// =====================================================
+// In-memory cache — يحل مشكلة قراءة SecureStore البطيئة
+// والمتكررة في كل طلب tRPC (سبب خطأ 10002 المتقطع).
+// =====================================================
+let _cachedToken: string | null = null;
+let _cacheLoaded = false;
+
+// fallback عام للطوارئ — يُقرأ منه trpc.ts لو فشلت getSessionToken
+if (typeof globalThis !== "undefined") {
+  (globalThis as any).__CWAXX_TOKEN__ = null;
+}
+
 export async function getSessionToken(): Promise<string | null> {
+  // 1) لو الـ cache محمّل، ارجعه فوراً
+  if (_cacheLoaded) {
+    return _cachedToken;
+  }
+
   try {
-    // Web: store the same JWT returned by the local login endpoint.
-    // The API client sends it as Authorization: Bearer <token>.
+    let token: string | null = null;
+
     if (Platform.OS === "web") {
-      const token = window.localStorage.getItem(SESSION_TOKEN_KEY);
-      console.log("[Auth] Web session token:", token ? "present" : "missing");
-      return token;
+      token = window.localStorage.getItem(SESSION_TOKEN_KEY);
+    } else {
+      token = await SecureStore.getItemAsync(SESSION_TOKEN_KEY);
     }
 
-    // Native: use SecureStore
-    console.log("[Auth] Getting session token...");
-    const token = await SecureStore.getItemAsync(SESSION_TOKEN_KEY);
-    console.log(
-      "[Auth] Session token retrieved from SecureStore:",
-      token ? `present (${token.substring(0, 20)}...)` : "missing",
-    );
+    _cachedToken = token;
+    _cacheLoaded = true;
+
+    // حدّث الـ fallback العام
+    if (typeof globalThis !== "undefined") {
+      (globalThis as any).__CWAXX_TOKEN__ = token;
+    }
+
     return token;
   } catch (error) {
     console.error("[Auth] Failed to get session token:", error);
+    // لا نضع _cacheLoaded = true هنا، حتى نعيد المحاولة لاحقاً
     return null;
   }
 }
 
 export async function setSessionToken(token: string): Promise<void> {
   try {
-    // Web: persist the JWT in localStorage so subsequent API requests
-    // can authenticate with Authorization: Bearer <token>.
+    // 1) حدّث الـ cache أولاً — هذا يحل مشكلة التوكن غير المرئي لـ trpc
+    _cachedToken = token;
+    _cacheLoaded = true;
+
+    if (typeof globalThis !== "undefined") {
+      (globalThis as any).__CWAXX_TOKEN__ = token;
+    }
+
+    // 2) ثم احفظ في التخزين الدائم
     if (Platform.OS === "web") {
       window.localStorage.setItem(SESSION_TOKEN_KEY, token);
       window.dispatchEvent(new Event("cwaax-auth-changed"));
-      console.log("[Auth] Web session token stored successfully");
-      return;
+    } else {
+      await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
     }
-
-    // Native: use SecureStore
-    console.log("[Auth] Setting session token...", token.substring(0, 20) + "...");
-    await SecureStore.setItemAsync(SESSION_TOKEN_KEY, token);
-    console.log("[Auth] Session token stored in SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to set session token:", error);
     throw error;
@@ -60,21 +81,24 @@ export async function setSessionToken(token: string): Promise<void> {
 
 export async function removeSessionToken(): Promise<void> {
   try {
-    // Web: remove the locally stored JWT.
+    // 1) امسح الـ cache أولاً
+    _cachedToken = null;
+    _cacheLoaded = true; // نعتبر الحالة "معروفة ومفرغة"
+
+    if (typeof globalThis !== "undefined") {
+      (globalThis as any).__CWAXX_TOKEN__ = null;
+    }
+
+    // 2) ثم امسح من التخزين الدائم
     if (Platform.OS === "web") {
       window.localStorage.removeItem(SESSION_TOKEN_KEY);
       window.localStorage.removeItem("app_session_token");
       window.localStorage.removeItem("manus-runtime-user-info");
       window.localStorage.removeItem(USER_INFO_KEY);
       window.dispatchEvent(new Event("cwaax-auth-changed"));
-      console.log("[Auth] Web session token removed successfully");
-      return;
+    } else {
+      await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
     }
-
-    // Native: use SecureStore
-    console.log("[Auth] Removing session token...");
-    await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
-    console.log("[Auth] Session token removed from SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to remove session token:", error);
   }
@@ -82,24 +106,15 @@ export async function removeSessionToken(): Promise<void> {
 
 export async function getUserInfo(): Promise<User | null> {
   try {
-    console.log("[Auth] Getting user info...");
-
     let info: string | null = null;
     if (Platform.OS === "web") {
-      // Use localStorage for web
       info = window.localStorage.getItem(USER_INFO_KEY);
     } else {
-      // Use SecureStore for native
       info = await SecureStore.getItemAsync(USER_INFO_KEY);
     }
 
-    if (!info) {
-      console.log("[Auth] No user info found");
-      return null;
-    }
-    const user = JSON.parse(info);
-    console.log("[Auth] User info retrieved:", user);
-    return user;
+    if (!info) return null;
+    return JSON.parse(info);
   } catch (error) {
     console.error("[Auth] Failed to get user info:", error);
     return null;
@@ -108,18 +123,11 @@ export async function getUserInfo(): Promise<User | null> {
 
 export async function setUserInfo(user: User): Promise<void> {
   try {
-    console.log("[Auth] Setting user info...", user);
-
     if (Platform.OS === "web") {
-      // Use localStorage for web
       window.localStorage.setItem(USER_INFO_KEY, JSON.stringify(user));
-      console.log("[Auth] User info stored in localStorage successfully");
       return;
     }
-
-    // Use SecureStore for native
     await SecureStore.setItemAsync(USER_INFO_KEY, JSON.stringify(user));
-    console.log("[Auth] User info stored in SecureStore successfully");
   } catch (error) {
     console.error("[Auth] Failed to set user info:", error);
   }
@@ -128,12 +136,9 @@ export async function setUserInfo(user: User): Promise<void> {
 export async function clearUserInfo(): Promise<void> {
   try {
     if (Platform.OS === "web") {
-      // Use localStorage for web
       window.localStorage.removeItem(USER_INFO_KEY);
       return;
     }
-
-    // Use SecureStore for native
     await SecureStore.deleteItemAsync(USER_INFO_KEY);
   } catch (error) {
     console.error("[Auth] Failed to clear user info:", error);
