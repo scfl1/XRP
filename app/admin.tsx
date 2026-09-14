@@ -38,34 +38,102 @@ export default function AdminScreen() {
   const [feedback, setFeedback] = useState<{ title: string; message: string } | null>(null);
 
   const isAdmin = user?.role === "admin";
-  const stats = trpc.admin.stats.useQuery(undefined, { enabled: isAdmin });
-  const users = trpc.admin.users.useQuery({ search: query || undefined }, { enabled: isAdmin });
-  const deposits = trpc.admin.deposits.useQuery(undefined, { enabled: isAdmin });
-  const withdrawals = trpc.admin.withdrawals.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
 
+  // ====== Queries with auto-refresh ======
+  const stats = trpc.admin.stats.useQuery(undefined, {
+    enabled: isAdmin,
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+  });
+
+  const users = trpc.admin.users.useQuery(
+    { search: query || undefined },
+    { enabled: isAdmin, refetchInterval: 20000, refetchOnWindowFocus: true }
+  );
+
+  const deposits = trpc.admin.deposits.useQuery(undefined, {
+    enabled: isAdmin,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+
+  const withdrawals = trpc.admin.withdrawals.useQuery(undefined, {
+    enabled: isAdmin,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+
+  // ====== Mutations with Optimistic updates ======
   const approveDeposit = trpc.admin.approveDeposit.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ requestId }) => {
+      await utils.admin.deposits.cancel();
+      const prev = utils.admin.deposits.getData();
+      utils.admin.deposits.setData(undefined, (old: any) =>
+        (old || []).filter((x: any) => x.request.id !== requestId)
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.prev) utils.admin.deposits.setData(undefined, ctx.prev);
+    },
+    onSettled: () => {
       utils.admin.deposits.invalidate();
       utils.admin.stats.invalidate();
       utils.wallet.balances.invalidate();
     },
   });
+
   const rejectDeposit = trpc.admin.rejectDeposit.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ requestId }) => {
+      await utils.admin.deposits.cancel();
+      const prev = utils.admin.deposits.getData();
+      utils.admin.deposits.setData(undefined, (old: any) =>
+        (old || []).filter((x: any) => x.request.id !== requestId)
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.prev) utils.admin.deposits.setData(undefined, ctx.prev);
+    },
+    onSettled: () => {
       utils.admin.deposits.invalidate();
       utils.admin.stats.invalidate();
     },
   });
+
   const approveWithdrawal = trpc.admin.approveWithdrawal.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ requestId }) => {
+      await utils.admin.withdrawals.cancel();
+      const prev = utils.admin.withdrawals.getData();
+      utils.admin.withdrawals.setData(undefined, (old: any) =>
+        (old || []).filter((x: any) => x.request.id !== requestId)
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.prev) utils.admin.withdrawals.setData(undefined, ctx.prev);
+    },
+    onSettled: () => {
       utils.admin.withdrawals.invalidate();
       utils.admin.stats.invalidate();
       utils.wallet.balances.invalidate();
     },
   });
+
   const rejectWithdrawal = trpc.admin.rejectWithdrawal.useMutation({
-    onSuccess: () => {
+    onMutate: async ({ requestId }) => {
+      await utils.admin.withdrawals.cancel();
+      const prev = utils.admin.withdrawals.getData();
+      utils.admin.withdrawals.setData(undefined, (old: any) =>
+        (old || []).filter((x: any) => x.request.id !== requestId)
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx: any) => {
+      if (ctx?.prev) utils.admin.withdrawals.setData(undefined, ctx.prev);
+    },
+    onSettled: () => {
       utils.admin.withdrawals.invalidate();
       utils.admin.stats.invalidate();
     },
@@ -94,7 +162,9 @@ export default function AdminScreen() {
   }
 
   const pendingDeposits = (deposits.data || []).filter((x: any) => x.request.status === "pending");
-  const pendingWithdrawals = (withdrawals.data || []).filter((x: any) => x.request.status === "pending");
+  const pendingWithdrawals = (withdrawals.data || []).filter(
+    (x: any) => x.request.status === "pending"
+  );
 
   const requestAction = (kind: "dep" | "wd", id: number, operation: "approve" | "reject") => {
     const label = kind === "dep" ? "الإيداع" : "السحب";
@@ -141,6 +211,7 @@ export default function AdminScreen() {
         },
         onError: (e) => {
           setFeedback({ title: "تعذر التنفيذ", message: e.message });
+          setPendingRequestAction(null);
         },
         onSettled: () => {
           setBusyRequestKey(null);
