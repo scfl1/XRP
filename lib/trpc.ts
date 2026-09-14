@@ -26,8 +26,26 @@ export function createTRPCClient() {
         // tRPC v11: transformer MUST be inside httpBatchLink, not at root
         transformer: superjson,
         async headers() {
-          const token = await Auth.getSessionToken();
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          // 1) حاول من Cache / SecureStore
+          let token: string | null = null;
+          try {
+            token = await Auth.getSessionToken();
+          } catch {
+            token = null;
+          }
+
+          // 2) fallback من الذاكرة العامة إذا فشلت القراءة
+          if (!token && typeof globalThis !== "undefined") {
+            token = (globalThis as any).__CWAXX_TOKEN__ ?? null;
+          }
+
+          // 3) تحقق أن التوكن فعلاً نص غير فارغ
+          if (!token || typeof token !== "string" || token.length < 10) {
+            console.warn("[trpc] No valid token found for request");
+            return {};
+          }
+
+          return { Authorization: `Bearer ${token}` };
         },
         // Custom fetch to include credentials for cookie-based auth
         fetch(url, options) {
