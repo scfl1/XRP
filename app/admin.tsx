@@ -40,31 +40,7 @@ export default function AdminScreen() {
   const isAdmin = user?.role === "admin";
   const utils = trpc.useUtils();
 
-  // ====== Queries with auto-refresh ======
-  const stats = trpc.admin.stats.useQuery(undefined, {
-    enabled: isAdmin,
-    refetchInterval: 15000,
-    refetchOnWindowFocus: true,
-  });
-
-  const users = trpc.admin.users.useQuery(
-    { search: query || undefined },
-    { enabled: isAdmin, refetchInterval: 20000, refetchOnWindowFocus: true }
-  );
-
-  const deposits = trpc.admin.deposits.useQuery(undefined, {
-    enabled: isAdmin,
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-  });
-
-  const withdrawals = trpc.admin.withdrawals.useQuery(undefined, {
-    enabled: isAdmin,
-    refetchInterval: 10000,
-    refetchOnWindowFocus: true,
-  });
-
-  // ====== Mutations with Optimistic updates ======
+  // ====== Mutations first (so isMutating can gate refetchInterval) ======
   const approveDeposit = trpc.admin.approveDeposit.useMutation({
     onMutate: async ({ requestId }) => {
       await utils.admin.deposits.cancel();
@@ -77,8 +53,8 @@ export default function AdminScreen() {
     onError: (_e, _v, ctx: any) => {
       if (ctx?.prev) utils.admin.deposits.setData(undefined, ctx.prev);
     },
-    onSettled: () => {
-      utils.admin.deposits.invalidate();
+    onSettled: async () => {
+      await utils.admin.deposits.invalidate();
       utils.admin.stats.invalidate();
       utils.wallet.balances.invalidate();
     },
@@ -96,8 +72,8 @@ export default function AdminScreen() {
     onError: (_e, _v, ctx: any) => {
       if (ctx?.prev) utils.admin.deposits.setData(undefined, ctx.prev);
     },
-    onSettled: () => {
-      utils.admin.deposits.invalidate();
+    onSettled: async () => {
+      await utils.admin.deposits.invalidate();
       utils.admin.stats.invalidate();
     },
   });
@@ -114,8 +90,8 @@ export default function AdminScreen() {
     onError: (_e, _v, ctx: any) => {
       if (ctx?.prev) utils.admin.withdrawals.setData(undefined, ctx.prev);
     },
-    onSettled: () => {
-      utils.admin.withdrawals.invalidate();
+    onSettled: async () => {
+      await utils.admin.withdrawals.invalidate();
       utils.admin.stats.invalidate();
       utils.wallet.balances.invalidate();
     },
@@ -133,10 +109,40 @@ export default function AdminScreen() {
     onError: (_e, _v, ctx: any) => {
       if (ctx?.prev) utils.admin.withdrawals.setData(undefined, ctx.prev);
     },
-    onSettled: () => {
-      utils.admin.withdrawals.invalidate();
+    onSettled: async () => {
+      await utils.admin.withdrawals.invalidate();
       utils.admin.stats.invalidate();
     },
+  });
+
+  const isMutating =
+    approveDeposit.isPending ||
+    rejectDeposit.isPending ||
+    approveWithdrawal.isPending ||
+    rejectWithdrawal.isPending;
+
+  // ====== Queries (auto-refresh, paused while mutating) ======
+  const stats = trpc.admin.stats.useQuery(undefined, {
+    enabled: isAdmin,
+    refetchInterval: isMutating ? false : 15000,
+    refetchOnWindowFocus: true,
+  });
+
+  const users = trpc.admin.users.useQuery(
+    { search: query || undefined },
+    { enabled: isAdmin, refetchInterval: isMutating ? false : 20000, refetchOnWindowFocus: true }
+  );
+
+  const deposits = trpc.admin.deposits.useQuery(undefined, {
+    enabled: isAdmin,
+    refetchInterval: isMutating ? false : 10000,
+    refetchOnWindowFocus: true,
+  });
+
+  const withdrawals = trpc.admin.withdrawals.useQuery(undefined, {
+    enabled: isAdmin,
+    refetchInterval: isMutating ? false : 10000,
+    refetchOnWindowFocus: true,
   });
 
   if (authLoading || !user) {
