@@ -37,7 +37,11 @@ export default function AdminScreen() {
   const [busyRequestKey, setBusyRequestKey] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ title: string; message: string } | null>(null);
 
-  const isAdmin = user?.role === "admin";
+  // يقبل جميع صيغ الدور لتفادي مشاكل اختلاف الحالة بين السيرفر والعميل
+  const isAdmin = ["admin", "owner", "superadmin", "administrator"].includes(
+    String(user?.role ?? "").toLowerCase().trim()
+  );
+
   const utils = trpc.useUtils();
 
   // ====== Mutations first (so isMutating can gate refetchInterval) ======
@@ -209,21 +213,36 @@ export default function AdminScreen() {
         ? approveWithdrawal
         : rejectWithdrawal;
 
-    mutation.mutate(
-      { requestId: current.id },
-      {
-        onSuccess: () => {
-          setPendingRequestAction(null);
-        },
-        onError: (e) => {
-          setFeedback({ title: "تعذر التنفيذ", message: e.message });
-          setPendingRequestAction(null);
-        },
-        onSettled: () => {
-          setBusyRequestKey(null);
-        },
-      }
-    );
+    // إعادة محاولة تلقائية عند خطأ الصلاحية (10002) الناتج عن سباق التوكِن
+    const runOnce = (attempt: number) => {
+      mutation.mutate(
+        { requestId: current.id },
+        {
+          onSuccess: () => {
+            setPendingRequestAction(null);
+          },
+          onError: (e: any) => {
+            const msg = String(e?.message ?? "");
+            const isPermissionErr =
+              msg.includes("10002") || msg.toLowerCase().includes("permission");
+            if (attempt < 3 && isPermissionErr) {
+              // إعادة المحاولة بدون إزعاج المستخدم
+              setTimeout(() => runOnce(attempt + 1), 700 * (attempt + 1));
+              return;
+            }
+            setFeedback({ title: "تعذر التنفيذ", message: msg });
+            setPendingRequestAction(null);
+          },
+          onSettled: () => {
+            // فقط آخر محاولة تُنهي حالة busy
+            if (attempt === 0) {
+              setBusyRequestKey(null);
+            }
+          },
+        }
+      );
+    };
+    runOnce(0);
   };
 
   return (
@@ -297,18 +316,16 @@ export default function AdminScreen() {
             <Text style={styles.section}>طلبات الإيداع المعلقة</Text>
             <Card>
               {pendingDeposits.length ? (
-                pendingDeposits
-                  .slice(0, 8)
-                  .map((x: any) => (
-                    <RequestRow
-                      key={x.request.id}
-                      row={x}
-                      type="dep"
-                      busyKey={busyRequestKey}
-                      onApprove={() => requestAction("dep", x.request.id, "approve")}
-                      onReject={() => requestAction("dep", x.request.id, "reject")}
-                    />
-                  ))
+                pendingDeposits.slice(0, 8).map((x: any) => (
+                  <RequestRow
+                    key={x.request.id}
+                    row={x}
+                    type="dep"
+                    busyKey={busyRequestKey}
+                    onApprove={() => requestAction("dep", x.request.id, "approve")}
+                    onReject={() => requestAction("dep", x.request.id, "reject")}
+                  />
+                ))
               ) : (
                 <Text style={styles.empty}>لا توجد طلبات معلقة.</Text>
               )}
@@ -317,18 +334,16 @@ export default function AdminScreen() {
             <Text style={styles.section}>طلبات السحب المعلقة</Text>
             <Card>
               {pendingWithdrawals.length ? (
-                pendingWithdrawals
-                  .slice(0, 8)
-                  .map((x: any) => (
-                    <RequestRow
-                      key={x.request.id}
-                      row={x}
-                      type="wd"
-                      busyKey={busyRequestKey}
-                      onApprove={() => requestAction("wd", x.request.id, "approve")}
-                      onReject={() => requestAction("wd", x.request.id, "reject")}
-                    />
-                  ))
+                pendingWithdrawals.slice(0, 8).map((x: any) => (
+                  <RequestRow
+                    key={x.request.id}
+                    row={x}
+                    type="wd"
+                    busyKey={busyRequestKey}
+                    onApprove={() => requestAction("wd", x.request.id, "approve")}
+                    onReject={() => requestAction("wd", x.request.id, "reject")}
+                  />
+                ))
               ) : (
                 <Text style={styles.empty}>لا توجد طلبات معلقة.</Text>
               )}
