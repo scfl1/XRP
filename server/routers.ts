@@ -33,7 +33,7 @@ export const appRouter = router({
       if (await db.getUserByUsername(input.username)) throw new Error("اسم المستخدم مستخدم بالفعل");
       const user = await db.createLocalUser({ name: input.name, username: input.username, email, passwordHash: hashPassword(input.password), referralCode: input.referralCode });
       if (!user) throw new Error("تعذر إنشاء الحساب");
-      const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
+      const token = await sdk.signSession({ openId: user.openId, userId: user.id, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: user.lastSignedIn } };
     }),
     login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3).max(320), password: z.string().min(1).max(128) })).mutation(async ({ ctx, input }) => {
@@ -41,7 +41,7 @@ export const appRouter = router({
       if (!user || !user.passwordHash || !verifyPassword(input.password, user.passwordHash)) throw new Error("بيانات تسجيل الدخول غير صحيحة");
       if (user.isBanned) throw new Error(user.bannedReason ? `تم حظر هذا الحساب: ${user.bannedReason}` : "تم حظر هذا الحساب. تواصل مع الدعم.");
       await db.updateUserLastSignedIn(user.id);
-      const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
+      const token = await sdk.signSession({ openId: user.openId, userId: user.id, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
       return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: new Date() } };
     }),
     logout: publicProcedure.mutation(() => ({ success: true } as const)),
