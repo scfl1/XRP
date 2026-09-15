@@ -8,14 +8,19 @@ const t = initTRPC.context<TrpcContext>().create({
   errorFormatter(opts) {
     const { shape, error } = opts;
 
-    // Never leak internal details (raw SQL, connection strings, stack
-    // traces, etc.) to the client for unexpected server errors. Known,
-    // intentional errors (bad login, forbidden, not found...) already
-    // carry a safe, user-facing message and are left untouched.
     if (error.code === "INTERNAL_SERVER_ERROR") {
+      // اطبع السبب الحقيقي في console السيرفر للتشخيص
+      console.error("[tRPC Internal Error]", {
+        message: error.message,
+        cause: error.cause,
+        stack: error.stack,
+      });
+
       return {
         ...shape,
-        message: "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى",
+        message: error.message.includes("Database")
+          ? "تعذر الاتصال بقاعدة البيانات، حاول مرة أخرى"
+          : "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى",
       };
     }
 
