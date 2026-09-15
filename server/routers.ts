@@ -58,6 +58,8 @@ export const appRouter = router({
     createDeposit: protectedProcedure.input(requestInput.extend({ paymentMethod: z.string().max(64).optional() })).mutation(({ ctx, input }) => db.createDepositRequest({ userId: ctx.user.id, ...input })),
     createWithdrawal: protectedProcedure.input(requestInput.extend({ address: z.string().min(20).max(500) })).mutation(({ ctx, input }) => db.createWithdrawalRequest({ userId: ctx.user.id, ...input })),
     referralStats: protectedProcedure.query(({ ctx }) => db.getReferralStats(ctx.user.id)),
+    tradeContracts: protectedProcedure.query(({ ctx }) => db.listTradeContracts(ctx.user.id)),
+    createTradeContract: protectedProcedure.input(z.object({ amount: z.number().positive().finite() })).mutation(({ ctx, input }) => db.createTradeContract(ctx.user.id, input.amount)),
   }),
   admin: router({
     stats: adminProcedure.query(() => db.getAdminStats()),
