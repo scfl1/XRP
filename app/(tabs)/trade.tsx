@@ -1,61 +1,96 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, CoinMark, CwaLogo, IconButton, SectionTitle, TrendLine } from "@/components/cwaax-ui";
-import { CWAAX, MARKETS, TRADE_PLAN_AMOUNTS } from "@/constants/cwaax";
+import { Card, CoinMark, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
+import { CWAAX, TRADE_PLANS } from "@/constants/cwaax";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/hooks/use-auth";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function TradeScreen() {
-  const router = useRouter();
-  const [mode, setMode] = useState("شراء");
-  const [amount, setAmount] = useState("");
-  const balances = trpc.wallet.balances.useQuery();
-  const contracts = trpc.wallet.tradeContracts.useQuery();
-  const createContract = trpc.wallet.createTradeContract.useMutation({
+  const { user } = useAuth();
+  const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user, staleTime: 15_000 });
+  const contracts = trpc.trade.contracts.useQuery(undefined, { enabled: !!user, staleTime: 10_000 });
+  const startContract = trpc.trade.startContract.useMutation({
     onSuccess: async () => {
       await Promise.all([balances.refetch(), contracts.refetch()]);
-      setAmount("");
     },
   });
-  const usdtBalance = useMemo(
-    () => Number(balances.data?.find((b: any) => b.currency === "USDT")?.amount ?? 0),
-    [balances.data],
-  );
-  const selectedAmount = Number(amount);
-  const selectedDailyProfit = Number.isFinite(selectedAmount) ? selectedAmount * 0.02 : 0;
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const usdtBalance = useMemo(() => Number((balances.data || []).find((b: any) => b.currency === "USDT")?.amount || 0), [balances.data]);
 
-  const startTrade = (planAmount: number) => {
-    if (createContract.isPending) return;
-    Alert.alert(
-      "تأكيد عقد التداول",
-      `المبلغ: ${planAmount.toLocaleString()} USDT\nمعدل العائد المبرمج: 2% يوميًا\nالعائد اليومي: ${(planAmount * 0.02).toFixed(2)} USDT\nسيتم خصم أصل المبلغ من رصيد USDT الآن.`,
-      [
-        { text: "إلغاء", style: "cancel" },
-        {
-          text: "بدء العقد",
-          onPress: () => createContract.mutate({ amount: planAmount }),
-        },
-      ],
-    );
+  const start = async (amount: number) => {
+    if (!user) {
+      Alert.alert("تسجيل الدخول مطلوب", "سجّل الدخول أولاً لبدء العقد.");
+      return;
+    }
+    if (usdtBalance < amount) {
+      Alert.alert("الرصيد غير كافٍ", `رصيدك المتاح ${usdtBalance.toFixed(2)} USDT.`);
+      return;
+    }
+    setSelectedAmount(amount);
+    try {
+      await startContract.mutateAsync({ amount });
+      Alert.alert("تم بدء العقد", `تم حجز ${amount.toFixed(2)} USDT. أول استحقاق بعد 24 ساعة.`);
+    } catch (error: any) {
+      Alert.alert("تعذر بدء العقد", error?.message || "حدث خطأ، حاول مرة أخرى.");
+    } finally {
+      setSelectedAmount(null);
+    }
   };
+
   return <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول" onPress={() => Alert.alert("إعدادات التداول", "يمكنك اختيار وضع الشراء أو البيع أو التبديل من الأزرار أدناه.")} /></View>
-      <View style={styles.titleRow}><View style={styles.live}><View style={styles.liveDot}/><Text style={styles.liveText}>السوق مباشر</Text></View><View><Text style={styles.kicker}>استكشف الفرص</Text><Text style={styles.title}>تجارة</Text></View></View>
-      <Card style={styles.quoteCard}><View style={styles.quoteHead}><Text style={styles.quoteTag}>+4.12%</Text><View><Text style={styles.pair}>XRP / USDT</Text><Text style={styles.quoteLabel}>السعر الحالي</Text></View></View><View style={styles.quoteBody}><View><Text style={styles.quotePrice}>$0.4671</Text><Text style={styles.quoteChange}>↑ $0.0184 اليوم</Text></View><TrendLine color={CWAAX.green}/></View></Card>
-      <View style={styles.modeSwitch}>{["شراء", "بيع", "تبديل"].map((item) => <Pressable key={item} onPress={() => setMode(item)} style={({ pressed }) => [styles.mode, mode === item && styles.modeActive, pressed && styles.pressed]}><Text style={[styles.modeText, mode === item && styles.modeActiveText]}>{item}</Text></Pressable>)}</View>
-      <Text style={styles.formLabel}>الأصل</Text>
-      <Pressable onPress={() => router.push("/assets")} style={({ pressed }) => [styles.assetSelect, pressed && styles.pressed]}><CoinMark mark="X" color="#232B32" size={31}/><View style={styles.selectName}><Text style={styles.selectSymbol}>XRP</Text><Text style={styles.selectBalance}>الرصيد المتاح: {usdtBalance.toFixed(2)} USDT</Text></View><MaterialIcons name="unfold-more" size={20} color={CWAAX.muted}/></Pressable>
-      <Text style={styles.formLabel}>المبلغ</Text><View style={styles.amountBox}><TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#9CA8A1" keyboardType="decimal-pad" style={styles.amountInput}/><Text style={styles.amountUnit}>USDT</Text></View>
-      {selectedAmount > 0 && <View style={styles.previewCard}><Text style={styles.previewTitle}>العائد اليومي المبرمج</Text><Text style={styles.previewValue}>{selectedDailyProfit.toFixed(2)} USDT</Text><Text style={styles.previewSub}>2% من أصل {selectedAmount.toFixed(2)} USDT · لا يُحتسب قبل موعد الاستحقاق التالي</Text></View>}
-      <Text style={styles.formLabel}>خطط التداول</Text><View style={styles.planList}>{TRADE_PLAN_AMOUNTS.map((planAmount) => { const daily = planAmount * 0.02; const disabled = createContract.isPending || usdtBalance < planAmount; return <Pressable key={planAmount} disabled={disabled} onPress={() => startTrade(planAmount)} style={({ pressed }) => [styles.planCard, pressed && styles.pressed, disabled && styles.planDisabled]}><View style={styles.planTop}><Text style={styles.planAmount}>{planAmount.toLocaleString()} USDT</Text><Text style={styles.planRate}>2% يوميًا</Text></View><Text style={styles.planProfit}>+{daily.toFixed(2)} USDT / يوم</Text><Text style={styles.planHint}>{usdtBalance >= planAmount ? "ابدأ العقد" : "الرصيد غير كافٍ"}</Text></Pressable>; })}</View>
-      <Pressable onPress={() => { if (!amount || Number(amount) <= 0) { Alert.alert("تحقق من المبلغ", "أدخل مبلغاً صحيحاً للمتابعة."); return; } if (mode === "شراء" || mode === "بيع") router.push("/deposit"); else Alert.alert("مراجعة التبديل", `سيتم تجهيز تبديل بقيمة ${amount} USDT.`); }} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryText}>{mode === "تبديل" ? "مراجعة التبديل" : `متابعة ${mode}`}</Text><MaterialIcons name="arrow-back" size={18} color={CWAAX.white}/></Pressable>
-      {contracts.data?.length ? <><SectionTitle title="عقودي" action="تحديث" onAction={() => contracts.refetch()} /><View style={styles.contractList}>{contracts.data.slice(0, 8).map((contract: any) => <View key={contract.id} style={styles.contractCard}><View style={styles.contractTop}><Text style={styles.contractStatus}>{contract.status === "active" ? "نشط" : contract.status}</Text><Text style={styles.contractAmount}>{Number(contract.principalAmount).toLocaleString()} USDT</Text></View><Text style={styles.contractMeta}>العائد اليومي: {(Number(contract.principalAmount) * Number(contract.dailyRateBps) / 10000).toFixed(2)} USDT · المدفوع: {Number(contract.totalProfitPaid).toFixed(2)} USDT</Text><Text style={styles.contractNext}>الاستحقاق التالي: {new Date(contract.nextPayoutAt).toLocaleString()}</Text></View>)}</View></> : null}
-      <SectionTitle title="الأسواق الرائجة" action="عرض الكل" onAction={() => router.push("/assets")} /><View style={styles.marketList}>{MARKETS.map((item, index) => <Pressable key={item.symbol} onPress={() => setMode("شراء")} style={({ pressed }) => [styles.marketItem, index < MARKETS.length - 1 && styles.marketBorder, pressed && styles.pressed]}><View style={[styles.marketIcon, { backgroundColor: item.color }]}><Text style={styles.marketIconText}>{item.symbol[0]}</Text></View><Text style={styles.marketSymbol}>{item.symbol}</Text><Text style={styles.marketValue}>{item.price}</Text><Text style={styles.marketPositive}>{item.change}</Text></Pressable>)}</View>
+      <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول" onPress={() => Alert.alert("عقود التداول", "اختر مبلغ العقد من البطاقات أدناه.")} /></View>
+      <View style={styles.titleRow}><View style={styles.live}><View style={styles.liveDot}/><Text style={styles.liveText}>عقود متاحة</Text></View><View><Text style={styles.kicker}>استثمر من رصيدك</Text><Text style={styles.title}>تجارة</Text></View></View>
+
+      <Card style={styles.balanceCard}>
+        <View style={styles.balanceTop}>
+          <View style={styles.usdtIcon}><CoinMark mark="USDT" color="#26A17B" size={48}/></View>
+          <View style={styles.balanceText}><Text style={styles.balanceTitle}>رصيد التداول</Text><Text style={styles.balanceSub}>الرصيد الحقيقي في محفظتك</Text></View>
+        </View>
+        <View style={styles.balanceBottom}><Text style={styles.balanceValue}>{usdtBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 })} <Text style={styles.balanceUnit}>USDT</Text></Text><View style={styles.realPill}><MaterialIcons name="verified" size={13} color={CWAAX.green}/><Text style={styles.realPillText}>رصيد مباشر</Text></View></View>
+      </Card>
+
+      <SectionTitle title="خطط التداول" action={`${TRADE_PLANS.length} خطة`} />
+      <View style={styles.planList}>
+        {TRADE_PLANS.map((plan) => {
+          const daily = plan.amount * 0.02;
+          const busy = selectedAmount === plan.amount && startContract.isPending;
+          return <Card key={plan.amount} style={styles.planCard}>
+            <View style={styles.planHeader}>
+              <View style={styles.coinWrap}><CoinMark mark="USDT" color="#26A17B" size={42}/></View>
+              <View style={styles.planIdentity}><Text style={styles.planAmount}>{plan.amount.toLocaleString("en-US")} USDT</Text><Text style={styles.planType}>عقد تداول USDT</Text></View>
+              <View style={styles.rateBadge}><Text style={styles.rateValue}>2%</Text><Text style={styles.rateLabel}>يوميًا</Text></View>
+            </View>
+            <View style={styles.planStats}>
+              <View><Text style={styles.statLabel}>العائد اليومي المحسوب</Text><Text style={styles.statValue}>+{daily.toFixed(2)} USDT</Text></View>
+              <View style={styles.locked}><MaterialIcons name="lock-outline" size={16} color={CWAAX.green}/><Text style={styles.lockedText}>مدة العقد 365 يوم</Text></View>
+            </View>
+            <Pressable disabled={startContract.isPending} onPress={() => start(plan.amount)} style={({ pressed }) => [styles.contractButton, pressed && styles.pressed, startContract.isPending && styles.disabled]}>
+              <Text style={styles.contractButtonText}>{busy ? "جاري بدء العقد..." : "ابدأ العقد"}</Text>
+              <MaterialIcons name={busy ? "hourglass-top" : "arrow-back"} size={18} color={CWAAX.white}/>
+            </Pressable>
+          </Card>;
+        })}
+      </View>
+
+      {contracts.data?.length ? <><SectionTitle title="عقودي الحالية" action={`${contracts.data.length} عقد`} /><View style={styles.activeList}>{contracts.data.slice(0, 10).map((contract: any) => <View key={contract.id} style={styles.activeRow}><CoinMark mark="USDT" color="#26A17B" size={34}/><View style={styles.activeInfo}><Text style={styles.activeAmount}>{Number(contract.principal).toLocaleString("en-US")} USDT</Text><Text style={styles.activeMeta}>{contract.status === "active" ? "نشط" : "مكتمل"} • {contract.payoutCount} دفعة</Text></View><View style={styles.activeProfit}><Text style={styles.activeProfitValue}>+{Number(contract.totalProfitPaid).toFixed(2)}</Text><Text style={styles.activeProfitLabel}>USDT أرباح</Text></View></View>)}</View></> : null}
     </ScrollView>
   </ScreenContainer>;
 }
 
-const styles = StyleSheet.create({ content: { paddingTop: 12, paddingBottom: 30 }, header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 25, marginBottom: 16 }, kicker: { color: CWAAX.muted, fontSize: 12, textAlign: "right" }, title: { color: CWAAX.ink, fontSize: 28, fontWeight: "900", textAlign: "right", marginTop: 3 }, live: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: CWAAX.greenSoft, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 6 }, liveDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: CWAAX.green }, liveText: { color: CWAAX.green, fontSize: 10, fontWeight: "800" }, quoteCard: { backgroundColor: CWAAX.ink, borderColor: CWAAX.ink, marginBottom: 15 }, quoteHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, pair: { color: CWAAX.white, fontSize: 15, fontWeight: "800", textAlign: "right" }, quoteLabel: { color: "#94A49C", fontSize: 10, marginTop: 4, textAlign: "right" }, quoteTag: { backgroundColor: "#205A42", color: "#89DBAE", paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, fontSize: 11, fontWeight: "800" }, quoteBody: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 23 }, quotePrice: { color: CWAAX.white, fontSize: 27, fontWeight: "900" }, quoteChange: { color: "#8FDBAD", fontSize: 11, marginTop: 5 }, modeSwitch: { flexDirection: "row-reverse", backgroundColor: CWAAX.surface, borderRadius: 13, padding: 4, marginBottom: 20 }, mode: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 10 }, modeActive: { backgroundColor: CWAAX.white, shadowColor: "#000", shadowOpacity: .06, shadowRadius: 4, elevation: 1 }, modeText: { color: CWAAX.muted, fontSize: 12, fontWeight: "800" }, modeActiveText: { color: CWAAX.green }, formLabel: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "right", marginBottom: 8, marginTop: 9 }, assetSelect: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 14, padding: 9 }, selectName: { flex: 1 }, selectSymbol: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", textAlign: "right" }, selectBalance: { color: CWAAX.muted, fontSize: 10, textAlign: "right", marginTop: 3 }, amountBox: { height: 53, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 14, flexDirection: "row", alignItems: "center", paddingHorizontal: 14 }, amountInput: { flex: 1, color: CWAAX.ink, fontSize: 20, fontWeight: "800", textAlign: "right" }, amountUnit: { color: CWAAX.green, fontWeight: "900", fontSize: 12 }, primaryButton: { backgroundColor: CWAAX.green, height: 52, borderRadius: 15, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 8, marginTop: 18, marginBottom: 28 }, primaryText: { color: CWAAX.white, fontSize: 14, fontWeight: "900" }, marketList: { borderWidth: 1, borderColor: CWAAX.line, borderRadius: 18, paddingHorizontal: 13 }, marketItem: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12 }, marketBorder: { borderBottomWidth: 1, borderBottomColor: CWAAX.line }, marketIcon: { width: 29, height: 29, borderRadius: 10, alignItems: "center", justifyContent: "center" }, marketIconText: { color: CWAAX.white, fontWeight: "900", fontSize: 12 }, marketSymbol: { flex: 1, color: CWAAX.ink, fontSize: 11, fontWeight: "800" }, marketValue: { color: CWAAX.ink, fontSize: 11, fontWeight: "700" }, marketPositive: { color: CWAAX.green, fontSize: 10, fontWeight: "800", width: 48, textAlign: "right" }, pressed: { opacity: .62 } });
+const styles = StyleSheet.create({
+  content: { paddingTop: 12, paddingBottom: 35 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 25, marginBottom: 16 },
+  kicker: { color: CWAAX.muted, fontSize: 12, textAlign: "right" }, title: { color: CWAAX.ink, fontSize: 28, fontWeight: "900", textAlign: "right", marginTop: 3 },
+  live: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: CWAAX.greenSoft, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 6 }, liveDot: { width: 6, height: 6, borderRadius: 4, backgroundColor: CWAAX.green }, liveText: { color: CWAAX.green, fontSize: 10, fontWeight: "800" },
+  balanceCard: { backgroundColor: CWAAX.ink, borderColor: CWAAX.ink, marginBottom: 22, padding: 18 }, balanceTop: { flexDirection: "row", alignItems: "center", gap: 12 }, usdtIcon: { width: 52, height: 52, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "#173A2D" }, balanceText: { flex: 1 }, balanceTitle: { color: CWAAX.white, fontSize: 14, fontWeight: "900", textAlign: "right" }, balanceSub: { color: "#93A49C", fontSize: 10, marginTop: 4, textAlign: "right" }, balanceBottom: { marginTop: 18, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, balanceValue: { color: CWAAX.white, fontSize: 27, fontWeight: "900" }, balanceUnit: { color: "#8FDBAD", fontSize: 12 }, realPill: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#E8F7EF", paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 }, realPillText: { color: CWAAX.green, fontSize: 9, fontWeight: "800" },
+  planList: { gap: 12, marginBottom: 26 }, planCard: { padding: 15, borderRadius: 20 }, planHeader: { flexDirection: "row", alignItems: "center", gap: 10 }, coinWrap: { width: 45, height: 45, borderRadius: 15, backgroundColor: "#F0F9F4", alignItems: "center", justifyContent: "center" }, planIdentity: { flex: 1 }, planAmount: { color: CWAAX.ink, fontSize: 16, fontWeight: "900", textAlign: "right" }, planType: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" }, rateBadge: { backgroundColor: CWAAX.greenSoft, minWidth: 58, paddingHorizontal: 8, paddingVertical: 7, borderRadius: 12, alignItems: "center" }, rateValue: { color: CWAAX.green, fontSize: 16, fontWeight: "900" }, rateLabel: { color: CWAAX.green, fontSize: 8, fontWeight: "800", marginTop: 1 },
+  planStats: { marginTop: 14, paddingTop: 13, borderTopWidth: 1, borderTopColor: CWAAX.line, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }, statLabel: { color: CWAAX.muted, fontSize: 9, textAlign: "right" }, statValue: { color: CWAAX.green, fontSize: 14, fontWeight: "900", marginTop: 3, textAlign: "right" }, locked: { flexDirection: "row", alignItems: "center", gap: 4 }, lockedText: { color: CWAAX.muted, fontSize: 9 },
+  contractButton: { marginTop: 14, height: 48, borderRadius: 14, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 7 }, contractButtonText: { color: CWAAX.white, fontSize: 13, fontWeight: "900" }, disabled: { opacity: 0.65 }, pressed: { opacity: 0.75, transform: [{ scale: 0.99 }] },
+  activeList: { borderWidth: 1, borderColor: CWAAX.line, borderRadius: 18, overflow: "hidden" }, activeRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 13, borderBottomWidth: 1, borderBottomColor: CWAAX.line }, activeInfo: { flex: 1 }, activeAmount: { color: CWAAX.ink, fontSize: 12, fontWeight: "900", textAlign: "right" }, activeMeta: { color: CWAAX.muted, fontSize: 9, marginTop: 4, textAlign: "right" }, activeProfit: { alignItems: "flex-end" }, activeProfitValue: { color: CWAAX.green, fontSize: 12, fontWeight: "900" }, activeProfitLabel: { color: CWAAX.muted, fontSize: 8, marginTop: 3 },
+});
