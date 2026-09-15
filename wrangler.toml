@@ -16,4 +16,4 @@ id = "84cd18cebe8a49f79e170ea4c5c9b6df"
 API_ALLOWED_ORIGINS = "https://cwaax.vfshj.workers.dev"
 
 [triggers]
-crons = ["0 * * * *"]
+crons = ["* * * * *"]
