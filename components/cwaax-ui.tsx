@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { CWAAX } from "@/constants/cwaax";
 import { NetworkIcon } from "@/components/network-icon";
 
@@ -43,28 +43,36 @@ export function SectionTitle({ title, action, onAction }: { title: string; actio
 /* ================================================================ */
 
 const KNOWN_CODES = new Set([
-  // شبكات
-  "TRC20", "TRON",
-  "ERC20", "ETH", "ETHEREUM",
-  "OPTIMISM", "OP",
-  "ARETH", "ARBITRUM", "ARB",
-  "AVAX", "AVALANCHE",
-  "OPBNB", "BEP20", "BNB",
-  "SOL", "SOLANA",
-  "TON",
-  "POLYGON", "MATIC",
-  "CELO",
-  // عملات
-  "USDT", "BTC", "BITCOIN", "XRP", "RIPPLE",
+  "TRC20", "TRON", "ERC20", "ETH", "ETHEREUM", "OPTIMISM", "OP",
+  "ARETH", "ARBITRUM", "ARB", "AVAX", "AVALANCHE", "OPBNB", "BEP20", "BNB",
+  "SOL", "SOLANA", "TON", "POLYGON", "MATIC", "CELO",
+  "USDT", "BTC", "BITCOIN", "DOGE", "DOGECOIN", "XLM", "STELLAR",
 ]);
+
+const COIN_LOGOS: Record<string, string> = {
+  USDT: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/0x55d398326f99059ff775485246999027b3197955/logo.png",
+  BTC: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png",
+  BITCOIN: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png",
+  DOGE: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/dogecoin/info/logo.png",
+  DOGECOIN: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/dogecoin/info/logo.png",
+  XLM: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/stellar/info/logo.png",
+  STELLAR: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/stellar/info/logo.png",
+};
 
 export function CoinMark({ mark, color, size = 42 }: { mark: string; color: string; size?: number }) {
   const upper = (mark || "").toUpperCase();
+  const logo = COIN_LOGOS[upper];
+
+  if (logo) {
+    return (
+      <Image source={{ uri: logo }} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#F2F3F2" }} />
+    );
+  }
 
   if (KNOWN_CODES.has(upper)) {
     return (
       <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
-        <NetworkIcon code={upper} size={size} />
+        <NetworkIcon network={{ code: upper, name: upper, chain: upper, feeUsd: 0, feeToken: "", color }} size={size} />
       </View>
     );
   }
