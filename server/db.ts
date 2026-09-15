@@ -30,22 +30,12 @@ import {
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _client: ReturnType<typeof postgres> | null = null;
-let _initialized = false;
 let _databaseUrl = "";
 
 export function configureDatabase(databaseUrl: string) {
-  // IMPORTANT: Hyperdrive rotates the connection string on every request.
-  // We must NOT destroy/recreate the client each time — doing so was the
-  // root cause of intermittent permission errors on admin actions that
-  // used a stale connection. Initialize once, then reuse.
-  if (_initialized) {
-    return;
-  }
-
-  if (databaseUrl) {
+  if (databaseUrl && databaseUrl !== _databaseUrl) {
     _databaseUrl = databaseUrl;
-    _initialized = true;
+    _db = null;
   }
 }
 
@@ -55,55 +45,55 @@ export async function getDb() {
   }
 
   const databaseUrl =
-    _databaseUrl || process.env.DATABASE_URL || ENV.databaseUrl;
+    _databaseUrl ||
+    process.env.DATABASE_URL ||
+    ENV.databaseUrl;
 
   if (!databaseUrl) {
-    console.warn("[Database] DATABASE_URL is not configured");
+    console.warn(
+      "[Database] DATABASE_URL is not configured",
+    );
+
     return null;
   }
 
   try {
-    if (!_client) {
-      _client = postgres(databaseUrl, {
-        prepare: false,
-        max: 10,
-        idle_timeout: 0,
-        connect_timeout: 15,
-        max_lifetime: 60 * 30,
-      });
-    }
+    /*
+     * Supabase Transaction Pooler uses PgBouncer
+     * in transaction mode.
+     *
+     * Prepared statements must therefore be disabled.
+     *
+     * Hyperdrive already maintains a shared connection pool at the
+     * edge, so each Worker isolate only needs a handful of local
+     * connections. Keeping `max` low avoids hitting Supabase's
+     * connection limit when many isolates run in parallel, which is
+     * what caused intermittent "Failed query" errors during login.
+     */
+    const client = postgres(databaseUrl, {
+      prepare: false,
+      max: 3,
+      idle_timeout: 20,
+      connect_timeout: 10,
+      max_lifetime: 60 * 30,
+    });
 
-    _db = drizzle(_client);
+    _db = drizzle(client);
 
-    console.log("[Database] PostgreSQL connection initialized");
+    console.log(
+      "[Database] PostgreSQL connection initialized",
+    );
 
     return _db;
   } catch (error) {
-    console.error("[Database] Failed to initialize connection:", error);
+    console.error(
+      "[Database] Failed to initialize connection:",
+      error,
+    );
+
     _db = null;
+
     return null;
-  }
-}
-
-/* =========================
-   RETRY HELPER
-========================= */
-
-async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    const isTransient =
-      /connection|terminated|closed|timeout|ECONNRESET|ECONNREFUSED|too many|pool/i.test(msg);
-
-    if (!isTransient) {
-      throw error;
-    }
-
-    console.warn("[Database] Transient failure, retrying once:", msg);
-    await new Promise((r) => setTimeout(r, 300));
-    return operation();
   }
 }
 
@@ -111,19 +101,31 @@ async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
    USERS
 ========================= */
 
-export async function upsertUser(user: InsertUser): Promise<void> {
+export async function upsertUser(
+  user: InsertUser,
+): Promise<void> {
   if (!user.openId) {
-    throw new Error("User openId is required for upsert");
+    throw new Error(
+      "User openId is required for upsert",
+    );
   }
 
   const db = await getDb();
 
   if (!db) {
-    throw new Error("Database is not available");
+    throw new Error(
+      "Database is not available",
+    );
   }
 
-  const values: InsertUser = { openId: user.openId };
-  const updateSet: Record<string, unknown> = {};
+  const values: InsertUser = {
+    openId: user.openId,
+  };
+
+  const updateSet: Record<
+    string,
+    unknown
+  > = {};
 
   for (const field of [
     "name",
@@ -133,20 +135,28 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     "passwordHash",
   ] as const) {
     if (user[field] !== undefined) {
-      values[field] = user[field] ?? null;
-      updateSet[field] = user[field] ?? null;
+      values[field] =
+        user[field] ?? null;
+
+      updateSet[field] =
+        user[field] ?? null;
     }
   }
 
   if (user.lastSignedIn !== undefined) {
-    values.lastSignedIn = user.lastSignedIn;
-    updateSet.lastSignedIn = user.lastSignedIn;
+    values.lastSignedIn =
+      user.lastSignedIn;
+
+    updateSet.lastSignedIn =
+      user.lastSignedIn;
   }
 
   if (user.role !== undefined) {
     values.role = user.role;
     updateSet.role = user.role;
-  } else if (user.openId === ENV.ownerOpenId) {
+  } else if (
+    user.openId === ENV.ownerOpenId
+  ) {
     values.role = "admin";
     updateSet.role = "admin";
   }
@@ -156,10 +166,12 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   if (!Object.keys(updateSet).length) {
-    updateSet.lastSignedIn = new Date();
+    updateSet.lastSignedIn =
+      new Date();
   }
 
-  updateSet.updatedAt = new Date();
+  updateSet.updatedAt =
+    new Date();
 
   await db
     .insert(users)
@@ -170,140 +182,250 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     });
 }
 
-export async function getUserByEmailOrUsername(identifier: string) {
-  const db = await getDb();
-  if (!db) return undefined;
+/*
+ * Transient network/connection failures between the Worker and
+ * Hyperdrive (e.g. a pooled connection that Supabase closed while
+ * idle) can make a single query fail even though the database itself
+ * is healthy. Retrying once, right away, resolves nearly all of
+ * these cases because the postgres.js client opens a fresh
+ * connection on the retry.
+ */
+async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    console.warn(
+      "[Database] Query failed, retrying once:",
+      error instanceof Error ? error.message : error,
+    );
 
-  return withDbRetry(
-    async () =>
-      (
-        await db
-          .select()
-          .from(users)
-          .where(
-            or(
-              eq(users.email, identifier.toLowerCase()),
-              eq(users.username, identifier),
-            ),
-          )
-          .limit(1)
-      )[0],
-  );
+    return operation();
+  }
 }
 
-export async function getUserByEmail(email: string) {
+export async function getUserByEmailOrUsername(
+  identifier: string,
+) {
   const db = await getDb();
-  if (!db) return undefined;
 
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1)
-  )[0];
-}
-
-export async function getUserByUsername(username: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username))
-      .limit(1)
-  )[0];
-}
-
-export async function getUserByReferralCode(code: string) {
-  const db = await getDb();
-  if (!db) return undefined;
-
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.referralCode, code.trim().toUpperCase()))
-      .limit(1)
-  )[0];
-}
-
-export async function createLocalUser(data: {
-  name: string;
-  username: string;
-  email: string;
-  passwordHash: string;
-  referralCode?: string;
-}) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const openId = `local_${randomUUID()}`;
-  const ownReferralCode = `CWAAX-${data.username.toUpperCase()}`;
-
-  let referredById: number | undefined;
-  if (data.referralCode?.trim()) {
-    const inviter = await getUserByReferralCode(data.referralCode);
-    if (inviter) referredById = inviter.id;
+  if (!db) {
+    return undefined;
   }
 
-  const inserted = await db
-    .insert(users)
-    .values({
-      openId,
-      name: data.name,
-      username: data.username,
-      email: data.email.toLowerCase(),
-      passwordHash: data.passwordHash,
-      loginMethod: "email",
-      role: "user",
-      referralCode: ownReferralCode,
-      referredById,
-    })
-    .returning({ id: users.id });
+  return withDbRetry(async () => (
+    await db
+      .select()
+      .from(users)
+      .where(
+        or(
+          eq(
+            users.email,
+            identifier.toLowerCase(),
+          ),
+          eq(
+            users.username,
+            identifier,
+          ),
+        ),
+      )
+      .limit(1)
+  )[0]);
+}
 
-  const id = inserted[0]?.id ?? 0;
+export async function getUserByEmail(
+  email: string,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return undefined;
+  }
 
   return (
-    await db.select().from(users).where(eq(users.id, id)).limit(1)
+    await db
+      .select()
+      .from(users)
+      .where(
+        eq(
+          users.email,
+          email.toLowerCase(),
+        ),
+      )
+      .limit(1)
   )[0];
 }
 
-export async function getUserByOpenId(openId: string) {
+export async function getUserByUsername(
+  username: string,
+) {
   const db = await getDb();
-  if (!db) return undefined;
 
-  return withDbRetry(
-    async () =>
-      (
-        await db
-          .select()
-          .from(users)
-          .where(eq(users.openId, openId))
-          .limit(1)
-      )[0],
-  );
+  if (!db) {
+    return undefined;
+  }
+
+  return (
+    await db
+      .select()
+      .from(users)
+      .where(
+        eq(users.username, username),
+      )
+      .limit(1)
+  )[0];
 }
 
-export async function updateUserLastSignedIn(userId: number) {
+export async function getUserByReferralCode(
+  code: string,
+) {
   const db = await getDb();
-  if (!db) return;
+
+  if (!db) {
+    return undefined;
+  }
+
+  return (
+    await db
+      .select()
+      .from(users)
+      .where(
+        eq(
+          users.referralCode,
+          code.trim().toUpperCase(),
+        ),
+      )
+      .limit(1)
+  )[0];
+}
+
+export async function createLocalUser(
+  data: {
+    name: string;
+    username: string;
+    email: string;
+    passwordHash: string;
+    referralCode?: string;
+  },
+) {
+  const db = await getDb();
+
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  const openId =
+    `local_${randomUUID()}`;
+
+  // The user's own referral code is derived from their (already unique,
+  // alphanumeric) username, uppercased, prefixed like the rest of the
+  // brand's codes (e.g. "CWAAX-AHMED928"). Reusing the username guarantees
+  // uniqueness without a extra collision-retry loop.
+  const ownReferralCode =
+    `CWAAX-${data.username.toUpperCase()}`;
+
+  let referredById: number | undefined;
+
+  if (data.referralCode?.trim()) {
+    const inviter =
+      await getUserByReferralCode(
+        data.referralCode,
+      );
+    if (inviter) {
+      referredById = inviter.id;
+    }
+  }
+
+  const inserted =
+    await db
+      .insert(users)
+      .values({
+        openId,
+        name: data.name,
+        username: data.username,
+        email:
+          data.email.toLowerCase(),
+        passwordHash:
+          data.passwordHash,
+        loginMethod: "email",
+        role: "user",
+        referralCode:
+          ownReferralCode,
+        referredById,
+      })
+      .returning({
+        id: users.id,
+      });
+
+  const id =
+    inserted[0]?.id ?? 0;
+
+  return (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1)
+  )[0];
+}
+
+export async function getUserByOpenId(
+  openId: string,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return undefined;
+  }
+
+  return withDbRetry(async () => (
+    await db
+      .select()
+      .from(users)
+      .where(
+        eq(users.openId, openId),
+      )
+      .limit(1)
+  )[0]);
+}
+
+export async function updateUserLastSignedIn(
+  userId: number,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return;
+  }
 
   await db
     .update(users)
-    .set({ lastSignedIn: new Date(), updatedAt: new Date() })
+    .set({
+      lastSignedIn: new Date(),
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, userId));
 }
 
-export async function updateUserPassword(userId: number, passwordHash: string) {
+export async function updateUserPassword(
+  userId: number,
+  passwordHash: string,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
 
   await db
     .update(users)
-    .set({ passwordHash, updatedAt: new Date() })
+    .set({
+      passwordHash,
+      updatedAt: new Date(),
+    })
     .where(eq(users.id, userId));
 }
 
@@ -311,9 +433,14 @@ export async function updateUserPassword(userId: number, passwordHash: string) {
    ADMIN USERS
 ========================= */
 
-export async function listUsers(search?: string) {
+export async function listUsers(
+  search?: string,
+) {
   const db = await getDb();
-  if (!db) return [];
+
+  if (!db) {
+    return [];
+  }
 
   const term = search?.trim();
   const pattern = term ? `%${term}%` : null;
@@ -333,10 +460,14 @@ export async function listUsers(search?: string) {
         .orderBy(desc(users.createdAt))
     : db.select().from(users).orderBy(desc(users.createdAt)));
 
-  if (!rows.length) return [];
+  if (!rows.length) {
+    return [];
+  }
 
   const ids = rows.map((u) => u.id);
 
+  // Direct (level-1) referral count per user, in a single grouped query
+  // instead of one query per row.
   const referralCounts = await db
     .select({
       referredById: users.referredById,
@@ -353,6 +484,7 @@ export async function listUsers(search?: string) {
     }
   }
 
+  // Total referral earnings (all 3 levels combined) per user.
   const earnings = await db
     .select({
       referrerId: referralRewards.referrerId,
@@ -367,6 +499,7 @@ export async function listUsers(search?: string) {
     earningsMap.set(row.referrerId, Number(row.total));
   }
 
+  // Wallet balances per user (small table, fine to fetch in bulk).
   const balances = await db
     .select()
     .from(walletBalances)
@@ -393,13 +526,18 @@ export async function listUsers(search?: string) {
 
 export async function getAdminUserDetail(userId: number) {
   const db = await getDb();
-  if (!db) return null;
+
+  if (!db) {
+    return null;
+  }
 
   const user = (
     await db.select().from(users).where(eq(users.id, userId)).limit(1)
   )[0];
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   const [referral, balances, recentTransactions] = await Promise.all([
     getReferralStats(userId),
@@ -424,7 +562,10 @@ export async function getAdminUserDetail(userId: number) {
 
 export async function banUser(userId: number, reason?: string) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
 
   await db
     .update(users)
@@ -439,7 +580,10 @@ export async function banUser(userId: number, reason?: string) {
 
 export async function unbanUser(userId: number) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
 
   await db
     .update(users)
@@ -465,79 +609,80 @@ export async function adminAdjustBalance(params: {
   note?: string;
 }) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
 
   const currency = params.currency.toUpperCase();
 
-  return withDbRetry(() =>
-    db.transaction(async (tx) => {
-      const balance = (
-        await tx
-          .select()
-          .from(walletBalances)
-          .where(
-            and(
-              eq(walletBalances.userId, params.userId),
-              eq(walletBalances.currency, currency),
-            ),
-          )
-          .limit(1)
-      )[0];
+  return db.transaction(async (tx) => {
+    const balance = (
+      await tx
+        .select()
+        .from(walletBalances)
+        .where(
+          and(
+            eq(walletBalances.userId, params.userId),
+            eq(walletBalances.currency, currency),
+          ),
+        )
+        .limit(1)
+    )[0];
 
-      if (params.direction === "debit") {
-        const current = Number(balance?.amount ?? 0);
-        if (!balance || current < params.amount) {
-          throw new Error("رصيد المستخدم غير كافٍ لإتمام هذا السحب");
-        }
+    if (params.direction === "debit") {
+      const current = Number(balance?.amount ?? 0);
+      if (!balance || current < params.amount) {
+        throw new Error("رصيد المستخدم غير كافٍ لإتمام هذا السحب");
       }
+    }
 
-      const signedAmount =
-        params.direction === "credit" ? params.amount : -params.amount;
+    const signedAmount =
+      params.direction === "credit" ? params.amount : -params.amount;
 
-      if (balance) {
-        await tx
-          .update(walletBalances)
-          .set({
-            amount: sql`${walletBalances.amount} + ${signedAmount}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(walletBalances.id, balance.id));
-      } else {
-        await tx.insert(walletBalances).values({
-          userId: params.userId,
-          currency,
-          amount: params.amount.toFixed(8),
-        });
-      }
-
-      await tx.insert(transactions).values({
-        transactionId: `ADJ-${params.userId}-${Date.now()}`,
+    if (balance) {
+      await tx
+        .update(walletBalances)
+        .set({
+          amount: sql`${walletBalances.amount} + ${signedAmount}`,
+          updatedAt: new Date(),
+        })
+        .where(eq(walletBalances.id, balance.id));
+    } else {
+      await tx.insert(walletBalances).values({
         userId: params.userId,
-        type: params.direction === "credit" ? "deposit" : "withdrawal",
-        amount: params.amount.toFixed(8),
         currency,
-        status: "completed",
-        adminId: params.adminId,
+        amount: params.amount.toFixed(8),
       });
+    }
 
-      await tx.insert(auditLogs).values({
-        adminId: params.adminId,
-        action:
-          params.direction === "credit"
-            ? "admin_credit_balance"
-            : "admin_debit_balance",
-        entity: "user",
-        entityId: params.userId,
-        metadata: JSON.stringify({
-          currency,
-          amount: params.amount,
-          note: params.note ?? null,
-        }),
-      });
+    await tx.insert(transactions).values({
+      transactionId: `ADJ-${params.userId}-${Date.now()}`,
+      userId: params.userId,
+      type: params.direction === "credit" ? "deposit" : "withdrawal",
+      amount: params.amount.toFixed(8),
+      currency,
+      status: "completed",
+      adminId: params.adminId,
+    });
 
-      return { success: true };
-    }),
-  );
+    await tx.insert(auditLogs).values({
+      adminId: params.adminId,
+      action:
+        params.direction === "credit"
+          ? "admin_credit_balance"
+          : "admin_debit_balance",
+      entity: "user",
+      entityId: params.userId,
+      metadata: JSON.stringify({
+        currency,
+        amount: params.amount,
+        note: params.note ?? null,
+      }),
+    });
+
+    return { success: true };
+  });
 }
 
 /* =========================
@@ -551,7 +696,10 @@ export async function sendNotification(params: {
   sentBy: number;
 }) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
 
   const result = await db
     .insert(notifications)
@@ -568,7 +716,10 @@ export async function sendNotification(params: {
     action: params.userId ? "send_notification" : "broadcast_notification",
     entity: "notification",
     entityId: result[0]?.id ?? 0,
-    metadata: JSON.stringify({ userId: params.userId, title: params.title }),
+    metadata: JSON.stringify({
+      userId: params.userId,
+      title: params.title,
+    }),
   });
 
   return result[0]?.id ?? 0;
@@ -576,7 +727,10 @@ export async function sendNotification(params: {
 
 export async function listNotificationsForUser(userId: number) {
   const db = await getDb();
-  if (!db) return [];
+
+  if (!db) {
+    return [];
+  }
 
   const rows = await db
     .select()
@@ -590,7 +744,9 @@ export async function listNotificationsForUser(userId: number) {
     .orderBy(desc(notifications.createdAt))
     .limit(50);
 
-  if (!rows.length) return [];
+  if (!rows.length) {
+    return [];
+  }
 
   const reads = await db
     .select()
@@ -607,7 +763,10 @@ export async function listNotificationsForUser(userId: number) {
 
   const readSet = new Set(reads.map((r) => r.notificationId));
 
-  return rows.map((n) => ({ ...n, read: readSet.has(n.id) }));
+  return rows.map((n) => ({
+    ...n,
+    read: readSet.has(n.id),
+  }));
 }
 
 export async function markNotificationRead(
@@ -615,7 +774,10 @@ export async function markNotificationRead(
   userId: number,
 ) {
   const db = await getDb();
-  if (!db) return;
+
+  if (!db) {
+    return;
+  }
 
   const existing = (
     await db
@@ -630,7 +792,9 @@ export async function markNotificationRead(
       .limit(1)
   )[0];
 
-  if (existing) return;
+  if (existing) {
+    return;
+  }
 
   await db.insert(notificationReads).values({
     notificationId,
@@ -655,19 +819,38 @@ export async function getAdminStats() {
     };
   }
 
-  const userRows = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(users);
+  const userRows =
+    await db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(users);
 
-  const deposits = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(depositRequests)
-    .where(eq(depositRequests.status, "pending"));
+  const deposits =
+    await db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(depositRequests)
+      .where(
+        eq(
+          depositRequests.status,
+          "pending",
+        ),
+      );
 
-  const withdrawals = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(withdrawalRequests)
-    .where(eq(withdrawalRequests.status, "pending"));
+  const withdrawals =
+    await db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(withdrawalRequests)
+      .where(
+        eq(
+          withdrawalRequests.status,
+          "pending",
+        ),
+      );
 
   const bannedRows = await db
     .select({ count: sql<number>`count(*)` })
@@ -681,10 +864,20 @@ export async function getAdminStats() {
     .from(referralRewards);
 
   return {
-    users: Number(userRows[0]?.count ?? 0),
-    pendingDeposits: Number(deposits[0]?.count ?? 0),
-    pendingWithdrawals: Number(withdrawals[0]?.count ?? 0),
+    users: Number(
+      userRows[0]?.count ?? 0,
+    ),
+
+    pendingDeposits: Number(
+      deposits[0]?.count ?? 0,
+    ),
+
+    pendingWithdrawals: Number(
+      withdrawals[0]?.count ?? 0,
+    ),
+
     bannedUsers: Number(bannedRows[0]?.count ?? 0),
+
     totalReferralPayout: Number(referralPayoutRows[0]?.total ?? 0),
   };
 }
@@ -693,162 +886,303 @@ export async function getAdminStats() {
    WALLET
 ========================= */
 
-export async function getWalletBalances(userId: number) {
+export async function getWalletBalances(
+  userId: number,
+) {
   const db = await getDb();
-  if (!db) return [];
+
+  if (!db) {
+    return [];
+  }
 
   return db
     .select()
     .from(walletBalances)
-    .where(eq(walletBalances.userId, userId))
-    .orderBy(desc(walletBalances.updatedAt));
+    .where(
+      eq(
+        walletBalances.userId,
+        userId,
+      ),
+    )
+    .orderBy(
+      desc(
+        walletBalances.updatedAt,
+      ),
+    );
 }
 
 /* =========================
    DEPOSITS
 ========================= */
 
-export async function createDepositRequest(data: {
-  userId: number;
-  currency: string;
-  amount: number;
-  network?: string;
-  paymentMethod?: string;
-}) {
+export async function createDepositRequest(
+  data: {
+    userId: number;
+    currency: string;
+    amount: number;
+    network?: string;
+    paymentMethod?: string;
+  },
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
 
-  const result = await db
-    .insert(depositRequests)
-    .values({
-      userId: data.userId,
-      currency: data.currency,
-      amount: data.amount.toFixed(8),
-      network: data.network,
-      paymentMethod: data.paymentMethod,
-    })
-    .returning({ id: depositRequests.id });
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  const result =
+    await db
+      .insert(depositRequests)
+      .values({
+        userId: data.userId,
+        currency: data.currency,
+        amount:
+          data.amount.toFixed(8),
+        network: data.network,
+        paymentMethod:
+          data.paymentMethod,
+      })
+      .returning({
+        id: depositRequests.id,
+      });
 
   return result[0]?.id ?? 0;
 }
 
 export async function listDepositRequests() {
   const db = await getDb();
-  if (!db) return [];
+
+  if (!db) {
+    return [];
+  }
 
   return db
     .select({
-      request: depositRequests,
+      request:
+        depositRequests,
+
       user: {
         id: users.id,
         name: users.name,
         email: users.email,
-        username: users.username,
+        username:
+          users.username,
       },
     })
     .from(depositRequests)
-    .leftJoin(users, eq(users.id, depositRequests.userId))
-    .orderBy(desc(depositRequests.createdAt));
+    .leftJoin(
+      users,
+      eq(
+        users.id,
+        depositRequests.userId,
+      ),
+    )
+    .orderBy(
+      desc(
+        depositRequests.createdAt,
+      ),
+    );
 }
 
 /* =========================
    WITHDRAWALS
 ========================= */
 
-export async function createWithdrawalRequest(data: {
-  userId: number;
-  currency: string;
-  amount: number;
-  address: string;
-  network?: string;
-}) {
+export async function createWithdrawalRequest(
+  data: {
+    userId: number;
+    currency: string;
+    amount: number;
+    address: string;
+    network?: string;
+  },
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
 
-  return withDbRetry(() =>
-    db.transaction(async (tx) => {
-      const debited = await tx
-        .update(walletBalances)
-        .set({
-          amount: sql`${walletBalances.amount} - ${data.amount}`,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(walletBalances.userId, data.userId),
-            eq(walletBalances.currency, data.currency),
-            gte(walletBalances.amount, data.amount),
-          ),
-        )
-        .returning({ id: walletBalances.id });
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  return db.transaction(
+    async (tx) => {
+      // Hold the funds immediately: atomically debit the balance only if
+      // enough is available. Using a conditional UPDATE (amount >= data.amount)
+      // instead of a separate SELECT-then-UPDATE prevents a race where two
+      // simultaneous withdrawal requests could both pass a balance check
+      // before either debit lands.
+      const debited =
+        await tx
+          .update(
+            walletBalances,
+          )
+          .set({
+            amount: sql`
+              ${walletBalances.amount}
+              - ${data.amount}
+            `,
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            and(
+              eq(
+                walletBalances.userId,
+                data.userId,
+              ),
+              eq(
+                walletBalances.currency,
+                data.currency,
+              ),
+              gte(
+                walletBalances.amount,
+                data.amount,
+              ),
+            ),
+          )
+          .returning({
+            id:
+              walletBalances.id,
+          });
 
       if (!debited.length) {
-        throw new Error("Insufficient balance");
+        throw new Error(
+          "Insufficient balance",
+        );
       }
 
-      const result = await tx
-        .insert(withdrawalRequests)
+      const result =
+        await tx
+          .insert(
+            withdrawalRequests,
+          )
+          .values({
+            userId: data.userId,
+            currency:
+              data.currency,
+            amount:
+              data.amount.toFixed(
+                8,
+              ),
+            address:
+              data.address,
+            network:
+              data.network,
+          })
+          .returning({
+            id:
+              withdrawalRequests.id,
+          });
+
+      const requestId =
+        result[0]?.id ?? 0;
+
+      // Record the withdrawal in the transactions ledger right away, as
+      // "pending" — this is what makes it show up immediately in the
+      // user's transaction history while it awaits admin review. The
+      // transactionId embeds the request id (no timestamp suffix here) so
+      // approveWithdrawal/rejectWithdrawal can find and update this exact
+      // row later instead of inserting a duplicate one.
+      await tx
+        .insert(transactions)
         .values({
-          userId: data.userId,
-          currency: data.currency,
-          amount: data.amount.toFixed(8),
-          address: data.address,
-          network: data.network,
-        })
-        .returning({ id: withdrawalRequests.id });
-
-      const requestId = result[0]?.id ?? 0;
-
-      await tx.insert(transactions).values({
-        transactionId: `WTH-${requestId}`,
-        userId: data.userId,
-        type: "withdrawal",
-        amount: data.amount.toFixed(8),
-        currency: data.currency,
-        status: "pending",
-      });
+          transactionId:
+            `WTH-${requestId}`,
+          userId:
+            data.userId,
+          type:
+            "withdrawal",
+          amount:
+            data.amount.toFixed(
+              8,
+            ),
+          currency:
+            data.currency,
+          status:
+            "pending",
+        });
 
       return requestId;
-    }),
+    },
   );
 }
 
 export async function listWithdrawalRequests() {
   const db = await getDb();
-  if (!db) return [];
+
+  if (!db) {
+    return [];
+  }
 
   return db
     .select({
-      request: withdrawalRequests,
+      request:
+        withdrawalRequests,
+
       user: {
         id: users.id,
         name: users.name,
         email: users.email,
-        username: users.username,
+        username:
+          users.username,
       },
     })
     .from(withdrawalRequests)
-    .leftJoin(users, eq(users.id, withdrawalRequests.userId))
-    .orderBy(desc(withdrawalRequests.createdAt));
+    .leftJoin(
+      users,
+      eq(
+        users.id,
+        withdrawalRequests.userId,
+      ),
+    )
+    .orderBy(
+      desc(
+        withdrawalRequests.createdAt,
+      ),
+    );
 }
 
 /* =========================
    TRANSACTIONS
 ========================= */
 
-export async function listTransactions(userId?: number) {
+export async function listTransactions(
+  userId?: number,
+) {
   const db = await getDb();
-  if (!db) return [];
 
-  const query = db.select().from(transactions);
+  if (!db) {
+    return [];
+  }
+
+  const query =
+    db
+      .select()
+      .from(transactions);
 
   if (userId !== undefined) {
     return query
-      .where(eq(transactions.userId, userId))
-      .orderBy(desc(transactions.createdAt));
+      .where(
+        eq(
+          transactions.userId,
+          userId,
+        ),
+      )
+      .orderBy(
+        desc(
+          transactions.createdAt,
+        ),
+      );
   }
 
-  return query.orderBy(desc(transactions.createdAt));
+  return query.orderBy(
+    desc(
+      transactions.createdAt,
+    ),
+  );
 }
 
 /* =========================
@@ -857,6 +1191,16 @@ export async function listTransactions(userId?: number) {
 
 const REFERRAL_RATES = [0.10, 0.05, 0.025];
 
+// Walks up to 3 levels of the referral chain starting from the person who
+// deposited, and credits each ancestor referrer a percentage of the
+// deposit directly into their wallet balance:
+//   level 1 (direct inviter)        -> 10%
+//   level 2 (inviter's inviter)     -> 5%
+//   level 3 (that person's inviter) -> 2.5%
+// Must be called from inside the same db transaction as the deposit
+// approval so the commission and the deposit either both land or neither
+// does. Silently does nothing for levels that don't have an inviter (e.g.
+// a user who signed up without a referral code stops the chain there).
 async function creditReferralChain(
   tx: any,
   params: {
@@ -866,69 +1210,131 @@ async function creditReferralChain(
     currency: string;
   },
 ) {
-  let childId = params.sourceUserId;
+  let childId =
+    params.sourceUserId;
 
-  for (let level = 1; level <= REFERRAL_RATES.length; level++) {
-    const child = (
-      await tx
-        .select({ referredById: users.referredById })
-        .from(users)
-        .where(eq(users.id, childId))
-        .limit(1)
-    )[0];
-
-    if (!child?.referredById) break;
-
-    const referrerId = child.referredById as number;
-    const commission =
-      params.depositAmount * REFERRAL_RATES[level - 1];
-
-    if (commission > 0) {
-      const balance = (
+  for (
+    let level = 1;
+    level <= REFERRAL_RATES.length;
+    level++
+  ) {
+    const child =
+      (
         await tx
-          .select()
-          .from(walletBalances)
+          .select({
+            referredById:
+              users.referredById,
+          })
+          .from(users)
           .where(
-            and(
-              eq(walletBalances.userId, referrerId),
-              eq(walletBalances.currency, params.currency),
+            eq(
+              users.id,
+              childId,
             ),
           )
           .limit(1)
       )[0];
 
-      if (balance) {
-        await tx
-          .update(walletBalances)
-          .set({
-            amount: sql`${walletBalances.amount} + ${commission.toFixed(8)}`,
-            updatedAt: new Date(),
-          })
-          .where(eq(walletBalances.id, balance.id));
-      } else {
-        await tx.insert(walletBalances).values({
-          userId: referrerId,
-          currency: params.currency,
-          amount: commission.toFixed(8),
-        });
-      }
-
-      await tx.insert(referralRewards).values({
-        referrerId,
-        sourceUserId: params.sourceUserId,
-        depositRequestId: params.depositRequestId,
-        level,
-        depositAmount: params.depositAmount.toFixed(8),
-        commission: commission.toFixed(8),
-        currency: params.currency,
-      });
+    if (!child?.referredById) {
+      break;
     }
 
+    const referrerId =
+      child.referredById as number;
+
+    const commission =
+      params.depositAmount *
+      REFERRAL_RATES[level - 1];
+
+    if (commission > 0) {
+      const balance =
+        (
+          await tx
+            .select()
+            .from(walletBalances)
+            .where(
+              and(
+                eq(
+                  walletBalances.userId,
+                  referrerId,
+                ),
+                eq(
+                  walletBalances.currency,
+                  params.currency,
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
+
+      if (balance) {
+        await tx
+          .update(
+            walletBalances,
+          )
+          .set({
+            amount: sql`
+              ${walletBalances.amount}
+              + ${commission.toFixed(8)}
+            `,
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            eq(
+              walletBalances.id,
+              balance.id,
+            ),
+          );
+      } else {
+        await tx
+          .insert(
+            walletBalances,
+          )
+          .values({
+            userId:
+              referrerId,
+            currency:
+              params.currency,
+            amount:
+              commission.toFixed(
+                8,
+              ),
+          });
+      }
+
+      await tx
+        .insert(
+          referralRewards,
+        )
+        .values({
+          referrerId,
+          sourceUserId:
+            params.sourceUserId,
+          depositRequestId:
+            params.depositRequestId,
+          level,
+          depositAmount:
+            params.depositAmount.toFixed(
+              8,
+            ),
+          commission:
+            commission.toFixed(
+              8,
+            ),
+          currency:
+            params.currency,
+        });
+    }
+
+    // Climb one level up the chain for the next iteration.
     childId = referrerId;
   }
 }
 
-export async function getReferralStats(userId: number) {
+export async function getReferralStats(
+  userId: number,
+) {
   const db = await getDb();
 
   if (!db) {
@@ -942,183 +1348,359 @@ export async function getReferralStats(userId: number) {
     };
   }
 
-  const me = (
+  const me =
+    (
+      await db
+        .select({
+          referralCode:
+            users.referralCode,
+        })
+        .from(users)
+        .where(
+          eq(users.id, userId),
+        )
+        .limit(1)
+    )[0];
+
+  const level1 =
     await db
-      .select({ referralCode: users.referralCode })
+      .select({ id: users.id })
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1)
-  )[0];
+      .where(
+        eq(
+          users.referredById,
+          userId,
+        ),
+      );
 
-  const level1 = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.referredById, userId));
+  const level1Ids =
+    level1.map((u) => u.id);
 
-  const level1Ids = level1.map((u) => u.id);
+  const level2 =
+    level1Ids.length
+      ? await db
+          .select({
+            id: users.id,
+          })
+          .from(users)
+          .where(
+            inArray(
+              users.referredById,
+              level1Ids,
+            ),
+          )
+      : [];
 
-  const level2 = level1Ids.length
-    ? await db
-        .select({ id: users.id })
-        .from(users)
-        .where(inArray(users.referredById, level1Ids))
-    : [];
+  const level2Ids =
+    level2.map((u) => u.id);
 
-  const level2Ids = level2.map((u) => u.id);
+  const level3 =
+    level2Ids.length
+      ? await db
+          .select({
+            id: users.id,
+          })
+          .from(users)
+          .where(
+            inArray(
+              users.referredById,
+              level2Ids,
+            ),
+          )
+      : [];
 
-  const level3 = level2Ids.length
-    ? await db
-        .select({ id: users.id })
-        .from(users)
-        .where(inArray(users.referredById, level2Ids))
-    : [];
+  const earningsByLevel =
+    await db
+      .select({
+        level:
+          referralRewards.level,
+        total: sql<string>`
+          coalesce(
+            sum(${referralRewards.commission}),
+            0
+          )
+        `,
+      })
+      .from(referralRewards)
+      .where(
+        eq(
+          referralRewards.referrerId,
+          userId,
+        ),
+      )
+      .groupBy(
+        referralRewards.level,
+      );
 
-  const earningsByLevel = await db
-    .select({
-      level: referralRewards.level,
-      total: sql<string>`coalesce(sum(${referralRewards.commission}), 0)`,
-    })
-    .from(referralRewards)
-    .where(eq(referralRewards.referrerId, userId))
-    .groupBy(referralRewards.level);
-
-  const levelEarnings: [number, number, number] = [0, 0, 0];
+  const levelEarnings: [
+    number,
+    number,
+    number,
+  ] = [0, 0, 0];
 
   for (const row of earningsByLevel) {
-    if (row.level >= 1 && row.level <= 3) {
-      levelEarnings[row.level - 1] = Number(row.total);
+    if (
+      row.level >= 1 &&
+      row.level <= 3
+    ) {
+      levelEarnings[
+        row.level - 1
+      ] = Number(row.total);
     }
   }
 
-  const history = await db
-    .select({
-      id: referralRewards.id,
-      level: referralRewards.level,
-      commission: referralRewards.commission,
-      currency: referralRewards.currency,
-      createdAt: referralRewards.createdAt,
-      sourceUsername: users.username,
-      sourceName: users.name,
-    })
-    .from(referralRewards)
-    .leftJoin(users, eq(referralRewards.sourceUserId, users.id))
-    .where(eq(referralRewards.referrerId, userId))
-    .orderBy(desc(referralRewards.createdAt))
-    .limit(30);
+  const history =
+    await db
+      .select({
+        id: referralRewards.id,
+        level:
+          referralRewards.level,
+        commission:
+          referralRewards.commission,
+        currency:
+          referralRewards.currency,
+        createdAt:
+          referralRewards.createdAt,
+        sourceUsername:
+          users.username,
+        sourceName:
+          users.name,
+      })
+      .from(referralRewards)
+      .leftJoin(
+        users,
+        eq(
+          referralRewards.sourceUserId,
+          users.id,
+        ),
+      )
+      .where(
+        eq(
+          referralRewards.referrerId,
+          userId,
+        ),
+      )
+      .orderBy(
+        desc(
+          referralRewards.createdAt,
+        ),
+      )
+      .limit(30);
 
   return {
-    referralCode: me?.referralCode ?? null,
-    levelCounts: [level1Ids.length, level2Ids.length, level3.length],
+    referralCode:
+      me?.referralCode ?? null,
+    levelCounts: [
+      level1Ids.length,
+      level2Ids.length,
+      level3.length,
+    ],
     levelEarnings,
-    totalReferred: level1Ids.length + level2Ids.length + level3.length,
+    totalReferred:
+      level1Ids.length +
+      level2Ids.length +
+      level3.length,
     totalEarned:
-      levelEarnings[0] + levelEarnings[1] + levelEarnings[2],
+      levelEarnings[0] +
+      levelEarnings[1] +
+      levelEarnings[2],
     history,
   };
 }
 
-export async function approveDeposit(requestId: number, adminId: number) {
+export async function approveDeposit(
+  requestId: number,
+  adminId: number,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
 
-  return withDbRetry(() =>
-    db.transaction(async (tx) => {
-      const request = (
-        await tx
-          .select()
-          .from(depositRequests)
-          .where(
-            and(
-              eq(depositRequests.id, requestId),
-              eq(depositRequests.status, "pending"),
-            ),
-          )
-          .limit(1)
-      )[0];
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  return db.transaction(
+    async (tx) => {
+      const request =
+        (
+          await tx
+            .select()
+            .from(
+              depositRequests,
+            )
+            .where(
+              and(
+                eq(
+                  depositRequests.id,
+                  requestId,
+                ),
+                eq(
+                  depositRequests.status,
+                  "pending",
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
 
       if (!request) {
-        return { changed: false, reason: "already_processed" as const };
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
       }
 
-      const marked = await tx
-        .update(depositRequests)
-        .set({
-          status: "approved",
-          approvedBy: adminId,
-          approvedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(depositRequests.id, requestId),
-            eq(depositRequests.status, "pending"),
-          ),
-        )
-        .returning({ id: depositRequests.id });
-
-      if (!marked.length) {
-        return { changed: false, reason: "already_processed" as const };
-      }
-
-      const balance = (
+      const marked =
         await tx
-          .select()
-          .from(walletBalances)
+          .update(
+            depositRequests,
+          )
+          .set({
+            status: "approved",
+            approvedBy:
+              adminId,
+            approvedAt:
+              new Date(),
+            updatedAt:
+              new Date(),
+          })
           .where(
             and(
-              eq(walletBalances.userId, request.userId),
-              eq(walletBalances.currency, request.currency),
+              eq(
+                depositRequests.id,
+                requestId,
+              ),
+              eq(
+                depositRequests.status,
+                "pending",
+              ),
             ),
           )
-          .limit(1)
-      )[0];
+          .returning({
+            id:
+              depositRequests.id,
+          });
+
+      if (!marked.length) {
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
+      }
+
+      const balance =
+        (
+          await tx
+            .select()
+            .from(walletBalances)
+            .where(
+              and(
+                eq(
+                  walletBalances.userId,
+                  request.userId,
+                ),
+                eq(
+                  walletBalances.currency,
+                  request.currency,
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
 
       if (balance) {
         await tx
-          .update(walletBalances)
+          .update(
+            walletBalances,
+          )
           .set({
-            amount: sql`${walletBalances.amount} + ${request.amount}`,
-            updatedAt: new Date(),
+            amount: sql`
+              ${walletBalances.amount}
+              + ${request.amount}
+            `,
+            updatedAt:
+              new Date(),
           })
-          .where(eq(walletBalances.id, balance.id));
+          .where(
+            eq(
+              walletBalances.id,
+              balance.id,
+            ),
+          );
       } else {
-        await tx.insert(walletBalances).values({
-          userId: request.userId,
-          currency: request.currency,
-          amount: request.amount,
-        });
+        await tx
+          .insert(
+            walletBalances,
+          )
+          .values({
+            userId:
+              request.userId,
+            currency:
+              request.currency,
+            amount:
+              request.amount,
+          });
       }
 
-      await tx.insert(transactions).values({
-        transactionId: `DEP-${request.id}-${Date.now()}`,
-        userId: request.userId,
-        type: "deposit",
-        amount: request.amount,
-        currency: request.currency,
-        status: "completed",
-        adminId,
-      });
+      await tx
+        .insert(transactions)
+        .values({
+          transactionId:
+            `DEP-${request.id}-${Date.now()}`,
+          userId:
+            request.userId,
+          type: "deposit",
+          amount:
+            request.amount,
+          currency:
+            request.currency,
+          status:
+            "completed",
+          adminId,
+        });
 
-      await creditReferralChain(tx, {
-        sourceUserId: request.userId,
-        depositRequestId: request.id,
-        depositAmount: Number(request.amount),
-        currency: request.currency,
-      });
+      await creditReferralChain(
+        tx,
+        {
+          sourceUserId:
+            request.userId,
+          depositRequestId:
+            request.id,
+          depositAmount:
+            Number(
+              request.amount,
+            ),
+          currency:
+            request.currency,
+        },
+      );
 
-      await tx.insert(auditLogs).values({
-        adminId,
-        action: "approve_deposit",
-        entity: "deposit_request",
-        entityId: requestId,
-        metadata: JSON.stringify({
-          currency: request.currency,
-          amount: request.amount,
-        }),
-      });
+      await tx
+        .insert(auditLogs)
+        .values({
+          adminId,
+          action:
+            "approve_deposit",
+          entity:
+            "deposit_request",
+          entityId:
+            requestId,
+          metadata:
+            JSON.stringify({
+              currency:
+                request.currency,
+              amount:
+                request.amount,
+            }),
+        });
 
-      return { changed: true };
-    }),
+      return {
+        changed: true,
+      };
+    },
   );
 }
 
@@ -1126,41 +1708,75 @@ export async function approveDeposit(requestId: number, adminId: number) {
    REJECT DEPOSIT
 ========================= */
 
-export async function rejectDeposit(requestId: number, adminId: number) {
+export async function rejectDeposit(
+  requestId: number,
+  adminId: number,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
 
-  return withDbRetry(() =>
-    db.transaction(async (tx) => {
-      const result = await tx
-        .update(depositRequests)
-        .set({
-          status: "rejected",
-          approvedBy: adminId,
-          approvedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(depositRequests.id, requestId),
-            eq(depositRequests.status, "pending"),
-          ),
-        )
-        .returning({ id: depositRequests.id });
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  return db.transaction(
+    async (tx) => {
+      const result =
+        await tx
+          .update(
+            depositRequests,
+          )
+          .set({
+            status: "rejected",
+            approvedBy:
+              adminId,
+            approvedAt:
+              new Date(),
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            and(
+              eq(
+                depositRequests.id,
+                requestId,
+              ),
+              eq(
+                depositRequests.status,
+                "pending",
+              ),
+            ),
+          )
+          .returning({
+            id:
+              depositRequests.id,
+          });
 
       if (!result.length) {
-        return { changed: false, reason: "already_processed" as const };
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
       }
 
-      await tx.insert(auditLogs).values({
-        adminId,
-        action: "reject_deposit",
-        entity: "deposit_request",
-        entityId: requestId,
-      });
+      await tx
+        .insert(auditLogs)
+        .values({
+          adminId,
+          action:
+            "reject_deposit",
+          entity:
+            "deposit_request",
+          entityId:
+            requestId,
+        });
 
-      return { changed: true };
-    }),
+      return {
+        changed: true,
+      };
+    },
   );
 }
 
@@ -1168,71 +1784,133 @@ export async function rejectDeposit(requestId: number, adminId: number) {
    APPROVE WITHDRAWAL
 ========================= */
 
-export async function approveWithdrawal(requestId: number, adminId: number) {
+export async function approveWithdrawal(
+  requestId: number,
+  adminId: number,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
 
-  return withDbRetry(() =>
-    db.transaction(async (tx) => {
-      const request = (
-        await tx
-          .select()
-          .from(withdrawalRequests)
-          .where(
-            and(
-              eq(withdrawalRequests.id, requestId),
-              eq(withdrawalRequests.status, "pending"),
-            ),
-          )
-          .limit(1)
-      )[0];
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  return db.transaction(
+    async (tx) => {
+      const request =
+        (
+          await tx
+            .select()
+            .from(
+              withdrawalRequests,
+            )
+            .where(
+              and(
+                eq(
+                  withdrawalRequests.id,
+                  requestId,
+                ),
+                eq(
+                  withdrawalRequests.status,
+                  "pending",
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
 
       if (!request) {
-        return { changed: false, reason: "already_processed" as const };
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
       }
 
-      const claimed = await tx
-        .update(withdrawalRequests)
-        .set({
-          status: "approved",
-          approvedBy: adminId,
-          approvedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(withdrawalRequests.id, requestId),
-            eq(withdrawalRequests.status, "pending"),
-          ),
-        )
-        .returning({ id: withdrawalRequests.id });
+      const claimed =
+        await tx
+          .update(
+            withdrawalRequests,
+          )
+          .set({
+            status: "approved",
+            approvedBy:
+              adminId,
+            approvedAt:
+              new Date(),
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            and(
+              eq(
+                withdrawalRequests.id,
+                requestId,
+              ),
+              eq(
+                withdrawalRequests.status,
+                "pending",
+              ),
+            ),
+          )
+          .returning({
+            id:
+              withdrawalRequests.id,
+          });
 
       if (!claimed.length) {
-        return { changed: false, reason: "already_processed" as const };
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
       }
+
+      // Balance was already debited when the user submitted the request
+      // (funds are held pending review), so approval does NOT touch
+      // walletBalances again — it only finalizes the request and flips the
+      // pending transaction row (created at request time) to completed.
 
       await tx
         .update(transactions)
         .set({
-          status: "completed",
+          status:
+            "completed",
           adminId,
-          updatedAt: new Date(),
+          updatedAt:
+            new Date(),
         })
-        .where(eq(transactions.transactionId, `WTH-${request.id}`));
+        .where(
+          eq(
+            transactions.transactionId,
+            `WTH-${request.id}`,
+          ),
+        );
 
-      await tx.insert(auditLogs).values({
-        adminId,
-        action: "approve_withdrawal",
-        entity: "withdrawal_request",
-        entityId: requestId,
-        metadata: JSON.stringify({
-          currency: request.currency,
-          amount: request.amount,
-        }),
-      });
+      await tx
+        .insert(auditLogs)
+        .values({
+          adminId,
+          action:
+            "approve_withdrawal",
+          entity:
+            "withdrawal_request",
+          entityId:
+            requestId,
+          metadata:
+            JSON.stringify({
+              currency:
+                request.currency,
+              amount:
+                request.amount,
+            }),
+        });
 
-      return { changed: true };
-    }),
+      return {
+        changed: true,
+      };
+    },
   );
 }
 
@@ -1240,59 +1918,116 @@ export async function approveWithdrawal(requestId: number, adminId: number) {
    REJECT WITHDRAWAL
 ========================= */
 
-export async function rejectWithdrawal(requestId: number, adminId: number) {
+export async function rejectWithdrawal(
+  requestId: number,
+  adminId: number,
+) {
   const db = await getDb();
-  if (!db) throw new Error("Database not available");
 
-  return withDbRetry(() =>
-    db.transaction(async (tx) => {
-      const request = (
-        await tx
-          .select()
-          .from(withdrawalRequests)
-          .where(
-            and(
-              eq(withdrawalRequests.id, requestId),
-              eq(withdrawalRequests.status, "pending"),
-            ),
-          )
-          .limit(1)
-      )[0];
+  if (!db) {
+    throw new Error(
+      "Database not available",
+    );
+  }
+
+  return db.transaction(
+    async (tx) => {
+      // Select-then-claim: only a still-pending request can be claimed, so
+      // two concurrent admin actions on the same request can't both apply
+      // (and can't both refund the same funds twice).
+      const request =
+        (
+          await tx
+            .select()
+            .from(
+              withdrawalRequests,
+            )
+            .where(
+              and(
+                eq(
+                  withdrawalRequests.id,
+                  requestId,
+                ),
+                eq(
+                  withdrawalRequests.status,
+                  "pending",
+                ),
+              ),
+            )
+            .limit(1)
+        )[0];
 
       if (!request) {
-        return { changed: false, reason: "already_processed" as const };
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
       }
 
-      const claimed = await tx
-        .update(withdrawalRequests)
-        .set({
-          status: "rejected",
-          approvedBy: adminId,
-          approvedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(withdrawalRequests.id, requestId),
-            eq(withdrawalRequests.status, "pending"),
-          ),
-        )
-        .returning({ id: withdrawalRequests.id });
+      const claimed =
+        await tx
+          .update(
+            withdrawalRequests,
+          )
+          .set({
+            status: "rejected",
+            approvedBy:
+              adminId,
+            approvedAt:
+              new Date(),
+            updatedAt:
+              new Date(),
+          })
+          .where(
+            and(
+              eq(
+                withdrawalRequests.id,
+                requestId,
+              ),
+              eq(
+                withdrawalRequests.status,
+                "pending",
+              ),
+            ),
+          )
+          .returning({
+            id:
+              withdrawalRequests.id,
+          });
 
       if (!claimed.length) {
-        return { changed: false, reason: "already_processed" as const };
+        return {
+          changed: false,
+          reason:
+            "already_processed" as const,
+        };
       }
 
+      // Refund the held funds back to the user's balance since the
+      // withdrawal did not go through.
       await tx
-        .update(walletBalances)
+        .update(
+          walletBalances,
+        )
         .set({
-          amount: sql`${walletBalances.amount} + ${request.amount}`,
-          updatedAt: new Date(),
+          amount: sql`
+            ${walletBalances.amount}
+            + ${request.amount}
+          `,
+          updatedAt:
+            new Date(),
         })
         .where(
           and(
-            eq(walletBalances.userId, request.userId),
-            eq(walletBalances.currency, request.currency),
+            eq(
+              walletBalances.userId,
+              request.userId,
+            ),
+            eq(
+              walletBalances.currency,
+              request.currency,
+            ),
           ),
         );
 
@@ -1301,23 +2036,40 @@ export async function rejectWithdrawal(requestId: number, adminId: number) {
         .set({
           status: "failed",
           adminId,
-          updatedAt: new Date(),
+          updatedAt:
+            new Date(),
         })
-        .where(eq(transactions.transactionId, `WTH-${request.id}`));
+        .where(
+          eq(
+            transactions.transactionId,
+            `WTH-${request.id}`,
+          ),
+        );
 
-      await tx.insert(auditLogs).values({
-        adminId,
-        action: "reject_withdrawal",
-        entity: "withdrawal_request",
-        entityId: requestId,
-        metadata: JSON.stringify({
-          currency: request.currency,
-          amount: request.amount,
-          refunded: true,
-        }),
-      });
+      await tx
+        .insert(auditLogs)
+        .values({
+          adminId,
+          action:
+            "reject_withdrawal",
+          entity:
+            "withdrawal_request",
+          entityId:
+            requestId,
+          metadata:
+            JSON.stringify({
+              currency:
+                request.currency,
+              amount:
+                request.amount,
+              refunded: true,
+            }),
+        });
 
-      return { changed: true };
-    }),
+      return {
+        changed: true,
+      };
+    },
   );
 }
+
