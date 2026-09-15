@@ -390,24 +390,6 @@ export async function getUserByOpenId(
   )[0]);
 }
 
-export async function getUserById(
-  id: number,
-) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return withDbRetry(async () => (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1)
-  )[0]);
-}
-
 export async function updateUserLastSignedIn(
   userId: number,
 ) {
