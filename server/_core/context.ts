@@ -20,22 +20,8 @@ export async function createContext(opts: { req: Request }): Promise<TrpcContext
 
   try {
     user = await sdk.authenticateRequest(opts.req);
-    if (user) {
-      console.log("[Auth] resolved user", {
-        userId: user.id,
-        openId: user.openId,
-        role: user.role,
-      });
-    }
   } catch (error) {
-    // Keep public routes usable without a session, but log the actual reason
-    // so an authentication/database problem cannot masquerade as a silent
-    // client-side state change.
-    console.warn("[Auth] authenticateRequest failed (treated as signed-out):", {
-      message: error instanceof Error ? error.message : String(error),
-      method: opts.req.method,
-      path: new URL(opts.req.url).pathname,
-    });
+    console.warn("[Auth] authenticateRequest failed (treated as signed-out):", error);
     user = null;
   }
 
