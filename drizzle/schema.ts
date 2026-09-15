@@ -7,7 +7,6 @@ import {
   serial,
   text,
   timestamp,
-  uniqueIndex,
   varchar,
 } from "drizzle-orm/pg-core";
 
@@ -285,6 +284,48 @@ export const transactions = pgTable(
 export type Transaction =
   typeof transactions.$inferSelect;
 
+
+/* =========================
+   TRADE CONTRACTS
+========================= */
+
+export const tradeContracts = pgTable(
+  "trade_contracts",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("userId").notNull(),
+    currency: varchar("currency", { length: 16 }).notNull(),
+    principal: numeric("principal", { precision: 24, scale: 8 }).notNull(),
+    dailyRate: numeric("dailyRate", { precision: 8, scale: 6 }).notNull(),
+    durationDays: integer("durationDays").notNull(),
+    totalProfitPaid: numeric("totalProfitPaid", { precision: 24, scale: 8 }).default("0").notNull(),
+    payoutCount: integer("payoutCount").default(0).notNull(),
+    startedAt: timestamp("startedAt").defaultNow().notNull(),
+    nextPayoutAt: timestamp("nextPayoutAt").notNull(),
+    endsAt: timestamp("endsAt").notNull(),
+    status: varchar("status", { length: 16 }).default("active").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+);
+
+export type TradeContract = typeof tradeContracts.$inferSelect;
+
+export const tradePayouts = pgTable(
+  "trade_payouts",
+  {
+    id: serial("id").primaryKey(),
+    contractId: integer("contractId").notNull(),
+    userId: integer("userId").notNull(),
+    payoutNumber: integer("payoutNumber").notNull(),
+    amount: numeric("amount", { precision: 24, scale: 8 }).notNull(),
+    currency: varchar("currency", { length: 16 }).notNull(),
+    paidAt: timestamp("paidAt").defaultNow().notNull(),
+  },
+);
+
+export type TradePayout = typeof tradePayouts.$inferSelect;
+
 /* =========================
    REFERRAL REWARDS
 ========================= */
@@ -419,100 +460,3 @@ export const notificationReads = pgTable(
 
 export type NotificationRead =
   typeof notificationReads.$inferSelect;
-
-/* =========================
-   TRADE CONTRACTS
-========================= */
-
-export const tradeContracts = pgTable(
-  "trade_contracts",
-  {
-    id: serial("id").primaryKey(),
-
-    userId: integer("userId").notNull(),
-
-    principalAmount: numeric("principalAmount", {
-      precision: 24,
-      scale: 8,
-    }).notNull(),
-
-    currency: varchar("currency", {
-      length: 16,
-    }).notNull().default("USDT"),
-
-    dailyRateBps: integer("dailyRateBps")
-      .notNull()
-      .default(200),
-
-    status: varchar("status", {
-      length: 16,
-    })
-      .notNull()
-      .default("active"),
-
-    totalProfitPaid: numeric("totalProfitPaid", {
-      precision: 24,
-      scale: 8,
-    })
-      .notNull()
-      .default("0"),
-
-    lastPayoutAt: timestamp("lastPayoutAt"),
-
-    nextPayoutAt: timestamp("nextPayoutAt").notNull(),
-
-    createdAt: timestamp("createdAt")
-      .defaultNow()
-      .notNull(),
-
-    updatedAt: timestamp("updatedAt")
-      .defaultNow()
-      .notNull(),
-
-    closedAt: timestamp("closedAt"),
-  },
-);
-
-export type TradeContract = typeof tradeContracts.$inferSelect;
-
-/* =========================
-   TRADE PAYOUTS
-========================= */
-
-export const tradePayouts = pgTable(
-  "trade_payouts",
-  {
-    id: serial("id").primaryKey(),
-
-    contractId: integer("contractId").notNull(),
-
-    userId: integer("userId").notNull(),
-
-    payoutDate: varchar("payoutDate", {
-      length: 32,
-    }).notNull(),
-
-    amount: numeric("amount", {
-      precision: 24,
-      scale: 8,
-    }).notNull(),
-
-    transactionId: varchar("transactionId", {
-      length: 64,
-    })
-      .notNull()
-      .unique(),
-
-    createdAt: timestamp("createdAt")
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => ({
-    contractDateUnique: uniqueIndex("trade_payouts_contract_date_idx").on(
-      table.contractId,
-      table.payoutDate,
-    ),
-  }),
-);
-
-export type TradePayout = typeof tradePayouts.$inferSelect;
