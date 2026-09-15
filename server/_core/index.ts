@@ -67,6 +67,16 @@ async function startServer() {
     createExpressMiddleware({
       router: appRouter,
       createContext,
+      onError({ path, error, req }) {
+        console.error("[tRPC] request failed", {
+          procedure: path,
+          requestId: req.headers["x-cwaax-request-id"] ?? "unknown",
+          code: error.code,
+          message: error.message,
+          cause: error.cause instanceof Error ? error.cause.message : String(error.cause ?? ""),
+          stack: error.stack,
+        });
+      },
     }),
   );
 
