@@ -213,23 +213,36 @@ export default function AdminScreen() {
         ? approveWithdrawal
         : rejectWithdrawal;
 
-    // Exactly one mutation per confirmation. Authentication/authorization
-    // errors are real server errors and must not be retried blindly.
-    mutation.mutate(
-      { requestId: current.id },
-      {
-        onSuccess: () => {
-          setPendingRequestAction(null);
-        },
-        onError: (e: any) => {
-          const msg = String(e?.message ?? "تعذر تنفيذ العملية");
-          setFeedback({ title: "تعذر التنفيذ", message: msg });
-        },
-        onSettled: () => {
-          setBusyRequestKey(null);
-        },
-      }
-    );
+    // إعادة محاولة تلقائية عند خطأ الصلاحية (10002) الناتج عن سباق التوكِن
+    const runOnce = (attempt: number) => {
+      mutation.mutate(
+        { requestId: current.id },
+        {
+          onSuccess: () => {
+            setPendingRequestAction(null);
+          },
+          onError: (e: any) => {
+            const msg = String(e?.message ?? "");
+            const isPermissionErr =
+              msg.includes("10002") || msg.toLowerCase().includes("permission");
+            if (attempt < 3 && isPermissionErr) {
+              // إعادة المحاولة بدون إزعاج المستخدم
+              setTimeout(() => runOnce(attempt + 1), 700 * (attempt + 1));
+              return;
+            }
+            setFeedback({ title: "تعذر التنفيذ", message: msg });
+            setPendingRequestAction(null);
+          },
+          onSettled: () => {
+            // فقط آخر محاولة تُنهي حالة busy
+            if (attempt === 0) {
+              setBusyRequestKey(null);
+            }
+          },
+        }
+      );
+    };
+    runOnce(0);
   };
 
   return (
