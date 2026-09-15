@@ -13,6 +13,17 @@ const t = initTRPC.context<TrpcContext>().create({
     // intentional errors (bad login, forbidden, not found...) already
     // carry a safe, user-facing message and are left untouched.
     if (error.code === "INTERNAL_SERVER_ERROR") {
+      console.error("[tRPC] internal error formatted for client", {
+        procedure: opts.path,
+        requestId:
+          typeof opts.ctx?.req?.headers?.get === "function"
+            ? opts.ctx.req.headers.get("x-cwaax-request-id") ?? "unknown"
+            : "unknown",
+        code: error.code,
+        message: error.message,
+        cause: error.cause instanceof Error ? error.cause.message : String(error.cause ?? ""),
+        stack: error.stack,
+      });
       return {
         ...shape,
         message: "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى",
@@ -46,6 +57,21 @@ export const protectedProcedure = t.procedure.use(requireUser);
 export const adminProcedure = t.procedure.use(
   t.middleware(async (opts) => {
     const { ctx, next } = opts;
+
+    console.info("[AdminTrace] request", {
+      procedure: opts.path,
+      requestId:
+        typeof ctx.req.headers?.get === "function"
+          ? ctx.req.headers.get("x-cwaax-request-id") ?? "unknown"
+          : "unknown",
+      inputRequestId:
+        opts.input && typeof opts.input === "object" && "requestId" in opts.input
+          ? (opts.input as { requestId?: unknown }).requestId
+          : undefined,
+      userId: ctx.user?.id ?? null,
+      openId: ctx.user?.openId ?? null,
+      role: ctx.user?.role ?? null,
+    });
 
     if (!ctx.user || ctx.user.role !== "admin") {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
