@@ -7,6 +7,7 @@ import { Card, IconButton, StatusPill, type IconName } from "@/components/cwaax-
 import { CWAAX } from "@/constants/cwaax";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
+import * as Auth from "@/lib/_core/auth";
 
 const TABS = ["نظرة عامة", "المستخدمون", "الإيداعات", "السحوبات"] as const;
 type Tab = (typeof TABS)[number];
@@ -213,31 +214,33 @@ export default function AdminScreen() {
         ? approveWithdrawal
         : rejectWithdrawal;
 
-    // إعادة محاولة تلقائية عند خطأ الصلاحية (10002) الناتج عن سباق التوكِن
+    // إعادة المحاولة فقط بعد إعادة قراءة التوكن عند خطأ 10002؛ لا نعيد الطلب
+    // عشوائياً ولا نحرر القفل قبل انتهاء المحاولة النهائية.
     const runOnce = (attempt: number) => {
       mutation.mutate(
         { requestId: current.id },
-        {
-          onSuccess: () => {
-            setPendingRequestAction(null);
-          },
+          {
+            onSuccess: () => {
+              setPendingRequestAction(null);
+              setBusyRequestKey(null);
+            },
           onError: (e: any) => {
             const msg = String(e?.message ?? "");
             const isPermissionErr =
               msg.includes("10002") || msg.toLowerCase().includes("permission");
-            if (attempt < 3 && isPermissionErr) {
-              // إعادة المحاولة بدون إزعاج المستخدم
-              setTimeout(() => runOnce(attempt + 1), 700 * (attempt + 1));
+            if (attempt < 1 && isPermissionErr) {
+              void Auth.reloadSessionToken().finally(() => {
+                setTimeout(() => runOnce(attempt + 1), 150);
+              });
               return;
             }
             setFeedback({ title: "تعذر التنفيذ", message: msg });
             setPendingRequestAction(null);
+            setBusyRequestKey(null);
           },
           onSettled: () => {
-            // فقط آخر محاولة تُنهي حالة busy
-            if (attempt === 0) {
-              setBusyRequestKey(null);
-            }
+            // Do not release the lock here: a permission failure may have a
+            // token-reload retry queued immediately after this callback.
           },
         }
       );
