@@ -48,23 +48,8 @@ export const adminProcedure = t.procedure.use(
     const { ctx, next } = opts;
 
     if (!ctx.user || ctx.user.role !== "admin") {
-      console.warn("[AdminTrace] authorization denied", {
-        method: ctx.req.method,
-        path: new URL(ctx.req.url).pathname,
-        userId: ctx.user?.id ?? null,
-        openId: ctx.user?.openId ?? null,
-        role: ctx.user?.role ?? null,
-      });
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
-
-    console.log("[AdminTrace] authorization granted", {
-      method: ctx.req.method,
-      path: new URL(ctx.req.url).pathname,
-      userId: ctx.user.id,
-      openId: ctx.user.openId,
-      role: ctx.user.role,
-    });
 
     return next({
       ctx: {
