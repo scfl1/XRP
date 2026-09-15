@@ -203,6 +203,29 @@ async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
   }
 }
 
+function logApprovalDatabaseError(operation: string, requestId: number, adminId: number, error: unknown) {
+  const dbError = error as {
+    code?: string;
+    detail?: string;
+    hint?: string;
+    constraint?: string;
+    table?: string;
+    column?: string;
+  };
+  console.error("[ApprovalDB] failed", {
+    operation,
+    requestId,
+    adminId,
+    code: dbError?.code ?? "unknown",
+    detail: dbError?.detail ?? "",
+    hint: dbError?.hint ?? "",
+    constraint: dbError?.constraint ?? "",
+    table: dbError?.table ?? "",
+    column: dbError?.column ?? "",
+    message: error instanceof Error ? error.message : String(error),
+  });
+}
+
 export async function getUserByEmailOrUsername(
   identifier: string,
 ) {
@@ -1520,7 +1543,8 @@ export async function approveDeposit(
     );
   }
 
-  return db.transaction(
+  try {
+    return await db.transaction(
     async (tx) => {
       const request =
         (
@@ -1701,7 +1725,12 @@ export async function approveDeposit(
         changed: true,
       };
     },
-  );
+    );
+  } catch (error) {
+    logApprovalDatabaseError("approveDeposit", requestId, adminId, error);
+    throw error;
+  }
+
 }
 
 /* =========================
@@ -2072,4 +2101,3 @@ export async function rejectWithdrawal(
     },
   );
 }
-
