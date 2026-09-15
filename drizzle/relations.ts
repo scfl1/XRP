@@ -7,6 +7,8 @@ import {
   withdrawalRequests,
   transactions,
   auditLogs,
+  tradeContracts,
+  tradePayouts,
 } from "./schema";
 
 export const usersRelations = relations(
@@ -17,6 +19,8 @@ export const usersRelations = relations(
     withdrawalRequests: many(withdrawalRequests),
     transactions: many(transactions),
     auditLogs: many(auditLogs),
+    tradeContracts: many(tradeContracts),
+    tradePayouts: many(tradePayouts),
   }),
 );
 
@@ -85,6 +89,32 @@ export const auditLogsRelations = relations(
   ({ one }) => ({
     admin: one(users, {
       fields: [auditLogs.adminId],
+      references: [users.id],
+    }),
+  }),
+);
+
+
+export const tradeContractsRelations = relations(
+  tradeContracts,
+  ({ one, many }) => ({
+    user: one(users, {
+      fields: [tradeContracts.userId],
+      references: [users.id],
+    }),
+    payouts: many(tradePayouts),
+  }),
+);
+
+export const tradePayoutsRelations = relations(
+  tradePayouts,
+  ({ one }) => ({
+    contract: one(tradeContracts, {
+      fields: [tradePayouts.contractId],
+      references: [tradeContracts.id],
+    }),
+    user: one(users, {
+      fields: [tradePayouts.userId],
       references: [users.id],
     }),
   }),
