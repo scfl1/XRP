@@ -19,8 +19,6 @@ export const usersRelations = relations(
     withdrawalRequests: many(withdrawalRequests),
     transactions: many(transactions),
     auditLogs: many(auditLogs),
-    tradeContracts: many(tradeContracts),
-    tradePayouts: many(tradePayouts),
   }),
 );
 
@@ -86,6 +84,8 @@ export const transactionsRelations = relations(
 
 export const auditLogsRelations = relations(
   auditLogs,
+  tradeContracts,
+  tradePayouts,
   ({ one }) => ({
     admin: one(users, {
       fields: [auditLogs.adminId],
@@ -95,27 +95,12 @@ export const auditLogsRelations = relations(
 );
 
 
-export const tradeContractsRelations = relations(
-  tradeContracts,
-  ({ one, many }) => ({
-    user: one(users, {
-      fields: [tradeContracts.userId],
-      references: [users.id],
-    }),
-    payouts: many(tradePayouts),
-  }),
-);
+export const tradeContractsRelations = relations(tradeContracts, ({ one, many }) => ({
+  user: one(users, { fields: [tradeContracts.userId], references: [users.id] }),
+  payouts: many(tradePayouts),
+}));
 
-export const tradePayoutsRelations = relations(
-  tradePayouts,
-  ({ one }) => ({
-    contract: one(tradeContracts, {
-      fields: [tradePayouts.contractId],
-      references: [tradeContracts.id],
-    }),
-    user: one(users, {
-      fields: [tradePayouts.userId],
-      references: [users.id],
-    }),
-  }),
-);
+export const tradePayoutsRelations = relations(tradePayouts, ({ one }) => ({
+  contract: one(tradeContracts, { fields: [tradePayouts.contractId], references: [tradeContracts.id] }),
+  user: one(users, { fields: [tradePayouts.userId], references: [users.id] }),
+}));
