@@ -1,15 +1,45 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, CwaLogo, IconButton, SectionTitle, TrendLine } from "@/components/cwaax-ui";
-import { CWAAX, MARKETS } from "@/constants/cwaax";
+import { CWAAX, MARKETS, TRADE_PLAN_AMOUNTS } from "@/constants/cwaax";
+import { trpc } from "@/lib/trpc";
 
 export default function TradeScreen() {
   const router = useRouter();
   const [mode, setMode] = useState("شراء");
   const [amount, setAmount] = useState("");
+  const balances = trpc.wallet.balances.useQuery();
+  const contracts = trpc.wallet.tradeContracts.useQuery();
+  const createContract = trpc.wallet.createTradeContract.useMutation({
+    onSuccess: async () => {
+      await Promise.all([balances.refetch(), contracts.refetch()]);
+      setAmount("");
+    },
+  });
+  const usdtBalance = useMemo(
+    () => Number(balances.data?.find((b: any) => b.currency === "USDT")?.amount ?? 0),
+    [balances.data],
+  );
+  const selectedAmount = Number(amount);
+  const selectedDailyProfit = Number.isFinite(selectedAmount) ? selectedAmount * 0.02 : 0;
+
+  const startTrade = (planAmount: number) => {
+    if (createContract.isPending) return;
+    Alert.alert(
+      "تأكيد عقد التداول",
+      `المبلغ: ${planAmount.toLocaleString()} USDT\nمعدل العائد المبرمج: 2% يوميًا\nالعائد اليومي: ${(planAmount * 0.02).toFixed(2)} USDT\nسيتم خصم أصل المبلغ من رصيد USDT الآن.`,
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "بدء العقد",
+          onPress: () => createContract.mutate({ amount: planAmount }),
+        },
+      ],
+    );
+  };
   return <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
       <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول" onPress={() => Alert.alert("إعدادات التداول", "يمكنك اختيار وضع الشراء أو البيع أو التبديل من الأزرار أدناه.")} /></View>
@@ -17,9 +47,12 @@ export default function TradeScreen() {
       <Card style={styles.quoteCard}><View style={styles.quoteHead}><Text style={styles.quoteTag}>+4.12%</Text><View><Text style={styles.pair}>XRP / USDT</Text><Text style={styles.quoteLabel}>السعر الحالي</Text></View></View><View style={styles.quoteBody}><View><Text style={styles.quotePrice}>$0.4671</Text><Text style={styles.quoteChange}>↑ $0.0184 اليوم</Text></View><TrendLine color={CWAAX.green}/></View></Card>
       <View style={styles.modeSwitch}>{["شراء", "بيع", "تبديل"].map((item) => <Pressable key={item} onPress={() => setMode(item)} style={({ pressed }) => [styles.mode, mode === item && styles.modeActive, pressed && styles.pressed]}><Text style={[styles.modeText, mode === item && styles.modeActiveText]}>{item}</Text></Pressable>)}</View>
       <Text style={styles.formLabel}>الأصل</Text>
-      <Pressable onPress={() => router.push("/assets")} style={({ pressed }) => [styles.assetSelect, pressed && styles.pressed]}><CoinMark mark="X" color="#232B32" size={31}/><View style={styles.selectName}><Text style={styles.selectSymbol}>XRP</Text><Text style={styles.selectBalance}>الرصيد المتاح: 486.20</Text></View><MaterialIcons name="unfold-more" size={20} color={CWAAX.muted}/></Pressable>
+      <Pressable onPress={() => router.push("/assets")} style={({ pressed }) => [styles.assetSelect, pressed && styles.pressed]}><CoinMark mark="X" color="#232B32" size={31}/><View style={styles.selectName}><Text style={styles.selectSymbol}>XRP</Text><Text style={styles.selectBalance}>الرصيد المتاح: {usdtBalance.toFixed(2)} USDT</Text></View><MaterialIcons name="unfold-more" size={20} color={CWAAX.muted}/></Pressable>
       <Text style={styles.formLabel}>المبلغ</Text><View style={styles.amountBox}><TextInput value={amount} onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#9CA8A1" keyboardType="decimal-pad" style={styles.amountInput}/><Text style={styles.amountUnit}>USDT</Text></View>
+      {selectedAmount > 0 && <View style={styles.previewCard}><Text style={styles.previewTitle}>العائد اليومي المبرمج</Text><Text style={styles.previewValue}>{selectedDailyProfit.toFixed(2)} USDT</Text><Text style={styles.previewSub}>2% من أصل {selectedAmount.toFixed(2)} USDT · لا يُحتسب قبل موعد الاستحقاق التالي</Text></View>}
+      <Text style={styles.formLabel}>خطط التداول</Text><View style={styles.planList}>{TRADE_PLAN_AMOUNTS.map((planAmount) => { const daily = planAmount * 0.02; const disabled = createContract.isPending || usdtBalance < planAmount; return <Pressable key={planAmount} disabled={disabled} onPress={() => startTrade(planAmount)} style={({ pressed }) => [styles.planCard, pressed && styles.pressed, disabled && styles.planDisabled]}><View style={styles.planTop}><Text style={styles.planAmount}>{planAmount.toLocaleString()} USDT</Text><Text style={styles.planRate}>2% يوميًا</Text></View><Text style={styles.planProfit}>+{daily.toFixed(2)} USDT / يوم</Text><Text style={styles.planHint}>{usdtBalance >= planAmount ? "ابدأ العقد" : "الرصيد غير كافٍ"}</Text></Pressable>; })}</View>
       <Pressable onPress={() => { if (!amount || Number(amount) <= 0) { Alert.alert("تحقق من المبلغ", "أدخل مبلغاً صحيحاً للمتابعة."); return; } if (mode === "شراء" || mode === "بيع") router.push("/deposit"); else Alert.alert("مراجعة التبديل", `سيتم تجهيز تبديل بقيمة ${amount} USDT.`); }} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}><Text style={styles.primaryText}>{mode === "تبديل" ? "مراجعة التبديل" : `متابعة ${mode}`}</Text><MaterialIcons name="arrow-back" size={18} color={CWAAX.white}/></Pressable>
+      {contracts.data?.length ? <><SectionTitle title="عقودي" action="تحديث" onAction={() => contracts.refetch()} /><View style={styles.contractList}>{contracts.data.slice(0, 8).map((contract: any) => <View key={contract.id} style={styles.contractCard}><View style={styles.contractTop}><Text style={styles.contractStatus}>{contract.status === "active" ? "نشط" : contract.status}</Text><Text style={styles.contractAmount}>{Number(contract.principalAmount).toLocaleString()} USDT</Text></View><Text style={styles.contractMeta}>العائد اليومي: {(Number(contract.principalAmount) * Number(contract.dailyRateBps) / 10000).toFixed(2)} USDT · المدفوع: {Number(contract.totalProfitPaid).toFixed(2)} USDT</Text><Text style={styles.contractNext}>الاستحقاق التالي: {new Date(contract.nextPayoutAt).toLocaleString()}</Text></View>)}</View></> : null}
       <SectionTitle title="الأسواق الرائجة" action="عرض الكل" onAction={() => router.push("/assets")} /><View style={styles.marketList}>{MARKETS.map((item, index) => <Pressable key={item.symbol} onPress={() => setMode("شراء")} style={({ pressed }) => [styles.marketItem, index < MARKETS.length - 1 && styles.marketBorder, pressed && styles.pressed]}><View style={[styles.marketIcon, { backgroundColor: item.color }]}><Text style={styles.marketIconText}>{item.symbol[0]}</Text></View><Text style={styles.marketSymbol}>{item.symbol}</Text><Text style={styles.marketValue}>{item.price}</Text><Text style={styles.marketPositive}>{item.change}</Text></Pressable>)}</View>
     </ScrollView>
   </ScreenContainer>;
