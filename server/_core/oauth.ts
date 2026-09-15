@@ -74,10 +74,9 @@ export function registerOAuthRoutes(app: Express) {
     try {
       const tokenResponse = await sdk.exchangeCodeForToken(code, state);
       const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-      const user = await syncUser(userInfo);
+      await syncUser(userInfo);
       const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
-        userId: user.id,
-        name: user.name || user.username || "",
+        name: userInfo.name || "",
         expiresInMs: ONE_YEAR_MS,
       });
 
