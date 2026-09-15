@@ -203,29 +203,6 @@ async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
   }
 }
 
-function logApprovalDatabaseError(operation: string, requestId: number, adminId: number, error: unknown) {
-  const dbError = error as {
-    code?: string;
-    detail?: string;
-    hint?: string;
-    constraint?: string;
-    table?: string;
-    column?: string;
-  };
-  console.error("[ApprovalDB] failed", {
-    operation,
-    requestId,
-    adminId,
-    code: dbError?.code ?? "unknown",
-    detail: dbError?.detail ?? "",
-    hint: dbError?.hint ?? "",
-    constraint: dbError?.constraint ?? "",
-    table: dbError?.table ?? "",
-    column: dbError?.column ?? "",
-    message: error instanceof Error ? error.message : String(error),
-  });
-}
-
 export async function getUserByEmailOrUsername(
   identifier: string,
 ) {
@@ -409,6 +386,24 @@ export async function getUserByOpenId(
       .where(
         eq(users.openId, openId),
       )
+      .limit(1)
+  )[0]);
+}
+
+export async function getUserById(
+  id: number,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return undefined;
+  }
+
+  return withDbRetry(async () => (
+    await db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
       .limit(1)
   )[0]);
 }
@@ -1543,8 +1538,7 @@ export async function approveDeposit(
     );
   }
 
-  try {
-    return await db.transaction(
+  return db.transaction(
     async (tx) => {
       const request =
         (
@@ -1725,12 +1719,7 @@ export async function approveDeposit(
         changed: true,
       };
     },
-    );
-  } catch (error) {
-    logApprovalDatabaseError("approveDeposit", requestId, adminId, error);
-    throw error;
-  }
-
+  );
 }
 
 /* =========================
@@ -2101,3 +2090,4 @@ export async function rejectWithdrawal(
     },
   );
 }
+
