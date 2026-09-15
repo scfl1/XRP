@@ -83,8 +83,15 @@ export default {
           req: request,
           router: appRouter,
           createContext: ({ req }) => createContext({ req }),
-          onError({ path, error }) {
-            console.error("[tRPC]", path, error);
+          onError({ path, error, req }) {
+            console.error("[tRPC] request failed", {
+              procedure: path,
+              requestId: req.headers.get("x-cwaax-request-id") ?? "unknown",
+              code: error.code,
+              message: error.message,
+              cause: error.cause instanceof Error ? error.cause.message : String(error.cause ?? ""),
+              stack: error.stack,
+            });
           },
         });
         return withCors(response, request, env);
