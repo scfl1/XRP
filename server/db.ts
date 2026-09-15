@@ -719,6 +719,18 @@ export async function startTradeContract(params: {
   const endsAt = new Date(now.getTime() + TRADE_DURATION_DAYS * 24 * 60 * 60 * 1000);
 
   return db.transaction(async (tx) => {
+    // One active contract per plan amount per user. This is also enforced by
+    // the database unique partial index to protect against concurrent taps.
+    const existing = (await tx.select({ id: tradeContracts.id }).from(tradeContracts).where(and(
+      eq(tradeContracts.userId, params.userId),
+      eq(tradeContracts.currency, "USDT"),
+      eq(tradeContracts.principal, amount.toFixed(8)),
+      eq(tradeContracts.status, "active"),
+    )).limit(1))[0];
+    if (existing) {
+      throw new Error("هذا العقد مفعل بالفعل ولا يمكنك شراء نفس العقد مرة أخرى");
+    }
+
     const balance = (await tx.select().from(walletBalances).where(and(
       eq(walletBalances.userId, params.userId),
       eq(walletBalances.currency, "USDT"),
