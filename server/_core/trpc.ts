@@ -15,7 +15,10 @@ const t = initTRPC.context<TrpcContext>().create({
     if (error.code === "INTERNAL_SERVER_ERROR") {
       return {
         ...shape,
-        message: "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى",
+        // TEMPORARY diagnostic: show the real cause instead of the
+        // generic message so the failure can be identified. Revert to
+        // "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى" once confirmed.
+        message: `[تشخيص مؤقت] ${error.message}`,
       };
     }
 
