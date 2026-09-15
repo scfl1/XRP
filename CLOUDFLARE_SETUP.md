@@ -10,12 +10,7 @@ This version runs the API as a Cloudflare Worker and uses Cloudflare Hyperdrive 
 
 Do not commit real database passwords, JWT secrets, or admin passwords.
 
-## Trade contracts and daily payout scheduler
 
-The Trade screen now creates a real database-backed trade contract for one of the configured USDT tiers. The server reserves the selected USDT amount atomically, stores the contract in `trade_contracts`, and records the opening transaction.
+## Trade contracts
 
-Daily payout processing is server-side only. The Cloudflare Worker runs the `scheduled` handler every hour and pays a contract only when its `nextPayoutAt` is due. The database claim condition prevents overlapping scheduled invocations from paying the same 24-hour slot twice. Each payout is stored in `trade_payouts` and credited to the user's USDT wallet inside the same database transaction.
-
-Before deploying this version, apply `drizzle/0001_trade_contracts.sql` to the same production PostgreSQL database used by the Worker/Hyperdrive. Do not create a second database for these tables.
-
-The configured rate is 200 basis points (2%) per 24-hour payout. This is an application-configured calculation, not a statement that real-world trading markets guarantee a 2% return.
+Before enabling the Trade contract buttons in production, apply `drizzle/migrations/0001_trade_contracts.sql` to the same PostgreSQL database used by the Cloudflare Hyperdrive binding. The Worker runs the scheduled payout job hourly. Contract creation is protected by the authenticated user session and the USDT wallet balance; the server, not the client, performs the balance deduction.
