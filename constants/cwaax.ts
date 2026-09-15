@@ -39,3 +39,13 @@ export const quickActions = [
   { label: "تبديل", icon: "compare-arrows" as const, route: "/trade" },
   { label: "أكثر", icon: "more-horiz" as const, route: "/menu" },
 ];
+
+
+/** Fixed trade tiers offered by the CwaAX trade screen. Rate is 200 bps = 2%. */
+export const TRADE_PLAN_AMOUNTS = [
+  50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700,
+  800, 900, 1000, 1200, 1400, 1500, 2000, 2500, 3000, 3500, 4000, 5000,
+  7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000, 40000, 50000,
+] as const;
+
+export const TRADE_DAILY_RATE_BPS = 200;
