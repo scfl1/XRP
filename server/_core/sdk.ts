@@ -21,8 +21,6 @@ export type SessionPayload = {
   openId: string;
   appId: string;
   name: string;
-  /** Stable database identity for local sessions. */
-  userId?: number;
 };
 
 const EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
@@ -148,14 +146,13 @@ class SDKServer {
    */
   async createSessionToken(
     openId: string,
-    options: { expiresInMs?: number; name?: string; userId?: number } = {},
+    options: { expiresInMs?: number; name?: string } = {},
   ): Promise<string> {
     return this.signSession(
       {
         openId,
         appId: ENV.appId,
         name: options.name || "",
-        userId: options.userId,
       },
       options,
     );
@@ -174,7 +171,6 @@ class SDKServer {
       openId: payload.openId,
       appId: payload.appId,
       name: payload.name,
-      ...(payload.userId ? { userId: payload.userId } : {}),
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setExpirationTime(expirationSeconds)
@@ -183,7 +179,7 @@ class SDKServer {
 
   async verifySession(
     cookieValue: string | undefined | null,
-  ): Promise<{ openId: string; appId: string; name: string; userId?: number } | null> {
+  ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
       console.warn("[Auth] Missing session cookie");
       return null;
@@ -194,11 +190,7 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      const { openId, appId, name, userId } = payload as Record<string, unknown>;
-      const normalizedUserId =
-        typeof userId === "number" && Number.isInteger(userId) && userId > 0
-          ? userId
-          : undefined;
+      const { openId, appId, name } = payload as Record<string, unknown>;
 
       // Local email/username authentication can work without a Manus appId.
       // openId and name are required; appId is optional for local sessions.
@@ -211,7 +203,6 @@ class SDKServer {
         openId,
         appId,
         name,
-        userId: normalizedUserId,
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
@@ -266,24 +257,9 @@ class SDKServer {
       return buildCronUser(userInfo);
     }
 
-    const sessionOpenId = session.openId;
+    const sessionUserId = session.openId;
     const signedInAt = new Date();
-    let user = await db.getUserByOpenId(sessionOpenId);
-
-    // Local sessions also carry the immutable DB user id. This is important
-    // when an old/stale session contains an openId that was created in a
-    // different database snapshot. We recover only by the signed session's
-    // userId; we never grant admin access merely because a user is missing.
-    if (!user && session.userId) {
-      const byId = await db.getUserById(session.userId);
-      if (byId) {
-        console.warn("[Auth] Session openId did not match DB; resolved user by signed userId", {
-          userId: byId.id,
-          role: byId.role,
-        });
-        user = byId;
-      }
-    }
+    let user = await db.getUserByOpenId(sessionUserId);
 
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
