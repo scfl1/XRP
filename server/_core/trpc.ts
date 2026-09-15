@@ -8,19 +8,14 @@ const t = initTRPC.context<TrpcContext>().create({
   errorFormatter(opts) {
     const { shape, error } = opts;
 
+    // Never leak internal details (raw SQL, connection strings, stack
+    // traces, etc.) to the client for unexpected server errors. Known,
+    // intentional errors (bad login, forbidden, not found...) already
+    // carry a safe, user-facing message and are left untouched.
     if (error.code === "INTERNAL_SERVER_ERROR") {
-      // اطبع السبب الحقيقي في console السيرفر للتشخيص
-      console.error("[tRPC Internal Error]", {
-        message: error.message,
-        cause: error.cause,
-        stack: error.stack,
-      });
-
       return {
         ...shape,
-        message: error.message.includes("Database")
-          ? "تعذر الاتصال بقاعدة البيانات، حاول مرة أخرى"
-          : "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى",
+        message: "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى",
       };
     }
 
@@ -52,17 +47,7 @@ export const adminProcedure = t.procedure.use(
   t.middleware(async (opts) => {
     const { ctx, next } = opts;
 
-    if (!ctx.user) {
-      throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
-    }
-
-    if (ctx.user.role !== "admin") {
-      console.error("[AdminAuth] Permission denied:", {
-        userId: ctx.user.id,
-        openId: ctx.user.openId,
-        role: ctx.user.role,
-      });
-
+    if (!ctx.user || ctx.user.role !== "admin") {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
 
