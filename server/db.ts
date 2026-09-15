@@ -6,7 +6,6 @@ import {
   eq,
   gte,
   inArray,
-  lte,
   like,
   or,
   sql,
@@ -689,6 +688,184 @@ export async function adminAdjustBalance(params: {
 }
 
 /* =========================
+   TRADE CONTRACTS
+========================= */
+
+const TRADE_DAILY_RATE = "0.020000";
+const TRADE_DURATION_DAYS = 365;
+
+export async function listTradeContracts(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tradeContracts)
+    .where(eq(tradeContracts.userId, userId))
+    .orderBy(desc(tradeContracts.createdAt));
+}
+
+export async function startTradeContract(params: {
+  userId: number;
+  amount: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const amount = Number(params.amount.toFixed(8));
+  if (!Number.isFinite(amount) || amount < 50) {
+    throw new Error("الحد الأدنى لبدء العقد هو 50 USDT");
+  }
+
+  const now = new Date();
+  const nextPayoutAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const endsAt = new Date(now.getTime() + TRADE_DURATION_DAYS * 24 * 60 * 60 * 1000);
+
+  return db.transaction(async (tx) => {
+    const balance = (await tx.select().from(walletBalances).where(and(
+      eq(walletBalances.userId, params.userId),
+      eq(walletBalances.currency, "USDT"),
+    )).limit(1))[0];
+
+    const current = Number(balance?.amount ?? 0);
+    if (!balance || current < amount) {
+      throw new Error("رصيد USDT غير كافٍ لبدء هذا العقد");
+    }
+
+    const debited = await tx.update(walletBalances).set({
+      amount: sql`${walletBalances.amount} - ${amount.toFixed(8)}`,
+      updatedAt: now,
+    }).where(and(
+      eq(walletBalances.id, balance.id),
+      sql`${walletBalances.amount} >= ${amount.toFixed(8)}`,
+    )).returning({ id: walletBalances.id });
+
+    if (!debited.length) throw new Error("تعذر حجز رصيد USDT، حاول مرة أخرى");
+
+    const contract = (await tx.insert(tradeContracts).values({
+      userId: params.userId,
+      currency: "USDT",
+      principal: amount.toFixed(8),
+      dailyRate: TRADE_DAILY_RATE,
+      durationDays: TRADE_DURATION_DAYS,
+      totalProfitPaid: "0",
+      payoutCount: 0,
+      startedAt: now,
+      nextPayoutAt,
+      endsAt,
+      status: "active",
+      createdAt: now,
+      updatedAt: now,
+    }).returning())[0];
+
+    if (!contract) throw new Error("تعذر إنشاء عقد التداول");
+
+    await tx.insert(transactions).values({
+      transactionId: `TRADE-START-${contract.id}-${Date.now()}`,
+      userId: params.userId,
+      type: "trade",
+      amount: amount.toFixed(8),
+      currency: "USDT",
+      status: "completed",
+    });
+
+    return contract;
+  });
+}
+
+/** Process due daily payouts. The conditional UPDATE acts as the atomic claim,
+ * so two cron invocations cannot pay the same contract/day concurrently. */
+export async function processDueTradePayouts(now = new Date()) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const due = await db.select().from(tradeContracts).where(and(
+    eq(tradeContracts.status, "active"),
+    sql`${tradeContracts.nextPayoutAt} <= ${now}`,
+  )).limit(200);
+
+  let paid = 0;
+  for (const candidate of due) {
+    try {
+      await db.transaction(async (tx) => {
+        const payoutAmount = Number(candidate.principal) * Number(candidate.dailyRate);
+        if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) return;
+
+        const next = new Date(candidate.nextPayoutAt.getTime() + 24 * 60 * 60 * 1000);
+        const nextCount = candidate.payoutCount + 1;
+        const isFinal = next >= candidate.endsAt;
+
+        const claimed = await tx.update(tradeContracts).set({
+          payoutCount: nextCount,
+          totalProfitPaid: sql`${tradeContracts.totalProfitPaid} + ${payoutAmount.toFixed(8)}`,
+          nextPayoutAt: next,
+          status: isFinal ? "completed" : "active",
+          updatedAt: now,
+        }).where(and(
+          eq(tradeContracts.id, candidate.id),
+          eq(tradeContracts.status, "active"),
+          sql`${tradeContracts.nextPayoutAt} <= ${now}`,
+        )).returning({ id: tradeContracts.id });
+
+        if (!claimed.length) return;
+
+        const wallet = (await tx.select().from(walletBalances).where(and(
+          eq(walletBalances.userId, candidate.userId),
+          eq(walletBalances.currency, "USDT"),
+        )).limit(1))[0];
+
+        const principalReturn = isFinal ? Number(candidate.principal) : 0;
+        const walletCredit = payoutAmount + principalReturn;
+
+        if (wallet) {
+          await tx.update(walletBalances).set({
+            amount: sql`${walletBalances.amount} + ${walletCredit.toFixed(8)}`,
+            updatedAt: now,
+          }).where(eq(walletBalances.id, wallet.id));
+        } else {
+          await tx.insert(walletBalances).values({
+            userId: candidate.userId,
+            currency: "USDT",
+            amount: walletCredit.toFixed(8),
+            updatedAt: now,
+          });
+        }
+
+        await tx.insert(tradePayouts).values({
+          contractId: candidate.id,
+          userId: candidate.userId,
+          payoutNumber: nextCount,
+          amount: payoutAmount.toFixed(8),
+          currency: "USDT",
+          paidAt: now,
+        });
+
+        await tx.insert(transactions).values({
+          transactionId: `TRADE-PAYOUT-${candidate.id}-${nextCount}`,
+          userId: candidate.userId,
+          type: "trade",
+          amount: payoutAmount.toFixed(8),
+          currency: "USDT",
+          status: "completed",
+        });
+
+        if (isFinal) {
+          await tx.insert(transactions).values({
+            transactionId: `TRADE-PRINCIPAL-${candidate.id}`,
+            userId: candidate.userId,
+            type: "trade",
+            amount: candidate.principal,
+            currency: "USDT",
+            status: "completed",
+          });
+        }
+        paid += 1;
+      });
+    } catch (error) {
+      console.error(`[Trade] payout failed for contract ${candidate.id}:`, error);
+    }
+  }
+  return { paid };
+}
+
+/* =========================
    NOTIFICATIONS
 ========================= */
 
@@ -912,234 +1089,6 @@ export async function getWalletBalances(
         walletBalances.updatedAt,
       ),
     );
-}
-
-/* =========================
-   TRADE CONTRACTS
-========================= */
-
-const TRADE_DAILY_RATE_BPS = 200;
-
-export const TRADE_PLAN_AMOUNTS = [
-  50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700,
-  800, 900, 1000, 1200, 1400, 1500, 2000, 2500, 3000, 3500, 4000, 5000,
-  7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000, 40000, 50000,
-] as const;
-
-function isAllowedTradeAmount(amount: number): boolean {
-  return TRADE_PLAN_AMOUNTS.includes(amount as (typeof TRADE_PLAN_AMOUNTS)[number]);
-}
-
-export async function listTradeContracts(userId: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  return db
-    .select()
-    .from(tradeContracts)
-    .where(eq(tradeContracts.userId, userId))
-    .orderBy(desc(tradeContracts.createdAt));
-}
-
-export async function createTradeContract(userId: number, amount: number) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  if (!Number.isFinite(amount) || !isAllowedTradeAmount(amount)) {
-    throw new Error("اختر مبلغ تداول موجودًا في البطاقات");
-  }
-
-  const currency = "USDT";
-  const now = new Date();
-  const nextPayoutAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-  return db.transaction(async (tx) => {
-    // Atomically reserve the principal so two simultaneous requests cannot
-    // spend the same wallet balance.
-    const debited = await tx
-      .update(walletBalances)
-      .set({
-        amount: sql`${walletBalances.amount} - ${amount.toFixed(8)}`,
-        updatedAt: now,
-      })
-      .where(
-        and(
-          eq(walletBalances.userId, userId),
-          eq(walletBalances.currency, currency),
-          gte(walletBalances.amount, amount),
-        ),
-      )
-      .returning({ id: walletBalances.id });
-
-    if (!debited.length) {
-      throw new Error("رصيد USDT غير كافٍ");
-    }
-
-    const created = await tx
-      .insert(tradeContracts)
-      .values({
-        userId,
-        principalAmount: amount.toFixed(8),
-        currency,
-        dailyRateBps: TRADE_DAILY_RATE_BPS,
-        status: "active",
-        totalProfitPaid: "0",
-        lastPayoutAt: null,
-        nextPayoutAt,
-      })
-      .returning({ id: tradeContracts.id });
-
-    const contractId = created[0]?.id;
-    if (!contractId) throw new Error("تعذر إنشاء عقد التداول");
-
-    await tx.insert(transactions).values({
-      transactionId: `TRD-OPEN-${contractId}`,
-      userId,
-      type: "trade",
-      amount: amount.toFixed(8),
-      currency,
-      status: "completed",
-    });
-
-    return {
-      success: true as const,
-      contractId,
-      amount,
-      dailyRate: 2,
-      nextPayoutAt,
-    };
-  });
-}
-
-/**
- * Pays exactly one due 24-hour payout per claimed schedule slot. The
- * conditional update acts as a lightweight DB claim, so concurrent cron
- * invocations cannot both pay the same slot.
- */
-export async function processDueTradePayouts(now = new Date()) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-
-  const candidates = await db
-    .select({ id: tradeContracts.id })
-    .from(tradeContracts)
-    .where(
-      and(
-        eq(tradeContracts.status, "active"),
-        lte(tradeContracts.nextPayoutAt, now),
-      ),
-    )
-    .limit(500);
-
-  let paid = 0;
-
-  for (const candidate of candidates) {
-    // Catch up missed daily payouts one at a time. This is also safe when
-    // two scheduled invocations overlap because the nextPayoutAt equality
-    // condition allows only one worker to claim a slot.
-    for (let attempt = 0; attempt < 370; attempt += 1) {
-      const result = await db.transaction(async (tx) => {
-        const contract = (
-          await tx
-            .select()
-            .from(tradeContracts)
-            .where(
-              and(
-                eq(tradeContracts.id, candidate.id),
-                eq(tradeContracts.status, "active"),
-              ),
-            )
-            .limit(1)
-        )[0];
-
-        if (!contract || contract.nextPayoutAt > now) return { claimed: false };
-
-        const dueAt = contract.nextPayoutAt;
-        const next = new Date(dueAt.getTime() + 24 * 60 * 60 * 1000);
-        const claimed = await tx
-          .update(tradeContracts)
-          .set({
-            lastPayoutAt: dueAt,
-            nextPayoutAt: next,
-            updatedAt: now,
-          })
-          .where(
-            and(
-              eq(tradeContracts.id, contract.id),
-              eq(tradeContracts.status, "active"),
-              eq(tradeContracts.nextPayoutAt, dueAt),
-            ),
-          )
-          .returning({ id: tradeContracts.id });
-
-        if (!claimed.length) return { claimed: false };
-
-        const amount = (Number(contract.principalAmount) * contract.dailyRateBps) / 10000;
-        const payoutDate = dueAt.toISOString();
-        const transactionId = `TRD-PROFIT-${contract.id}-${dueAt.getTime()}`;
-
-        await tx.insert(tradePayouts).values({
-          contractId: contract.id,
-          userId: contract.userId,
-          payoutDate,
-          amount: amount.toFixed(8),
-          transactionId,
-        });
-
-        const balance = (
-          await tx
-            .select()
-            .from(walletBalances)
-            .where(
-              and(
-                eq(walletBalances.userId, contract.userId),
-                eq(walletBalances.currency, contract.currency),
-              ),
-            )
-            .limit(1)
-        )[0];
-
-        if (balance) {
-          await tx
-            .update(walletBalances)
-            .set({
-              amount: sql`${walletBalances.amount} + ${amount.toFixed(8)}`,
-              updatedAt: now,
-            })
-            .where(eq(walletBalances.id, balance.id));
-        } else {
-          await tx.insert(walletBalances).values({
-            userId: contract.userId,
-            currency: contract.currency,
-            amount: amount.toFixed(8),
-          });
-        }
-
-        await tx
-          .update(tradeContracts)
-          .set({
-            totalProfitPaid: sql`${tradeContracts.totalProfitPaid} + ${amount.toFixed(8)}`,
-            updatedAt: now,
-          })
-          .where(eq(tradeContracts.id, contract.id));
-
-        await tx.insert(transactions).values({
-          transactionId,
-          userId: contract.userId,
-          type: "trade",
-          amount: amount.toFixed(8),
-          currency: contract.currency,
-          status: "completed",
-        });
-
-        return { claimed: true, amount };
-      });
-
-      if (!result.claimed) break;
-      paid += 1;
-    }
-  }
-
-  return { paid };
 }
 
 /* =========================
