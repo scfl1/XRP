@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS "trade_contracts" (
 );
 CREATE INDEX IF NOT EXISTS "trade_contracts_user_idx" ON "trade_contracts" ("userId");
 CREATE INDEX IF NOT EXISTS "trade_contracts_due_idx" ON "trade_contracts" ("status", "nextPayoutAt");
+CREATE UNIQUE INDEX IF NOT EXISTS "trade_contracts_user_plan_active_unique" ON "trade_contracts" ("userId", "principal") WHERE "status" = 'active';
 
 CREATE TABLE IF NOT EXISTS "trade_payouts" (
   "id" serial PRIMARY KEY NOT NULL,
