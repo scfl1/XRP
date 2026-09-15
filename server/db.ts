@@ -30,17 +30,22 @@ import {
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _databaseUrl = "";
 let _client: ReturnType<typeof postgres> | null = null;
+let _initialized = false;
+let _databaseUrl = "";
 
 export function configureDatabase(databaseUrl: string) {
-  if (databaseUrl && databaseUrl !== _databaseUrl) {
+  // IMPORTANT: Hyperdrive rotates the connection string on every request.
+  // We must NOT destroy/recreate the client each time — doing so was the
+  // root cause of intermittent permission errors on admin actions that
+  // used a stale connection. Initialize once, then reuse.
+  if (_initialized) {
+    return;
+  }
+
+  if (databaseUrl) {
     _databaseUrl = databaseUrl;
-    if (_client) {
-      _client.end({ timeout: 5 }).catch(() => {});
-    }
-    _client = null;
-    _db = null;
+    _initialized = true;
   }
 }
 
@@ -58,15 +63,6 @@ export async function getDb() {
   }
 
   try {
-    /*
-     * Supabase Transaction Pooler uses PgBouncer in transaction mode.
-     * Prepared statements must therefore be disabled.
-     *
-     * idle_timeout: 0 → keep connections alive to avoid the
-     * intermittent "connection closed while idle" failures that were
-     * surfacing as deceptive errors in admin mutations.
-     * max: 10 → enough headroom for concurrent admin queries.
-     */
     if (!_client) {
       _client = postgres(databaseUrl, {
         prepare: false,
@@ -106,10 +102,7 @@ async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
     }
 
     console.warn("[Database] Transient failure, retrying once:", msg);
-
-    // انتظر قليلاً قبل إعادة المحاولة ليعطي الاتصال الجديد وقتاً للفتح
     await new Promise((r) => setTimeout(r, 300));
-
     return operation();
   }
 }
