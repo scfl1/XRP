@@ -2,7 +2,7 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "../server/routers";
 import { createContext } from "../server/_core/context";
 import { assertServerEnvironment, configureServerEnvironment, type ServerEnvBindings } from "../server/_core/env";
-import { configureDatabase } from "../server/db";
+import { configureDatabase, processDueTradePayouts } from "../server/db";
 
 type Env = ServerEnvBindings & {
   HYPERDRIVE: { connectionString: string };
@@ -40,6 +40,19 @@ function json(data: unknown, status = 200, request?: Request, env?: Env) {
 }
 
 export default {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    try {
+      configureServerEnvironment(env);
+      assertServerEnvironment();
+      configureDatabase(env.HYPERDRIVE.connectionString);
+      const result = await processDueTradePayouts(new Date(event.scheduledTime));
+      console.log("[TradeCron] daily payout run complete", result);
+    } catch (error) {
+      console.error("[TradeCron] daily payout run failed", error);
+      throw error;
+    }
+  },
+
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       configureServerEnvironment(env);
@@ -83,15 +96,8 @@ export default {
           req: request,
           router: appRouter,
           createContext: ({ req }) => createContext({ req }),
-          onError({ path, error, req }) {
-            console.error("[tRPC] request failed", {
-              procedure: path,
-              requestId: req.headers.get("x-cwaax-request-id") ?? "unknown",
-              code: error.code,
-              message: error.message,
-              cause: error.cause instanceof Error ? error.cause.message : String(error.cause ?? ""),
-              stack: error.stack,
-            });
+          onError({ path, error }) {
+            console.error("[tRPC]", path, error);
           },
         });
         return withCors(response, request, env);
