@@ -40,15 +40,15 @@ function json(data: unknown, status = 200, request?: Request, env?: Env) {
 }
 
 export default {
-  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    configureServerEnvironment(env);
+    assertServerEnvironment();
+    configureDatabase(env.HYPERDRIVE.connectionString);
     try {
-      configureServerEnvironment(env);
-      assertServerEnvironment();
-      configureDatabase(env.HYPERDRIVE.connectionString);
-      const result = await processDueTradePayouts(new Date(event.scheduledTime));
-      console.log("[TradeCron] daily payout run complete", result);
+      const result = await processDueTradePayouts(new Date(controller.scheduledTime));
+      console.log("[Trade] scheduled payout run", result);
     } catch (error) {
-      console.error("[TradeCron] daily payout run failed", error);
+      console.error("[Trade] scheduled payout run failed", error);
       throw error;
     }
   },
