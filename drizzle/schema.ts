@@ -1,6 +1,8 @@
 import {
   boolean,
   integer,
+  index,
+  uniqueIndex,
   numeric,
   pgEnum,
   pgTable,
@@ -9,6 +11,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /* =========================
    ENUMS
@@ -307,6 +310,11 @@ export const tradeContracts = pgTable(
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   },
+  (table) => ({
+    userIdx: index("trade_contracts_user_idx").on(table.userId),
+    dueIdx: index("trade_contracts_due_idx").on(table.status, table.nextPayoutAt),
+    activePlanUnique: uniqueIndex("trade_contracts_user_plan_active_unique").on(table.userId, table.principal).where(sql`status = 'active'`),
+  }),
 );
 
 export type TradeContract = typeof tradeContracts.$inferSelect;
