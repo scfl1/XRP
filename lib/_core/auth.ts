@@ -19,19 +19,24 @@ export type User = {
 // =====================================================
 let _cachedToken: string | null = null;
 let _cacheLoaded = false;
+let _tokenLoadPromise: Promise<string | null> | null = null;
 
 // fallback عام للطوارئ — يُقرأ منه trpc.ts لو فشلت getSessionToken
 if (typeof globalThis !== "undefined") {
   (globalThis as any).__CWAXX_TOKEN__ = null;
 }
 
-export async function getSessionToken(): Promise<string | null> {
-  // 1) لو الـ cache محمّل، ارجعه فوراً
+export async function getSessionToken(options?: { forceReload?: boolean }): Promise<string | null> {
+  if (options?.forceReload) _cacheLoaded = false;
+
   if (_cacheLoaded) {
     return _cachedToken;
   }
 
-  try {
+  if (_tokenLoadPromise) return _tokenLoadPromise;
+
+  _tokenLoadPromise = (async () => {
+    try {
     let token: string | null = null;
 
     if (Platform.OS === "web") {
@@ -48,12 +53,21 @@ export async function getSessionToken(): Promise<string | null> {
       (globalThis as any).__CWAXX_TOKEN__ = token;
     }
 
-    return token;
-  } catch (error) {
-    console.error("[Auth] Failed to get session token:", error);
-    // لا نضع _cacheLoaded = true هنا، حتى نعيد المحاولة لاحقاً
-    return null;
-  }
+      return token;
+    } catch (error) {
+      console.error("[Auth] Failed to get session token:", error);
+      // لا نضع _cacheLoaded = true هنا، حتى نعيد المحاولة لاحقاً
+      return null;
+    } finally {
+      _tokenLoadPromise = null;
+    }
+  })();
+
+  return _tokenLoadPromise;
+}
+
+export function reloadSessionToken(): Promise<string | null> {
+  return getSessionToken({ forceReload: true });
 }
 
 export async function setSessionToken(token: string): Promise<void> {
@@ -61,6 +75,7 @@ export async function setSessionToken(token: string): Promise<void> {
     // 1) حدّث الـ cache أولاً — هذا يحل مشكلة التوكن غير المرئي لـ trpc
     _cachedToken = token;
     _cacheLoaded = true;
+    _tokenLoadPromise = null;
 
     if (typeof globalThis !== "undefined") {
       (globalThis as any).__CWAXX_TOKEN__ = token;
@@ -84,6 +99,7 @@ export async function removeSessionToken(): Promise<void> {
     // 1) امسح الـ cache أولاً
     _cachedToken = null;
     _cacheLoaded = true; // نعتبر الحالة "معروفة ومفرغة"
+    _tokenLoadPromise = null;
 
     if (typeof globalThis !== "undefined") {
       (globalThis as any).__CWAXX_TOKEN__ = null;
