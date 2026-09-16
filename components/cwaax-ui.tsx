@@ -1,5 +1,5 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { CWAAX } from "@/constants/cwaax";
 import { NetworkIcon } from "@/components/network-icon";
@@ -47,29 +47,43 @@ const KNOWN_CODES = new Set([
   "ARETH", "ARBITRUM", "ARB", "AVAX", "AVALANCHE", "OPBNB", "BEP20", "BNB",
   "SOL", "SOLANA", "TON", "POLYGON", "MATIC", "CELO",
   "USDT", "BTC", "BITCOIN", "DOGE", "DOGECOIN", "XLM", "STELLAR",
+  "XRP", "ADA", "TRX", "DOT", "LINK", "LTC", "BCH", "NEAR", "UNI", "ATOM", "SHIB",
 ]);
 
-const COIN_LOGOS: Record<string, string> = {
-  USDT: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/0x55d398326f99059ff775485246999027b3197955/logo.png",
-  BTC: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png",
-  BITCOIN: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png",
-  DOGE: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/dogecoin/info/logo.png",
-  DOGECOIN: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/dogecoin/info/logo.png",
-  XLM: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/stellar/info/logo.png",
-  STELLAR: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/stellar/info/logo.png",
+/*
+ * All coin logos come from CoinCap's public icon CDN (proven reliable
+ * elsewhere in this app — see NetworkIcon/UsdtIcon). Every symbol maps
+ * to https://assets.coincap.io/assets/icons/{symbol}@2x.png.
+ */
+const COIN_ICON_SYMBOLS: Record<string, string> = {
+  USDT: "usdt", BTC: "btc", BITCOIN: "btc", DOGE: "doge", DOGECOIN: "doge",
+  XLM: "xlm", STELLAR: "xlm", ETH: "eth", ETHEREUM: "eth", BNB: "bnb",
+  SOL: "sol", SOLANA: "sol", XRP: "xrp", ADA: "ada", TRX: "trx", TRON: "trx",
+  TON: "ton", AVAX: "avax", AVALANCHE: "avax", DOT: "dot", LINK: "link",
+  MATIC: "matic", POLYGON: "matic", LTC: "ltc", BCH: "bch", NEAR: "near",
+  UNI: "uni", ATOM: "atom", SHIB: "shib",
 };
 
-export function CoinMark({ mark, color, size = 42 }: { mark: string; color: string; size?: number }) {
-  const upper = (mark || "").toUpperCase();
-  const logo = COIN_LOGOS[upper];
+function coinIconUrl(symbol: string): string {
+  return `https://assets.coincap.io/assets/icons/${symbol}@2x.png`;
+}
 
-  if (logo) {
+export function CoinMark({ mark, color, size = 42 }: { mark: string; color: string; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const upper = (mark || "").toUpperCase();
+  const iconSymbol = COIN_ICON_SYMBOLS[upper];
+
+  if (iconSymbol && !failed) {
     return (
-      <Image source={{ uri: logo }} style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#F2F3F2" }} />
+      <Image
+        source={{ uri: coinIconUrl(iconSymbol) }}
+        style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: "#F2F3F2" }}
+        onError={() => setFailed(true)}
+      />
     );
   }
 
-  if (KNOWN_CODES.has(upper)) {
+  if (!iconSymbol && KNOWN_CODES.has(upper)) {
     return (
       <View style={{ width: size, height: size, borderRadius: size / 2, overflow: "hidden" }}>
         <NetworkIcon network={{ code: upper, name: upper, chain: upper, feeUsd: 0, feeToken: "", color }} size={size} />
