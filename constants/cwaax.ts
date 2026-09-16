@@ -12,11 +12,23 @@ export const CWAAX = {
   purple: "#7567D9",
 } as const;
 
-export const TRADE_PLANS = [
+const PLAN_COIN_CYCLE = [
+  "USDT", "ETH", "BNB", "XRP", "SOL", "ADA", "TRX", "TON",
+  "AVAX", "DOT", "LINK", "MATIC", "LTC", "BCH", "NEAR", "UNI",
+];
+
+const TRADE_AMOUNTS = [
   50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700,
   800, 900, 1000, 1200, 1400, 1500, 2000, 2500, 3000, 3500, 4000, 5000,
   7000, 8000, 9000, 10000, 15000, 20000, 25000, 30000, 40000, 50000,
-].map((amount) => ({ amount }));
+];
+
+export const TRADE_PLANS = TRADE_AMOUNTS.map((amount, index) => ({
+  amount,
+  // The last (highest) plan is always Bitcoin; every other plan cycles
+  // through a curated list of real, distinct coins for visual variety.
+  coin: index === TRADE_AMOUNTS.length - 1 ? "BTC" : PLAN_COIN_CYCLE[index % PLAN_COIN_CYCLE.length],
+}));
 
 export const COINS = [
   { symbol: "TRX", name: "TRON", amount: "0", value: "$0.00", change: "—", color: "#E94F64", mark: "TRON" },
