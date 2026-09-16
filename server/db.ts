@@ -694,6 +694,24 @@ export async function adminAdjustBalance(params: {
 const TRADE_DAILY_RATE = "0.020000";
 const TRADE_DURATION_DAYS = 365;
 
+/*
+ * All contracts, regardless of when each user started theirs, pay out
+ * at the SAME daily wall-clock moment (00:00 UTC) — so every user sees
+ * the exact same countdown and everyone's profit lands together. This
+ * anchor never depends on `startedAt`; it only depends on `now`, so it
+ * naturally stays in lockstep for every contract forever (each cycle
+ * in processDueTradePayouts just adds 24h to the previous anchor,
+ * landing on the same time of day again).
+ */
+function nextGlobalPayoutAnchor(from: Date): Date {
+  const next = new Date(from);
+  next.setUTCHours(0, 0, 0, 0);
+  if (next.getTime() <= from.getTime()) {
+    next.setUTCDate(next.getUTCDate() + 1);
+  }
+  return next;
+}
+
 export async function listTradeContracts(userId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -715,8 +733,11 @@ export async function startTradeContract(params: {
   }
 
   const now = new Date();
-  const nextPayoutAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  // Every contract's *next* payout lands on the shared global anchor —
+  // this is what keeps every user's countdown identical.
+  const nextPayoutAt = nextGlobalPayoutAnchor(now);
   const endsAt = new Date(now.getTime() + TRADE_DURATION_DAYS * 24 * 60 * 60 * 1000);
+  const immediateProfit = Number((amount * Number(TRADE_DAILY_RATE)).toFixed(8));
 
   return db.transaction(async (tx) => {
     // One active contract per plan amount per user. This is also enforced by
@@ -757,8 +778,11 @@ export async function startTradeContract(params: {
       principal: amount.toFixed(8),
       dailyRate: TRADE_DAILY_RATE,
       durationDays: TRADE_DURATION_DAYS,
-      totalProfitPaid: "0",
-      payoutCount: 0,
+      // The immediate activation profit is counted as payout #1 right
+      // away — the user doesn't wait a full cycle to see their first
+      // return.
+      totalProfitPaid: immediateProfit.toFixed(8),
+      payoutCount: 1,
       startedAt: now,
       nextPayoutAt,
       endsAt,
@@ -774,6 +798,46 @@ export async function startTradeContract(params: {
       userId: params.userId,
       type: "trade",
       amount: amount.toFixed(8),
+      currency: "USDT",
+      status: "completed",
+    });
+
+    // Credit the immediate activation profit to the wallet right now,
+    // and record it the same way a scheduled payout is recorded so it
+    // shows up consistently in history.
+    const walletAfterDebit = (await tx.select().from(walletBalances).where(and(
+      eq(walletBalances.userId, params.userId),
+      eq(walletBalances.currency, "USDT"),
+    )).limit(1))[0];
+
+    if (walletAfterDebit) {
+      await tx.update(walletBalances).set({
+        amount: sql`${walletBalances.amount} + ${immediateProfit.toFixed(8)}`,
+        updatedAt: now,
+      }).where(eq(walletBalances.id, walletAfterDebit.id));
+    } else {
+      await tx.insert(walletBalances).values({
+        userId: params.userId,
+        currency: "USDT",
+        amount: immediateProfit.toFixed(8),
+        updatedAt: now,
+      });
+    }
+
+    await tx.insert(tradePayouts).values({
+      contractId: contract.id,
+      userId: params.userId,
+      payoutNumber: 1,
+      amount: immediateProfit.toFixed(8),
+      currency: "USDT",
+      paidAt: now,
+    });
+
+    await tx.insert(transactions).values({
+      transactionId: `TRADE-PAYOUT-${contract.id}-1`,
+      userId: params.userId,
+      type: "trade",
+      amount: immediateProfit.toFixed(8),
       currency: "USDT",
       status: "completed",
     });
