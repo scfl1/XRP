@@ -1,34 +1,19 @@
-import { Alert, Platform } from "react-native";
+import { pushAlert } from "./alert-store";
 
 /**
- * React Native's `Alert.alert(title, message, buttons)` does not work on
- * react-native-web: pressing a button silently does nothing, because
- * react-native-web has no real native dialog behind it. Every screen in
- * this app that used `Alert.alert` with a buttons array (logout
- * confirmation, success dialogs with an onPress, etc.) was therefore
- * broken when running as a website. These two helpers behave correctly
- * on both web (window.alert/confirm) and native (Alert.alert).
+ * Styled replacements for the browser's window.alert()/window.confirm(),
+ * which render as the plain OS/browser "site says" dialog (ugly, and on
+ * react-native-web a buttons array silently does nothing). These push
+ * into the global alert queue (lib/_core/alert-store.ts) instead, which
+ * <AlertHost /> (mounted once in app/_layout.tsx) renders as the app's
+ * own styled ConfirmModal card. Same signatures as before, so every
+ * existing call site across the app gets the nicer UI automatically.
  */
 
 export function notify(title: string, message?: string, onDismiss?: () => void) {
-  if (Platform.OS === "web") {
-    window.alert(message ? `${title}\n\n${message}` : title);
-    onDismiss?.();
-    return;
-  }
-
-  Alert.alert(title, message, onDismiss ? [{ text: "حسناً", onPress: onDismiss }] : undefined);
+  pushAlert({ title, message, confirmLabel: "حسناً" }).then(() => onDismiss?.());
 }
 
 export function confirmAsync(title: string, message?: string, confirmLabel = "تأكيد"): Promise<boolean> {
-  if (Platform.OS === "web") {
-    return Promise.resolve(window.confirm(message ? `${title}\n\n${message}` : title));
-  }
-
-  return new Promise((resolve) => {
-    Alert.alert(title, message, [
-      { text: "إلغاء", style: "cancel", onPress: () => resolve(false) },
-      { text: confirmLabel, style: "destructive", onPress: () => resolve(true) },
-    ]);
-  });
+  return pushAlert({ title, message, confirmLabel, cancelLabel: "إلغاء" });
 }
