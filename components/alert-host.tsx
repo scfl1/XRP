@@ -1,69 +1,44 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { ConfirmModal } from "@/components/cwaax-ui";
 import {
-  getAlert,
+  getCurrentAlert,
+  resolveCurrentAlert,
   subscribeAlert,
-  closeAlert,
-} from "@/lib/alert";
+} from "@/lib/_core/alert-store";
 
-export default function AlertHost() {
-  const [, refresh] = useState(0);
+/**
+ * Mount once near the root (see app/_layout.tsx). Renders the app's
+ * styled ConfirmModal for whatever notify()/confirmAsync() call is
+ * currently pending, anywhere in the app.
+ */
+export function AlertHost() {
+  const [, tick] = useState(0);
 
   useEffect(() => {
-    return subscribeAlert(() => {
-      refresh((v) => v + 1);
+    const unsubscribe = subscribeAlert(() => {
+      tick((n) => n + 1);
     });
+
+    return unsubscribe;
   }, []);
 
-  const alert = getAlert();
+  const current = getCurrentAlert();
 
-  if (!alert) return null;
+  if (!current) return null;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.45)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-      }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 20,
-          padding: 25,
-          width: "90%",
-          maxWidth: 400,
-          textAlign: "center",
-        }}
-      >
-        <h3>{alert.title}</h3>
-
-        <p>{alert.message}</p>
-
-        <button
-          onClick={() => {
-            closeAlert();
-            alert.onConfirm?.();
-          }}
-        >
-          {alert.confirmText || "تأكيد"}
-        </button>
-
-        {alert.onCancel && (
-          <button
-            onClick={() => {
-              closeAlert();
-              alert.onCancel?.();
-            }}
-          >
-            {alert.cancelText || "إلغاء"}
-          </button>
-        )}
-      </div>
-    </div>
+    <ConfirmModal
+      visible
+      title={current.title}
+      message={current.message}
+      confirmLabel={current.confirmLabel}
+      danger={current.danger}
+      onConfirm={() => resolveCurrentAlert(true)}
+      onCancel={
+        current.cancelLabel
+          ? () => resolveCurrentAlert(false)
+          : undefined
+      }
+    />
   );
 }
