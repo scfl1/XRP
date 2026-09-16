@@ -1,115 +1,68 @@
 import React, { useEffect, useState } from "react";
 import {
-  getCurrentAlert,
+  getAlert,
   subscribeAlert,
   closeAlert,
-} from "./alert-service";
+} from "@/lib/alert";
 
 export default function AlertHost() {
-  const [, tick] = useState(0);
+  const [, refresh] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = subscribeAlert(() => {
-      tick((n) => n + 1);
+    return subscribeAlert(() => {
+      refresh((v) => v + 1);
     });
-
-    return unsubscribe;
   }, []);
 
-  const current = getCurrentAlert();
+  const alert = getAlert();
 
-  if (!current) return null;
-
-  const {
-    title,
-    message,
-    type = "info",
-    confirmText = "تأكيد",
-    cancelText = "إلغاء",
-    onConfirm,
-    onCancel,
-  } = current;
-
-  const handleConfirm = () => {
-    closeAlert();
-    if (onConfirm) onConfirm();
-  };
-
-  const handleCancel = () => {
-    closeAlert();
-    if (onCancel) onCancel();
-  };
+  if (!alert) return null;
 
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
+        background: "rgba(0,0,0,.45)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "rgba(0,0,0,0.45)",
         zIndex: 9999,
       }}
     >
       <div
         style={{
-          width: "90%",
-          maxWidth: 420,
           background: "#fff",
-          borderRadius: 18,
-          padding: 24,
+          borderRadius: 20,
+          padding: 25,
+          width: "90%",
+          maxWidth: 400,
           textAlign: "center",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
         }}
       >
-        <h3 style={{ marginBottom: 12 }}>
-          {title}
-        </h3>
+        <h3>{alert.title}</h3>
 
-        <p style={{ marginBottom: 24 }}>
-          {message}
-        </p>
+        <p>{alert.message}</p>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            justifyContent: "center",
+        <button
+          onClick={() => {
+            closeAlert();
+            alert.onConfirm?.();
           }}
         >
-          {onCancel && (
-            <button
-              onClick={handleCancel}
-              style={{
-                padding: "12px 20px",
-                borderRadius: 10,
-                border: "1px solid #ccc",
-                background: "#eee",
-                cursor: "pointer",
-              }}
-            >
-              {cancelText}
-            </button>
-          )}
+          {alert.confirmText || "تأكيد"}
+        </button>
 
+        {alert.onCancel && (
           <button
-            onClick={handleConfirm}
-            style={{
-              padding: "12px 20px",
-              borderRadius: 10,
-              border: "none",
-              background:
-                type === "error"
-                  ? "#d9534f"
-                  : "#1677ff",
-              color: "#fff",
-              cursor: "pointer",
+            onClick={() => {
+              closeAlert();
+              alert.onCancel?.();
             }}
           >
-            {confirmText}
+            {alert.cancelText || "إلغاء"}
           </button>
-        </div>
+        )}
       </div>
     </div>
   );
