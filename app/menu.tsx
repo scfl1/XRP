@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CwaLogo, IconButton, StatusPill } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
+import { confirmAsync } from "@/lib/_core/native-alert";
 import { useAuth } from "@/hooks/use-auth";
 
 const common = [
@@ -154,17 +155,11 @@ export default function MenuScreen() {
 
         <Pressable
           onPress={() =>
-            Alert.alert("تسجيل الخروج", "هل تريد تسجيل الخروج من CwaAX؟", [
-              { text: "إلغاء", style: "cancel" },
-              {
-                text: "تسجيل الخروج",
-                style: "destructive",
-                onPress: async () => {
-                  await logout();
-                  router.replace("/login");
-                },
-              },
-            ])
+            confirmAsync("تسجيل الخروج", "هل تريد تسجيل الخروج من CwaAX؟", "تسجيل الخروج").then(async (ok) => {
+              if (!ok) return;
+              await logout();
+              router.replace("/login");
+            })
           }
           style={({ pressed }) => [styles.logout, pressed && styles.pressed]}
         >
