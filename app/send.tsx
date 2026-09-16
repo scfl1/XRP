@@ -7,7 +7,7 @@ import { UsdtIcon } from "@/components/usdt-icon";
 import { NetworkIcon } from "@/components/network-icon";
 import { CWAAX } from "@/constants/cwaax";
 import { getNetwork } from "@/constants/networks";
-import { notify, confirmAsync } from "@/lib/_core/native-alert";
+import { notify } from "@/lib/_core/native-alert";
 import { getSelectedNetwork, subscribeNetwork } from "@/lib/_core/network-store";
 import { consumePendingScan } from "@/lib/_core/qr-store";
 import { trpc } from "@/lib/trpc";
@@ -111,10 +111,7 @@ export default function SendScreen() {
       return;
     }
 
-    confirmAsync("تأكيد الإرسال", `سيتم إرسال ${finalAmount} USDT عبر ${network.name}. هل تريد المتابعة؟`).then((ok) => {
-      if (!ok) return;
-
-      createWithdrawal.mutate(
+    createWithdrawal.mutate(
       { currency: "USDT", amount: finalAmount, network: network.code, address: address.trim() },
       {
         onSuccess: () => {
@@ -122,8 +119,7 @@ export default function SendScreen() {
         },
         onError: (err) => notify("تعذر إرسال الطلب", err.message || "حاول مرة أخرى."),
       },
-      );
-    });
+    );
   };
 
   const OPS: PendingOp["op"][] = ["+", "-", "×", "÷"];
