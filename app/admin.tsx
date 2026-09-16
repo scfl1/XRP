@@ -576,7 +576,7 @@ function RequestRow({
           {u?.name || u?.username || "مستخدم"} · {u?.email || ""}
         </Text>
         <Text style={styles.requestAmount}>
-          {String(r.amount)} {r.currency}
+          {fmt(r.amount)} {r.currency}
           {r.network ? ` · ${r.network}` : ""}
         </Text>
         {type === "wd" && <Text style={styles.requestAddress}>{r.address}</Text>}
