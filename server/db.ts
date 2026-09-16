@@ -1764,6 +1764,86 @@ export async function getReferralStats(
   };
 }
 
+/* =========================
+   REFERRALS AT A SPECIFIC LEVEL (admin drill-down)
+========================= */
+
+// Returns the actual referred accounts at one level (1, 2, or 3) under
+// `userId`, walking the same referredById tree used by getReferralStats,
+// plus how much commission each of those accounts has generated for
+// `userId` specifically at that level.
+export async function getReferralsAtLevel(userId: number, level: 1 | 2 | 3) {
+  const db = await getDb();
+
+  if (!db) {
+    return [];
+  }
+
+  const level1 = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.referredById, userId));
+
+  const level1Ids = level1.map((u) => u.id);
+
+  let targetIds = level1Ids;
+
+  if (level >= 2) {
+    const level2 = level1Ids.length
+      ? await db
+          .select({ id: users.id })
+          .from(users)
+          .where(inArray(users.referredById, level1Ids))
+      : [];
+    targetIds = level2.map((u) => u.id);
+  }
+
+  if (level === 3) {
+    const level3 = targetIds.length
+      ? await db
+          .select({ id: users.id })
+          .from(users)
+          .where(inArray(users.referredById, targetIds))
+      : [];
+    targetIds = level3.map((u) => u.id);
+  }
+
+  if (!targetIds.length) {
+    return [];
+  }
+
+  const accounts = await db
+    .select()
+    .from(users)
+    .where(inArray(users.id, targetIds))
+    .orderBy(desc(users.createdAt));
+
+  const earnings = await db
+    .select({
+      sourceUserId: referralRewards.sourceUserId,
+      total: sql<string>`coalesce(sum(${referralRewards.commission}), 0)`,
+    })
+    .from(referralRewards)
+    .where(
+      and(
+        eq(referralRewards.referrerId, userId),
+        eq(referralRewards.level, level),
+        inArray(referralRewards.sourceUserId, targetIds),
+      ),
+    )
+    .groupBy(referralRewards.sourceUserId);
+
+  const earningsMap = new Map<number, number>();
+  for (const row of earnings) {
+    earningsMap.set(row.sourceUserId, Number(row.total));
+  }
+
+  return accounts.map((u) => ({
+    ...u,
+    earningsContributed: earningsMap.get(u.id) ?? 0,
+  }));
+}
+
 export async function approveDeposit(
   requestId: number,
   adminId: number,
