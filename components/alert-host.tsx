@@ -10,7 +10,7 @@ import { getCurrentAlert, resolveCurrentAlert, subscribeAlert } from "@/lib/_cor
 export function AlertHost() {
   const [, tick] = useState(0);
 
-  useEffect(() => subscribeAlert(() => tick((n) => n + 1)), []);
+  useEffect(() => {\n    const unsubscribe = subscribeAlert(() => tick((n) => n + 1));\n    return unsubscribe;\n  }, []);
 
   const current = getCurrentAlert();
   if (!current) return null;
