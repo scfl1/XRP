@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
 import { CWAAX, TRADE_PLANS } from "@/constants/cwaax";
+import { notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -41,19 +42,19 @@ export default function TradeScreen() {
 
   const start = async (amount: number) => {
     if (!user) {
-      Alert.alert("تسجيل الدخول مطلوب", "سجّل الدخول أولاً لبدء العقد.");
+      notify("تسجيل الدخول مطلوب", "سجّل الدخول أولاً لبدء العقد.");
       return;
     }
     if (usdtBalance < amount) {
-      Alert.alert("الرصيد غير كافٍ", `رصيدك المتاح ${usdtBalance.toFixed(2)} USDT.`);
+      notify("الرصيد غير كافٍ", `رصيدك المتاح ${usdtBalance.toFixed(2)} USDT.`);
       return;
     }
     setSelectedAmount(amount);
     try {
       await startContract.mutateAsync({ amount });
-      Alert.alert("تم بدء العقد", `تم حجز ${amount.toFixed(2)} USDT. أول استحقاق بعد 24 ساعة.`);
+      notify("تم بدء العقد", `تم حجز ${amount.toFixed(2)} USDT، وأُضيف ربحك الفوري مباشرة لرصيدك.`);
     } catch (error: any) {
-      Alert.alert("تعذر بدء العقد", error?.message || "حدث خطأ، حاول مرة أخرى.");
+      notify("تعذر بدء العقد", error?.message || "حدث خطأ، حاول مرة أخرى.");
     } finally {
       setSelectedAmount(null);
     }
@@ -61,7 +62,7 @@ export default function TradeScreen() {
 
   return <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-      <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول" onPress={() => Alert.alert("عقود التداول", "اختر مبلغ العقد من البطاقات أدناه.")} /></View>
+      <View style={styles.header}><CwaLogo/><IconButton icon="tune" label="إعدادات التداول" onPress={() => notify("عقود التداول", "اختر مبلغ العقد من البطاقات أدناه.")} /></View>
       <View style={styles.titleRow}><View style={styles.live}><View style={styles.liveDot}/><Text style={styles.liveText}>عقود متاحة</Text></View><View><Text style={styles.kicker}>استثمر من رصيدك</Text><Text style={styles.title}>تجارة</Text></View></View>
 
       <Card style={styles.balanceCard}>
@@ -86,7 +87,7 @@ export default function TradeScreen() {
           const countdown = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
           return <Card key={plan.amount} style={styles.planCard}>
             <View style={styles.planHeader}>
-              <View style={styles.coinWrap}><CoinMark mark="USDT" color="#26A17B" size={42}/></View>
+              <View style={styles.coinWrap}><CoinMark mark={plan.coin} color="#26A17B" size={42}/></View>
               <View style={styles.planIdentity}><Text style={styles.planAmount}>{plan.amount.toLocaleString("en-US")} USDT</Text><Text style={styles.planType}>عقد تداول USDT</Text></View>
               <View style={styles.rateBadge}><Text style={styles.rateValue}>2%</Text><Text style={styles.rateLabel}>يوميًا</Text></View>
             </View>
@@ -115,7 +116,7 @@ export default function TradeScreen() {
         })}
       </View>
 
-      {contracts.data?.length ? <><SectionTitle title="عقودي الحالية" action={`${contracts.data.length} عقد`} /><View style={styles.activeList}>{contracts.data.slice(0, 10).map((contract: any) => <View key={contract.id} style={styles.activeRow}><CoinMark mark="USDT" color="#26A17B" size={34}/><View style={styles.activeInfo}><Text style={styles.activeAmount}>{Number(contract.principal).toLocaleString("en-US")} USDT</Text><Text style={styles.activeMeta}>{contract.status === "active" ? "نشط" : "مكتمل"} • {contract.payoutCount} دفعة</Text></View><View style={styles.activeProfit}><Text style={styles.activeProfitValue}>+{Number(contract.totalProfitPaid).toFixed(2)}</Text><Text style={styles.activeProfitLabel}>USDT أرباح</Text></View></View>)}</View></> : null}
+      {contracts.data?.length ? <><SectionTitle title="عقودي الحالية" action={`${contracts.data.length} عقد`} /><View style={styles.activeList}>{contracts.data.slice(0, 10).map((contract: any) => { const matchingPlan = TRADE_PLANS.find((p) => p.amount === Number(contract.principal)); return <View key={contract.id} style={styles.activeRow}><CoinMark mark={matchingPlan?.coin || "USDT"} color="#26A17B" size={34}/><View style={styles.activeInfo}><Text style={styles.activeAmount}>{Number(contract.principal).toLocaleString("en-US")} USDT</Text><Text style={styles.activeMeta}>{contract.status === "active" ? "نشط" : "مكتمل"} • {contract.payoutCount} دفعة</Text></View><View style={styles.activeProfit}><Text style={styles.activeProfitValue}>+{Number(contract.totalProfitPaid).toFixed(2)}</Text><Text style={styles.activeProfitLabel}>USDT أرباح</Text></View></View>; })}</View></> : null}
     </ScrollView>
   </ScreenContainer>;
 }
