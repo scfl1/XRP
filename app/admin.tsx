@@ -662,11 +662,12 @@ function UserRow({ user, onPress }: { user: any; onPress: () => void }) {
    USER DETAIL MODAL
 ========================= */
 
-type PanelMode = "detail" | "ban" | "password" | "balance" | "notify";
+type PanelMode = "detail" | "ban" | "password" | "balance" | "notify" | "level";
 
 function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => void }) {
   const [mode, setMode] = useState<PanelMode>("detail");
   const [confirmUnban, setConfirmUnban] = useState(false);
+  const [levelSelected, setLevelSelected] = useState<1 | 2 | 3>(1);
   const detail = trpc.admin.userDetail.useQuery({ userId });
   const utils = trpc.useUtils();
 
@@ -748,8 +749,9 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
               <Text style={styles.sheetSection}>الإحالات</Text>
               <View style={styles.levelRow}>
                 {[0, 1, 2].map((i) => (
-                  <View
+                  <Pressable
                     key={i}
+                    onPress={() => { setLevelSelected((i + 1) as 1 | 2 | 3); setMode("level"); }}
                     style={[styles.levelCard, { borderColor: `${LEVEL_COLORS[i]}33` }]}
                   >
                     <Text style={[styles.levelTitle, { color: LEVEL_COLORS[i] }]}>
@@ -757,7 +759,8 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                     </Text>
                     <Text style={styles.levelCount}>{referral?.levelCounts?.[i] ?? 0}</Text>
                     <Text style={styles.levelEarn}>{fmt(referral?.levelEarnings?.[i])}</Text>
-                  </View>
+                    <Text style={[styles.levelDetails, { color: LEVEL_COLORS[i] }]}>عرض التفاصيل ‹</Text>
+                  </Pressable>
                 ))}
               </View>
               <View style={styles.totalsRow}>
@@ -812,6 +815,8 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                 />
               </View>
             </ScrollView>
+          ) : mode === "level" ? (
+            <LevelDetailPanel userId={userId} level={levelSelected} onCancel={() => setMode("detail")} />
           ) : mode === "ban" ? (
             <BanPanel
               busy={banMutation.isPending}
@@ -1168,6 +1173,54 @@ function NotifyPanel({
   );
 }
 
+const LEVEL_LABELS = { 1: "مستوى 1 (مباشر)", 2: "مستوى 2", 3: "مستوى 3" } as const;
+
+function LevelDetailPanel({ userId, level, onCancel }: { userId: number; level: 1 | 2 | 3; onCancel: () => void }) {
+  const list = trpc.admin.referralsAtLevel.useQuery({ userId, level });
+  const accounts = list.data || [];
+
+  return (
+    <View>
+      <View style={styles.panelHeader}>
+        <Pressable onPress={onCancel} hitSlop={10}>
+          <MaterialIcons name="arrow-forward" size={20} color={CWAAX.ink} />
+        </Pressable>
+        <Text style={styles.panelTitle}>{LEVEL_LABELS[level]}</Text>
+        <View style={{ width: 20 }} />
+      </View>
+
+      {list.isLoading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={CWAAX.green} />
+        </View>
+      ) : accounts.length === 0 ? (
+        <Text style={styles.empty}>لا يوجد حسابات مُحالة على هذا المستوى.</Text>
+      ) : (
+        <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+          {accounts.map((a: any) => (
+            <View key={a.id} style={styles.levelUserRow}>
+              <View style={[styles.userAvatar, a.isBanned && styles.userAvatarBanned]}>
+                <Text style={styles.userLetter}>{(a.name || a.username || a.email || "U")[0].toUpperCase()}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.userName} numberOfLines={1}>{a.name || a.username || "بدون اسم"}</Text>
+                <Text style={styles.userEmail} numberOfLines={1}>{a.email || a.openId}</Text>
+                {a.isBanned && (
+                  <View style={[styles.chip, styles.chipRed, { marginTop: 5 }]}>
+                    <MaterialIcons name="block" size={11} color={CWAAX.red} />
+                    <Text style={[styles.chipText, { color: CWAAX.red }]}>محظور</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.levelUserEarn}>{fmt(a.earningsContributed)}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
 function BroadcastModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
@@ -1500,6 +1553,9 @@ const styles = StyleSheet.create({
   levelTitle: { fontSize: 9, fontWeight: "900", marginBottom: 4 },
   levelCount: { color: CWAAX.ink, fontSize: 15, fontWeight: "900" },
   levelEarn: { color: CWAAX.muted, fontSize: 9, marginTop: 2 },
+  levelDetails: { fontSize: 8, fontWeight: "800", marginTop: 6 },
+  levelUserRow: { flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
+  levelUserEarn: { color: CWAAX.gold, fontSize: 11, fontWeight: "900" },
   totalsRow: { flexDirection: "row", gap: 8, marginTop: 8 },
   totalBox: {
     flex: 1,
