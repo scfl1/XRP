@@ -4,6 +4,12 @@ import { sdk } from "./sdk";
 export type TrpcContext = {
   req: Request;
   user: User | null;
+  // Set when authentication couldn't be verified due to an unexpected
+  // error (e.g. the database was momentarily unreachable), as opposed
+  // to the user simply having no session. `requireUser` /
+  // `adminProcedure` use this to report a retry-able connection error
+  // instead of a misleading "not admin" / "not signed in" message.
+  authError: unknown;
 };
 
 export async function createContext(opts: { req: Request }): Promise<TrpcContext> {
@@ -17,16 +23,19 @@ export async function createContext(opts: { req: Request }): Promise<TrpcContext
   // genuine "not admin" case still reports as "not admin", not as a
   // generic crash.
   let user: User | null = null;
+  let authError: unknown = null;
 
   try {
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
     console.warn("[Auth] authenticateRequest failed (treated as signed-out):", error);
     user = null;
+    authError = error;
   }
 
   return {
     req: opts.req,
     user,
+    authError,
   };
 }
