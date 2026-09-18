@@ -223,9 +223,14 @@ export default function AdminScreen() {
           },
           onError: (e: any) => {
             const msg = String(e?.message ?? "");
-            const isPermissionErr =
-              msg.includes("10002") || msg.toLowerCase().includes("permission");
-            if (attempt < 3 && isPermissionErr) {
+            // 10003 = a transient connection error while checking the
+            // session (safe and expected to retry). 10002 is kept here
+            // too for backward compatibility with already-deployed
+            // clients, but after the server-side fix it should no
+            // longer be thrown for connection issues.
+            const isTransientErr =
+              msg.includes("10003") || msg.includes("10002") || msg.toLowerCase().includes("permission");
+            if (attempt < 3 && isTransientErr) {
               // إعادة المحاولة بدون إزعاج المستخدم
               setTimeout(() => runOnce(attempt + 1), 700 * (attempt + 1));
               return;
