@@ -188,21 +188,44 @@ export async function upsertUser(
  * Transient network/connection failures between the Worker and
  * Hyperdrive (e.g. a pooled connection that Supabase closed while
  * idle) can make a single query fail even though the database itself
- * is healthy. Retrying once, right away, resolves nearly all of
- * these cases because the postgres.js client opens a fresh
- * connection on the retry.
+ * is healthy. A single retry does not always land on a healthy
+ * connection when Supabase is under momentary pressure — this was
+ * observed to surface as a misleading "not admin (10002)" error on
+ * admin actions, because a fully-exhausted retry gets swallowed by
+ * createContext() and treated as "no session". Retrying up to 3
+ * times total, with a short increasing delay, gives the postgres.js
+ * client more chances to open a fresh, healthy connection before we
+ * give up and let the real error propagate.
  */
-async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    console.warn(
-      "[Database] Query failed, retrying once:",
-      error instanceof Error ? error.message : error,
-    );
+const DB_RETRY_ATTEMPTS = 3;
+const DB_RETRY_DELAY_MS = 150;
 
-    return operation();
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const isLastAttempt = attempt === DB_RETRY_ATTEMPTS;
+
+      console.warn(
+        `[Database] Query failed (attempt ${attempt}/${DB_RETRY_ATTEMPTS})${isLastAttempt ? ", giving up:" : ", retrying:"}`,
+        error instanceof Error ? error.message : error,
+      );
+
+      if (!isLastAttempt) {
+        await delay(DB_RETRY_DELAY_MS * attempt);
+      }
+    }
   }
+
+  throw lastError;
 }
 
 export async function getUserByEmailOrUsername(
@@ -1856,7 +1879,7 @@ export async function approveDeposit(
     );
   }
 
-  return db.transaction(
+  return withDbRetry(() => db.transaction(
     async (tx) => {
       const request =
         (
@@ -2037,7 +2060,7 @@ export async function approveDeposit(
         changed: true,
       };
     },
-  );
+  ));
 }
 
 /* =========================
@@ -2056,7 +2079,7 @@ export async function rejectDeposit(
     );
   }
 
-  return db.transaction(
+  return withDbRetry(() => db.transaction(
     async (tx) => {
       const result =
         await tx
@@ -2113,7 +2136,7 @@ export async function rejectDeposit(
         changed: true,
       };
     },
-  );
+  ));
 }
 
 /* =========================
@@ -2132,7 +2155,7 @@ export async function approveWithdrawal(
     );
   }
 
-  return db.transaction(
+  return withDbRetry(() => db.transaction(
     async (tx) => {
       const request =
         (
@@ -2247,7 +2270,7 @@ export async function approveWithdrawal(
         changed: true,
       };
     },
-  );
+  ));
 }
 
 /* =========================
@@ -2266,7 +2289,7 @@ export async function rejectWithdrawal(
     );
   }
 
-  return db.transaction(
+  return withDbRetry(() => db.transaction(
     async (tx) => {
       // Select-then-claim: only a still-pending request can be claimed, so
       // two concurrent admin actions on the same request can't both apply
@@ -2406,6 +2429,5 @@ export async function rejectWithdrawal(
         changed: true,
       };
     },
-  );
+  ));
 }
-
