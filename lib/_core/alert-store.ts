@@ -5,6 +5,16 @@
  * of calling window.alert/window.confirm or Alert.alert, so every part
  * of the app gets the same nicely designed card with zero call-site
  * changes. Follows the same simple pub-sub pattern as network-store.ts.
+ *
+ * IMPORTANT: state lives on `globalThis`, not in module-level `let`
+ * variables. Expo Router's static web export code-splits each route
+ * into its own JS bundle; a plain module-level singleton can end up
+ * duplicated — one copy per bundle — so a call from e.g. send.tsx's
+ * bundle would silently update a *different* copy than the one
+ * <AlertHost/> (mounted in the root layout) is subscribed to, and the
+ * dialog would never appear even though pushAlert() ran with no error.
+ * `globalThis` is the one thing guaranteed to be the same object no
+ * matter how many times this module gets evaluated.
  */
 
 export type AlertRequest = {
@@ -19,29 +29,43 @@ export type AlertRequest = {
 
 type Listener = () => void;
 
-let current: AlertRequest | null = null;
-const queue: AlertRequest[] = [];
-const listeners = new Set<Listener>();
-let nextId = 1;
+type AlertStoreState = {
+  current: AlertRequest | null;
+  queue: AlertRequest[];
+  listeners: Set<Listener>;
+  nextId: number;
+};
+
+const KEY = "__cwaaxAlertStore";
+
+function getStore(): AlertStoreState {
+  const g = globalThis as unknown as Record<string, AlertStoreState>;
+  if (!g[KEY]) {
+    g[KEY] = { current: null, queue: [], listeners: new Set(), nextId: 1 };
+  }
+  return g[KEY];
+}
 
 function emit() {
-  listeners.forEach((l) => l());
+  getStore().listeners.forEach((l) => l());
 }
 
 function pump() {
-  if (!current && queue.length) {
-    current = queue.shift()!;
+  const store = getStore();
+  if (!store.current && store.queue.length) {
+    store.current = store.queue.shift()!;
     emit();
   }
 }
 
 export function getCurrentAlert(): AlertRequest | null {
-  return current;
+  return getStore().current;
 }
 
 export function subscribeAlert(listener: Listener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+  const store = getStore();
+  store.listeners.add(listener);
+  return () => store.listeners.delete(listener);
 }
 
 export function pushAlert(req: {
@@ -52,15 +76,17 @@ export function pushAlert(req: {
   danger?: boolean;
 }): Promise<boolean> {
   return new Promise((resolve) => {
-    queue.push({ ...req, id: nextId++, resolve });
+    const store = getStore();
+    store.queue.push({ ...req, id: store.nextId++, resolve });
     pump();
   });
 }
 
 export function resolveCurrentAlert(value: boolean) {
-  if (!current) return;
-  const { resolve } = current;
-  current = null;
+  const store = getStore();
+  if (!store.current) return;
+  const { resolve } = store.current;
+  store.current = null;
   emit();
   resolve(value);
   pump();
