@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, IconButton } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
-import { notify } from "@/lib/_core/native-alert";
+import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 
 export default function ChangePasswordScreen() {
@@ -26,7 +26,7 @@ export default function ChangePasswordScreen() {
     },
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!currentPassword) {
       notify("تنبيه", "يرجى إدخال كلمة المرور الحالية");
       return;
@@ -46,6 +46,13 @@ export default function ChangePasswordScreen() {
       notify("تنبيه", "كلمة المرور الجديدة يجب أن تختلف عن الحالية");
       return;
     }
+
+    const confirmed = await confirmAsync(
+      "تأكيد تغيير كلمة المرور",
+      "سيتم استبدال كلمة المرور الحالية بالكلمة الجديدة فوراً. هل تريد المتابعة؟",
+      "تأكيد التغيير",
+    );
+    if (!confirmed) return;
 
     changePassword.mutate({ currentPassword, newPassword });
   };
