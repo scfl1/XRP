@@ -4,7 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
 import { CWAAX, TRADE_PLANS } from "@/constants/cwaax";
-import { notify } from "@/lib/_core/native-alert";
+import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -49,6 +49,13 @@ export default function TradeScreen() {
       notify("الرصيد غير كافٍ", `رصيدك المتاح ${usdtBalance.toFixed(2)} USDT.`);
       return;
     }
+    const dailyProfit = amount * 0.02;
+    const confirmed = await confirmAsync(
+      "تأكيد بدء العقد",
+      `المبلغ: ${amount.toFixed(2)} USDT\nالربح اليومي التقديري: ${dailyProfit.toFixed(2)} USDT\n\nسيتم حجز المبلغ من رصيدك فوراً عند التأكيد.`,
+      "تأكيد البدء",
+    );
+    if (!confirmed) return;
     setSelectedAmount(amount);
     try {
       await startContract.mutateAsync({ amount });
