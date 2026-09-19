@@ -10,7 +10,7 @@ import { UsdtIcon } from "@/components/usdt-icon";
 import { CWAAX } from "@/constants/cwaax";
 import { getNetwork } from "@/constants/networks";
 import { DEPOSIT_ADDRESSES } from "@/constants/receive-addresses";
-import { notify } from "@/lib/_core/native-alert";
+import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { getSelectedNetwork, subscribeNetwork } from "@/lib/_core/network-store";
 import { trpc } from "@/lib/trpc";
 
@@ -36,12 +36,18 @@ export default function ReceiveScreen() {
     onError: (err) => notify("تعذر الإرسال", err.message || "حاول مرة أخرى."),
   });
 
-  const handleConfirmSent = () => {
+  const handleConfirmSent = async () => {
     const amount = Number(sentAmount);
     if (!amount || amount <= 0) {
       notify("تحقق من المبلغ", "أدخل المبلغ الذي أرسلته بالضبط.");
       return;
     }
+    const confirmed = await confirmAsync(
+      "تأكيد الإيداع",
+      `المبلغ: ${amount} USDT\nالشبكة: ${network.name}\n\nسيصل إشعار للأدمن ببريدك الإلكتروني والمبلغ ليتحقق من العملية ويعتمدها.`,
+      "تأكيد وإرسال",
+    );
+    if (!confirmed) return;
     createDeposit.mutate({
       currency: "USDT",
       amount,
