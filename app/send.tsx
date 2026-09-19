@@ -7,7 +7,7 @@ import { UsdtIcon } from "@/components/usdt-icon";
 import { NetworkIcon } from "@/components/network-icon";
 import { CWAAX } from "@/constants/cwaax";
 import { getNetwork } from "@/constants/networks";
-import { notify } from "@/lib/_core/native-alert";
+import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { getSelectedNetwork, subscribeNetwork } from "@/lib/_core/network-store";
 import { consumePendingScan } from "@/lib/_core/qr-store";
 import { trpc } from "@/lib/trpc";
@@ -88,7 +88,7 @@ export default function SendScreen() {
     setDisplay(String(Math.floor(usdt * pct * 100) / 100));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const finalAmount = finalizeAmount();
 
     if (!finalAmount || finalAmount <= 0) {
@@ -110,6 +110,13 @@ export default function SendScreen() {
       notify("عنوان غير صالح", "أدخل عنوان محفظة صحيحاً على شبكة " + network.name + ".");
       return;
     }
+
+    const confirmed = await confirmAsync(
+      "تأكيد التحويل",
+      `المبلغ: ${finalAmount} USDT\nالشبكة: ${network.name}\nالعنوان: ${address.trim()}\n\nلا يمكن التراجع عن التحويل بعد إرساله.`,
+      "تأكيد وإرسال",
+    );
+    if (!confirmed) return;
 
     createWithdrawal.mutate(
       { currency: "USDT", amount: finalAmount, network: network.code, address: address.trim() },
