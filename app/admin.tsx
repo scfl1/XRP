@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, IconButton, StatusPill, type IconName } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
+import { notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -829,7 +830,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
               onConfirm={(reason) =>
                 banMutation.mutate(
                   { userId, reason: reason || undefined },
-                  { onError: (e) => Alert.alert("تعذر الحظر", e.message) }
+                  { onError: (e) => notify("تعذر الحظر", e.message) }
                 )
               }
             />
@@ -840,7 +841,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
               onConfirm={(pw) =>
                 passwordMutation.mutate(
                   { userId, newPassword: pw },
-                  { onError: (e) => Alert.alert("تعذر التغيير", e.message) }
+                  { onError: (e) => notify("تعذر التغيير", e.message) }
                 )
               }
             />
@@ -851,7 +852,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
               onConfirm={(v) =>
                 balanceMutation.mutate(
                   { userId, ...v },
-                  { onError: (e) => Alert.alert("تعذر التنفيذ", e.message) }
+                  { onError: (e) => notify("تعذر التنفيذ", e.message) }
                 )
               }
             />
@@ -862,7 +863,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
               onConfirm={(title, message) =>
                 notifyMutation.mutate(
                   { userId, title, message },
-                  { onError: (e) => Alert.alert("تعذر الإرسال", e.message) }
+                  { onError: (e) => notify("تعذر الإرسال", e.message) }
                 )
               }
             />
@@ -879,7 +880,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                 { userId },
                 {
                   onSuccess: () => setConfirmUnban(false),
-                  onError: (e) => Alert.alert("تعذر رفع الحظر", e.message),
+                  onError: (e) => notify("تعذر رفع الحظر", e.message),
                 }
               )
             }
@@ -1235,7 +1236,7 @@ function BroadcastModal({ visible, onClose }: { visible: boolean; onClose: () =>
       setMessage("");
       onClose();
     },
-    onError: (e) => Alert.alert("تعذر الإرسال", e.message),
+    onError: (e) => notify("تعذر الإرسال", e.message),
   });
   const valid = title.trim().length > 0 && message.trim().length > 0;
   if (!visible) return null;
