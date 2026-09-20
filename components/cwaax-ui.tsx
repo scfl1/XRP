@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode, useState } from "react";
-import { Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { CWAAX } from "@/constants/cwaax";
 import { NetworkIcon } from "@/components/network-icon";
 
@@ -140,9 +140,11 @@ export function ConfirmModal({
   onConfirm: () => void;
   onCancel?: () => void;
 }) {
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={() => (onCancel ?? onConfirm)()}>
-      <View style={styles.confirmOverlay}>
+    <View style={styles.confirmOverlay} pointerEvents="box-none">
+      <View style={styles.confirmScrim} pointerEvents="auto">
         <View style={styles.confirmCard}>
           <View style={[styles.confirmIconWrap, danger && styles.confirmIconWrapDanger]}>
             <MaterialIcons name={danger ? "warning-amber" : "help-outline"} size={26} color={danger ? CWAAX.red : CWAAX.green} />
@@ -164,7 +166,7 @@ export function ConfirmModal({
           </View>
         </View>
       </View>
-    </Modal>
+    </View>
   );
 }
 
@@ -194,7 +196,14 @@ export const styles = StyleSheet.create({
   successText: { color: CWAAX.green },
   warningText: { color: CWAAX.gold },
   dangerText: { color: CWAAX.red },
-  confirmOverlay: { flex: 1, backgroundColor: "rgba(16,26,22,0.5)", alignItems: "center", justifyContent: "center", paddingHorizontal: 28 },
+  confirmOverlay: {
+    ...(Platform.OS === "web"
+      ? ({ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 } as object)
+      : { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }),
+    zIndex: 999999,
+    elevation: 24,
+  },
+  confirmScrim: { flex: 1, backgroundColor: "rgba(16,26,22,0.5)", alignItems: "center", justifyContent: "center", paddingHorizontal: 28 },
   confirmCard: { width: "100%", maxWidth: 360, backgroundColor: CWAAX.white, borderRadius: 24, paddingHorizontal: 22, paddingTop: 26, paddingBottom: 20, alignItems: "center" },
   confirmIconWrap: { width: 52, height: 52, borderRadius: 18, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center", marginBottom: 16 },
   confirmIconWrapDanger: { backgroundColor: "#FDECEB" },
