@@ -89,12 +89,6 @@ export default function SendScreen() {
   };
 
   const handleSend = async () => {
-    // TEMPORARY diagnostic: raw browser alert, completely independent
-    // of the app's custom ConfirmModal/alert-store system, to confirm
-    // the click is even reaching this handler. Remove once confirmed.
-    if (typeof window !== "undefined") window.alert("[تشخيص] تم الضغط على زر الإرسال");
-
-    try {
     const finalAmount = finalizeAmount();
 
     if (!finalAmount || finalAmount <= 0) {
@@ -117,16 +111,11 @@ export default function SendScreen() {
       return;
     }
 
-    if (typeof window !== "undefined") window.alert("[تشخيص] قبل استدعاء نافذة التأكيد...");
-
     const confirmed = await confirmAsync(
       "تأكيد التحويل",
       `المبلغ: ${finalAmount} USDT\nالشبكة: ${network.name}\nالعنوان: ${address.trim()}\n\nلا يمكن التراجع عن التحويل بعد إرساله.`,
       "تأكيد وإرسال",
     );
-
-    if (typeof window !== "undefined") window.alert("[تشخيص] نتيجة نافذة التأكيد: " + confirmed);
-
     if (!confirmed) return;
 
     createWithdrawal.mutate(
@@ -138,13 +127,6 @@ export default function SendScreen() {
         onError: (err) => notify("تعذر إرسال الطلب", err.message || "حاول مرة أخرى."),
       },
     );
-    } catch (err: any) {
-      // TEMPORARY diagnostic: surface any exception raised anywhere in
-      // this handler directly on-screen. Remove once confirmed.
-      if (typeof window !== "undefined") {
-        window.alert("[تشخيص] حدث خطأ فعلي:\n" + (err?.message || String(err)));
-      }
-    }
   };
 
   const OPS: PendingOp["op"][] = ["+", "-", "×", "÷"];
