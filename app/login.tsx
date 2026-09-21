@@ -152,7 +152,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Text style={styles.label}>رقم الهاتف</Text>
-                <View style={{ position: "relative" }}>
+                <View style={styles.phonePickerContainer}>
                   <View style={styles.phoneRow}>
                     <Pressable
                       onPress={() => setShowCountryPicker((v) => !v)}
@@ -395,9 +395,25 @@ const styles = StyleSheet.create({
 
   methodTabTextActive: { color: "#111827" },
 
-  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
+  phonePickerContainer: {
+    position: "relative",
+    width: "100%",
+    zIndex: 1000,
+    elevation: 1000,
+  },
 
-  phoneInput: { flex: 1, marginBottom: 0 },
+  phoneRow: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 18,
+  },
+
+  phoneInput: {
+    flex: 1,
+    minWidth: 0,
+    marginBottom: 0,
+  },
 
   countryBtn: {
     flexDirection: "row",
@@ -417,11 +433,13 @@ const styles = StyleSheet.create({
 
   pickerBackdrop: {
     position: "absolute",
-    top: 0,
+    top: 58,
     left: -400,
     right: -400,
     bottom: -2000,
-    zIndex: 40,
+    zIndex: 1001,
+    elevation: 1001,
+    backgroundColor: "#FFFFFF",
   },
 
   countryList: {
@@ -438,8 +456,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
-    zIndex: 50,
+    elevation: 1002,
+    zIndex: 1002,
   },
 
   countryOption: {
