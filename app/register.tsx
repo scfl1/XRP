@@ -202,7 +202,7 @@ export default function RegisterScreen() {
             {/* Phone */}
             <Text style={styles.label}>رقم الهاتف</Text>
 
-            <View style={{ position: "relative" }}>
+            <View style={[styles.phonePickerContainer, showCountryPicker && styles.phonePickerOpen]}>
               <View style={styles.phoneRow}>
                 <Pressable
                   onPress={() => setShowCountryPicker((v) => !v)}
@@ -461,9 +461,9 @@ const styles = StyleSheet.create({
 
   pressed: { opacity: 0.7 },
 
-  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 17 },
+  phoneRow: {\n    width: "100%",\n    flexDirection: "row",\n    gap: 10,\n    marginBottom: 17,\n    alignItems: "stretch",\n  },
 
-  phoneInput: { flex: 1, marginBottom: 0 },
+  phoneInput: {\n    flex: 1,\n    width: 0,\n    minWidth: 0,\n    flexShrink: 1,\n    marginBottom: 0,\n  },
 
   countryBtn: {
     flexDirection: "row",
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
     left: -400,
     right: -400,
     bottom: -2000,
-    zIndex: 40,
+    zIndex: 1000,\n    elevation: 1000,
   },
 
   countryList: {
