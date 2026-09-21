@@ -251,6 +251,10 @@ export async function getUserByEmailOrUsername(
             users.username,
             identifier,
           ),
+          eq(
+            users.phone,
+            identifier,
+          ),
         ),
       )
       .limit(1)
@@ -274,6 +278,29 @@ export async function getUserByEmail(
         eq(
           users.email,
           email.toLowerCase(),
+        ),
+      )
+      .limit(1)
+  )[0];
+}
+
+export async function getUserByPhone(
+  phone: string,
+) {
+  const db = await getDb();
+
+  if (!db) {
+    return undefined;
+  }
+
+  return (
+    await db
+      .select()
+      .from(users)
+      .where(
+        eq(
+          users.phone,
+          phone,
         ),
       )
       .limit(1)
@@ -330,6 +357,7 @@ export async function createLocalUser(
     email: string;
     passwordHash: string;
     referralCode?: string;
+    phone?: string;
   },
 ) {
   const db = await getDb();
@@ -371,6 +399,7 @@ export async function createLocalUser(
         username: data.username,
         email:
           data.email.toLowerCase(),
+        phone: data.phone || undefined,
         passwordHash:
           data.passwordHash,
         loginMethod: "email",
