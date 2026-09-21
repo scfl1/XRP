@@ -59,7 +59,6 @@ import {
 } from "@/lib/_core/manus-runtime";
 
 import { LocaleProvider } from "@/lib/_core/i18n";
-import { AlertHost } from "@/components/alert-host";
 
 
 /* =========================================================
@@ -416,8 +415,6 @@ export default function RootLayout() {
           {/* Authentication Protection */}
 
           <AuthGate />
-
-          <AlertHost />
 
 
           <StatusBar
