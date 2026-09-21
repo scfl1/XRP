@@ -67,6 +67,10 @@ export const users = pgTable("users", {
     length: 320,
   }),
 
+  phone: varchar("phone", {
+    length: 32,
+  }),
+
   loginMethod: varchar("loginMethod", {
     length: 64,
   }),
