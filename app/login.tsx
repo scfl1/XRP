@@ -15,6 +15,7 @@ import {
 import { router } from "expo-router";
 import { trpc } from "@/lib/trpc";
 import * as Auth from "@/lib/_core/auth";
+import { isIdentityVerified } from "@/lib/identity-verification";
 
 const COUNTRY_CODES = [
   { code: "+966", flag: "🇸🇦", name: "السعودية" },
@@ -60,8 +61,9 @@ export default function LoginScreen() {
       await Auth.setSessionToken(data.token);
       await Auth.setUserInfo(data.user as any);
 
+      const verified = await isIdentityVerified(data.user.id);
       setLoading(false);
-      router.replace("/(tabs)");
+      router.replace(verified ? "/(tabs)" : "/verify-identity");
     },
     onError: (err) => {
       setLoading(false);
@@ -152,7 +154,7 @@ export default function LoginScreen() {
             ) : (
               <>
                 <Text style={styles.label}>رقم الهاتف</Text>
-                <View style={styles.phonePickerContainer}>
+                <View style={{ position: "relative" }}>
                   <View style={styles.phoneRow}>
                     <Pressable
                       onPress={() => setShowCountryPicker((v) => !v)}
@@ -395,25 +397,9 @@ const styles = StyleSheet.create({
 
   methodTabTextActive: { color: "#111827" },
 
-  phonePickerContainer: {
-    position: "relative",
-    width: "100%",
-    zIndex: 1000,
-    elevation: 1000,
-  },
+  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
 
-  phoneRow: {
-    width: "100%",
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 18,
-  },
-
-  phoneInput: {
-    flex: 1,
-    minWidth: 0,
-    marginBottom: 0,
-  },
+  phoneInput: { flex: 1, marginBottom: 0 },
 
   countryBtn: {
     flexDirection: "row",
@@ -433,13 +419,11 @@ const styles = StyleSheet.create({
 
   pickerBackdrop: {
     position: "absolute",
-    top: 58,
+    top: 0,
     left: -400,
     right: -400,
     bottom: -2000,
-    zIndex: 1001,
-    elevation: 1001,
-    backgroundColor: "#FFFFFF",
+    zIndex: 40,
   },
 
   countryList: {
@@ -456,8 +440,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
-    elevation: 1002,
-    zIndex: 1002,
+    elevation: 12,
+    zIndex: 50,
   },
 
   countryOption: {
