@@ -1,19 +1,37 @@
-import { pushAlert } from "./alert-store";
-
 /**
- * Styled replacements for the browser's window.alert()/window.confirm(),
- * which render as the plain OS/browser "site says" dialog (ugly, and on
- * react-native-web a buttons array silently does nothing). These push
- * into the global alert queue (lib/_core/alert-store.ts) instead, which
- * <AlertHost /> (mounted once in app/_layout.tsx) renders as the app's
- * own styled ConfirmModal card. Same signatures as before, so every
- * existing call site across the app gets the nicer UI automatically.
+ * بطاقة التأكيد معطّلة مؤقتاً للتشخيص.
+ * notify / confirmAsync يعملان بدون ConfirmModal / AlertHost.
  */
 
+import { Platform, Alert } from "react-native";
+
 export function notify(title: string, message?: string, onDismiss?: () => void) {
-  pushAlert({ title, message, confirmLabel: "حسناً" }).then(() => onDismiss?.());
+  const text = message ? `\( {title}\n\n \){message}` : title;
+
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.alert(text);
+    onDismiss?.();
+    return;
+  }
+
+  Alert.alert(title, message, [{ text: "حسناً", onPress: () => onDismiss?.() }]);
 }
 
-export function confirmAsync(title: string, message?: string, confirmLabel = "تأكيد"): Promise<boolean> {
-  return pushAlert({ title, message, confirmLabel, cancelLabel: "إلغاء" });
+export function confirmAsync(
+  title: string,
+  message?: string,
+  _confirmLabel = "تأكيد",
+): Promise<boolean> {
+  const text = message ? `\( {title}\n\n \){message}` : title;
+
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    return Promise.resolve(window.confirm(text));
+  }
+
+  return new Promise((resolve) => {
+    Alert.alert(title, message, [
+      { text: "إلغاء", style: "cancel", onPress: () => resolve(false) },
+      { text: "تأكيد", onPress: () => resolve(true) },
+    ]);
+  });
 }
