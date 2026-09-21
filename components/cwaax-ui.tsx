@@ -1,6 +1,6 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ReactNode, useState } from "react";
-import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CWAAX } from "@/constants/cwaax";
 import { NetworkIcon } from "@/components/network-icon";
 
@@ -153,16 +153,17 @@ export function ConfirmModal({
           {!!message && <Text style={styles.confirmMessage}>{message}</Text>}
           <View style={[styles.confirmActions, !onCancel && styles.confirmActionsSingle]}>
             {onCancel && (
-              <Pressable onPress={onCancel} style={({ pressed }) => [styles.confirmCancelBtn, pressed && styles.pressed]}>
+              <TouchableOpacity onPress={onCancel} activeOpacity={0.7} style={styles.confirmCancelBtn}>
                 <Text style={styles.confirmCancelText}>{cancelLabel}</Text>
-              </Pressable>
+              </TouchableOpacity>
             )}
-            <Pressable
+            <TouchableOpacity
               onPress={onConfirm}
-              style={({ pressed }) => [styles.confirmOkBtn, danger && styles.confirmOkBtnDanger, pressed && styles.pressed]}
+              activeOpacity={0.7}
+              style={[styles.confirmOkBtn, danger && styles.confirmOkBtnDanger]}
             >
               <Text style={styles.confirmOkText}>{confirmLabel}</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
