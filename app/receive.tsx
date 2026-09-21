@@ -134,6 +134,46 @@ export default function ReceiveScreen() {
           </Pressable>
         </View>
 
+        {/* زر تأكيد الإيداع مباشرة تحت التبويبات وفي المنتصف */}
+        {mode === "onchain" && address ? (
+          !showConfirm ? (
+            <Pressable
+              onPress={() => setShowConfirm(true)}
+              style={({ pressed }) => [styles.sentBtn, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="check-circle-outline" size={17} color={CWAAX.white} />
+              <Text style={styles.sentBtnText}>اضغط هنا للتأكيد ايداع</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.confirmBox}>
+              <Text style={styles.confirmLabel}>كم المبلغ الذي أرسلته؟ (USDT)</Text>
+              <TextInput
+                value={sentAmount}
+                onChangeText={setSentAmount}
+                placeholder="مثال: 50"
+                placeholderTextColor="#9CA8A1"
+                keyboardType="decimal-pad"
+                style={styles.confirmInput}
+                textAlign="center"
+              />
+              <View style={styles.confirmActions}>
+                <Pressable onPress={() => setShowConfirm(false)} style={styles.confirmCancel}>
+                  <Text style={styles.confirmCancelText}>إلغاء</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleConfirmSent}
+                  disabled={createDeposit.isPending}
+                  style={({ pressed }) => [styles.confirmSubmit, (pressed || createDeposit.isPending) && styles.pressed]}
+                >
+                  <Text style={styles.confirmSubmitText}>
+                    {createDeposit.isPending ? "جاري الإرسال..." : "تأكيد الإرسال"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          )
+        ) : null}
+
         {mode === "offchain" ? (
           <View style={styles.comingSoon}>
             <MaterialIcons name="hourglass-empty" size={30} color={CWAAX.muted} />
@@ -202,53 +242,14 @@ export default function ReceiveScreen() {
               )}
             </View>
 
-            {address && (
-              <>
-                <View style={styles.noteRow}>
-                  <MaterialIcons name="info-outline" size={16} color={CWAAX.muted} />
-                  <Text style={styles.note}>
-                    فقط رمز USDT على شبكة {network.name} المُرسل إلى هذا العنوان سيصل إلى محفظتك. إرسال أي عملة أو شبكة أخرى قد يؤدي لفقدانها.
-                  </Text>
-                </View>
-
-                {!showConfirm ? (
-                  <Pressable
-                    onPress={() => setShowConfirm(true)}
-                    style={({ pressed }) => [styles.sentBtn, pressed && styles.pressed]}
-                  >
-                    <MaterialIcons name="check-circle-outline" size={17} color={CWAAX.white} />
-                    <Text style={styles.sentBtnText}>اضغط هنا للتأكيد ايداع</Text>
-                  </Pressable>
-                ) : (
-                  <View style={styles.confirmBox}>
-                    <Text style={styles.confirmLabel}>كم المبلغ الذي أرسلته؟ (USDT)</Text>
-                    <TextInput
-                      value={sentAmount}
-                      onChangeText={setSentAmount}
-                      placeholder="مثال: 50"
-                      placeholderTextColor="#9CA8A1"
-                      keyboardType="decimal-pad"
-                      style={styles.confirmInput}
-                      textAlign="center"
-                    />
-                    <View style={styles.confirmActions}>
-                      <Pressable onPress={() => setShowConfirm(false)} style={styles.confirmCancel}>
-                        <Text style={styles.confirmCancelText}>إلغاء</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={handleConfirmSent}
-                        disabled={createDeposit.isPending}
-                        style={({ pressed }) => [styles.confirmSubmit, (pressed || createDeposit.isPending) && styles.pressed]}
-                      >
-                        <Text style={styles.confirmSubmitText}>
-                          {createDeposit.isPending ? "جاري الإرسال..." : "تأكيد الإرسال"}
-                        </Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
+            {address ? (
+              <View style={styles.noteRow}>
+                <MaterialIcons name="info-outline" size={16} color={CWAAX.muted} />
+                <Text style={styles.note}>
+                  فقط رمز USDT على شبكة {network.name} المُرسل إلى هذا العنوان سيصل إلى محفظتك. إرسال أي عملة أو شبكة أخرى قد يؤدي لفقدانها.
+                </Text>
+              </View>
+            ) : null}
           </>
         )}
       </ScrollView>
@@ -291,9 +292,29 @@ const styles = StyleSheet.create({
   noteRow: { flexDirection: "row-reverse", gap: 8, marginTop: 18, paddingHorizontal: 4 },
   note: { flex: 1, color: CWAAX.muted, fontSize: 10.5, lineHeight: 17, textAlign: "right" },
   pressed: { opacity: 0.6 },
-  sentBtn: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: CWAAX.green, borderRadius: 14, height: 50, marginTop: 20 },
+  sentBtn: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: CWAAX.green,
+    borderRadius: 14,
+    height: 50,
+    marginTop: 4,
+    marginBottom: 18,
+    alignSelf: "center",
+    width: "100%",
+  },
   sentBtnText: { color: CWAAX.white, fontSize: 13, fontWeight: "800" },
-  confirmBox: { backgroundColor: CWAAX.surface, borderRadius: 16, padding: 16, marginTop: 20 },
+  confirmBox: {
+    backgroundColor: CWAAX.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 4,
+    marginBottom: 18,
+    width: "100%",
+    alignSelf: "center",
+  },
   confirmLabel: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "center", marginBottom: 10 },
   confirmInput: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: CWAAX.line, height: 46, fontSize: 15, fontWeight: "800", color: CWAAX.ink },
   confirmHint: { color: CWAAX.muted, fontSize: 10, textAlign: "center", marginTop: 10, lineHeight: 16 },
