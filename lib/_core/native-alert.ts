@@ -1,6 +1,6 @@
 /**
- * بطاقة التأكيد معطّلة مؤقتاً للتشخيص.
- * notify / confirmAsync يعملان بدون ConfirmModal / AlertHost.
+ * بدون بطاقة تأكيد مخصّصة — تنبيهات المتصفح فقط.
+ * لا تغيّر ${title} و ${message} إلى نص ثابت.
  */
 
 import { Platform, Alert } from "react-native";
@@ -8,7 +8,7 @@ import { Platform, Alert } from "react-native";
 export function notify(title: string, message?: string, onDismiss?: () => void) {
   const text = message ? `\( {title}\n\n \){message}` : title;
 
-  if (Platform.OS === "web" && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     window.alert(text);
     onDismiss?.();
     return;
@@ -24,7 +24,7 @@ export function confirmAsync(
 ): Promise<boolean> {
   const text = message ? `\( {title}\n\n \){message}` : title;
 
-  if (Platform.OS === "web" && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     return Promise.resolve(window.confirm(text));
   }
 
