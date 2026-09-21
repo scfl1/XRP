@@ -738,6 +738,12 @@ function nextGlobalPayoutAnchor(from: Date): Date {
 export async function listTradeContracts(userId: number) {
   const db = await getDb();
   if (!db) return [];
+  // عند فتح صفحة التجارة: صرف الأرباح المستحقة وإعادة ضبط العدّاد
+  try {
+    await processDueTradePayouts(new Date());
+  } catch (error) {
+    console.error("[Trade] processDue on list failed", error);
+  }
   return db.select().from(tradeContracts)
     .where(eq(tradeContracts.userId, userId))
     .orderBy(desc(tradeContracts.createdAt));
@@ -875,92 +881,112 @@ export async function processDueTradePayouts(now = new Date()) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const due = await db.select().from(tradeContracts).where(and(
-    eq(tradeContracts.status, "active"),
-    sql`${tradeContracts.nextPayoutAt} <= ${now}`,
-  )).limit(200);
-
+  const nowIso = now.toISOString();
   let paid = 0;
-  for (const candidate of due) {
-    try {
-      await db.transaction(async (tx) => {
-        const payoutAmount = Number(candidate.principal) * Number(candidate.dailyRate);
-        if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) return;
 
-        const next = new Date(candidate.nextPayoutAt.getTime() + 24 * 60 * 60 * 1000);
-        const nextCount = candidate.payoutCount + 1;
-        const isFinal = next >= candidate.endsAt;
+  // عدة دورات لصرف الأيام المتأخرة (حتى 30 يوماً كحد أقصى لكل تشغيل)
+  for (let round = 0; round < 30; round++) {
+    const due = await db.select().from(tradeContracts).where(and(
+      eq(tradeContracts.status, "active"),
+      sql`${tradeContracts.nextPayoutAt} <= ${nowIso}`,
+    )).limit(200);
 
-        const claimed = await tx.update(tradeContracts).set({
-          payoutCount: nextCount,
-          totalProfitPaid: sql`${tradeContracts.totalProfitPaid} + ${payoutAmount.toFixed(8)}`,
-          nextPayoutAt: next,
-          status: isFinal ? "completed" : "active",
-          updatedAt: now,
-        }).where(and(
-          eq(tradeContracts.id, candidate.id),
-          eq(tradeContracts.status, "active"),
-          sql`${tradeContracts.nextPayoutAt} <= ${now}`,
-        )).returning({ id: tradeContracts.id });
+    if (!due.length) break;
 
-        if (!claimed.length) return;
+    let paidThisRound = 0;
+    for (const candidate of due) {
+      try {
+        await db.transaction(async (tx) => {
+          const payoutAmount = Number(candidate.principal) * Number(candidate.dailyRate);
+          if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) return;
 
-        const wallet = (await tx.select().from(walletBalances).where(and(
-          eq(walletBalances.userId, candidate.userId),
-          eq(walletBalances.currency, "USDT"),
-        )).limit(1))[0];
+          // تقدّم يوم واحد من موعد الاستحقاق
+          let next = new Date(new Date(candidate.nextPayoutAt).getTime() + 24 * 60 * 60 * 1000);
+          // إذا بقي في الماضي → انتقل لأقرب منتصف ليل UTC قادم حتى لا يبقى العداد 00:00:00
+          if (next.getTime() <= now.getTime()) {
+            next = nextGlobalPayoutAnchor(now);
+          }
 
-        const principalReturn = isFinal ? Number(candidate.principal) : 0;
-        const walletCredit = payoutAmount + principalReturn;
+          const nextCount = candidate.payoutCount + 1;
+          const endsAt = new Date(candidate.endsAt);
+          const isFinal = next.getTime() >= endsAt.getTime();
 
-        if (wallet) {
-          await tx.update(walletBalances).set({
-            amount: sql`${walletBalances.amount} + ${walletCredit.toFixed(8)}`,
+          const claimed = await tx.update(tradeContracts).set({
+            payoutCount: nextCount,
+            totalProfitPaid: sql`${tradeContracts.totalProfitPaid} + ${payoutAmount.toFixed(8)}`,
+            nextPayoutAt: next,
+            status: isFinal ? "completed" : "active",
             updatedAt: now,
-          }).where(eq(walletBalances.id, wallet.id));
-        } else {
-          await tx.insert(walletBalances).values({
+          }).where(and(
+            eq(tradeContracts.id, candidate.id),
+            eq(tradeContracts.status, "active"),
+            sql`${tradeContracts.nextPayoutAt} <= ${nowIso}`,
+          )).returning({ id: tradeContracts.id });
+
+          if (!claimed.length) return;
+
+          const wallet = (await tx.select().from(walletBalances).where(and(
+            eq(walletBalances.userId, candidate.userId),
+            eq(walletBalances.currency, "USDT"),
+          )).limit(1))[0];
+
+          const principalReturn = isFinal ? Number(candidate.principal) : 0;
+          const walletCredit = payoutAmount + principalReturn;
+
+          if (wallet) {
+            await tx.update(walletBalances).set({
+              amount: sql`${walletBalances.amount} + ${walletCredit.toFixed(8)}`,
+              updatedAt: now,
+            }).where(eq(walletBalances.id, wallet.id));
+          } else {
+            await tx.insert(walletBalances).values({
+              userId: candidate.userId,
+              currency: "USDT",
+              amount: walletCredit.toFixed(8),
+              updatedAt: now,
+            });
+          }
+
+          await tx.insert(tradePayouts).values({
+            contractId: candidate.id,
             userId: candidate.userId,
+            payoutNumber: nextCount,
+            amount: payoutAmount.toFixed(8),
             currency: "USDT",
-            amount: walletCredit.toFixed(8),
-            updatedAt: now,
+            paidAt: now,
           });
-        }
 
-        await tx.insert(tradePayouts).values({
-          contractId: candidate.id,
-          userId: candidate.userId,
-          payoutNumber: nextCount,
-          amount: payoutAmount.toFixed(8),
-          currency: "USDT",
-          paidAt: now,
-        });
-
-        await tx.insert(transactions).values({
-          transactionId: `TRADE-PAYOUT-${candidate.id}-${nextCount}`,
-          userId: candidate.userId,
-          type: "trade",
-          amount: payoutAmount.toFixed(8),
-          currency: "USDT",
-          status: "completed",
-        });
-
-        if (isFinal) {
           await tx.insert(transactions).values({
-            transactionId: `TRADE-PRINCIPAL-${candidate.id}`,
+            transactionId: `TRADE-PAYOUT-${candidate.id}-${nextCount}`,
             userId: candidate.userId,
             type: "trade",
-            amount: candidate.principal,
+            amount: payoutAmount.toFixed(8),
             currency: "USDT",
             status: "completed",
           });
-        }
-        paid += 1;
-      });
-    } catch (error) {
-      console.error(`[Trade] payout failed for contract ${candidate.id}:`, error);
+
+          if (isFinal) {
+            await tx.insert(transactions).values({
+              transactionId: `TRADE-PRINCIPAL-${candidate.id}`,
+              userId: candidate.userId,
+              type: "trade",
+              amount: Number(candidate.principal).toFixed(8),
+              currency: "USDT",
+              status: "completed",
+            });
+          }
+
+          paidThisRound += 1;
+        });
+      } catch (error) {
+        console.error(`[Trade] payout failed for contract ${candidate.id}:`, error);
+      }
     }
+
+    paid += paidThisRound;
+    if (paidThisRound === 0) break;
   }
+
   return { paid };
 }
 
