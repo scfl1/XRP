@@ -13,8 +13,7 @@ import { notify } from "@/lib/_core/native-alert";
  * PHONE_NUMBER in international format with no spaces or "+" (e.g.
  * "9665XXXXXXXX") since that's what wa.me / tel: links require.
  */
-const TELEGRAM_USERNAME = "CwaAXSupport";
-const PHONE_NUMBER = "966500000000";
+const TELEGRAM_USERNAME = "CwaAXx";
 
 /*
  * Instant, automated Q&A about the app itself. Each entry has keywords
@@ -29,7 +28,7 @@ const FAQS: { keywords: string[]; q: string; a: string }[] = [
   { keywords: ["مصادقة ثنائية", "2fa", "تحقق بخطوتين"], q: "كيف أفعّل المصادقة الثنائية؟", a: "من الإعدادات → المصادقة الثنائية، فعّل المفتاح. (ملاحظة: هذه الميزة قيد التطوير ولم تُفعَّل بشكل كامل بعد.)" },
   { keywords: ["كلمة المرور", "الباسورد", "غير كلمة السر"], q: "كيف أغيّر كلمة المرور؟", a: "من صفحة الملف الشخصي اضغط \"تغيير كلمة المرور\"، أدخل كلمة المرور الحالية والجديدة وتأكيدها." },
   { keywords: ["عملة", "اللغة", "لغة التطبيق"], q: "كيف أغيّر العملة أو اللغة؟", a: "من الإعدادات → العملة الأصلية أو اللغة، اختر ما يناسبك ويُحفظ تلقائياً." },
-  { keywords: ["طلبي معلق", "لسا ما اجى", "متى يوافق", "تأخر الطلب"], q: "طلبي معلّق منذ فترة، متى يُعتمد؟", a: "طلبات الإيداع والسحب تُراجع يدوياً من فريقنا وعادة تُعتمد خلال ساعات العمل. إذا تأخر الطلب أكثر من يوم، تواصل معنا مباشرة عبر تليجرام أو واتساب أدناه." },
+  { keywords: ["طلبي معلق", "لسا ما اجى", "متى يوافق", "تأخر الطلب"], q: "طلبي معلّق منذ فترة، متى يُعتمد؟", a: "طلبات الإيداع والسحب تُراجع يدوياً من فريقنا وعادة تُعتمد خلال ساعات العمل. إذا تأخر الطلب أكثر من يوم، تواصل معنا مباشرة عبر تليجرام أدناه." },
   { keywords: ["رسوم", "عمولة"], q: "هل توجد رسوم على العمليات؟", a: "الرسوم إن وجدت تظهر بوضوح قبل تأكيد أي عملية إيداع أو سحب داخل التطبيق." },
 ];
 
@@ -63,11 +62,6 @@ export default function SupportScreen() {
     );
   };
 
-  const openWhatsapp = () => {
-    Linking.openURL(`https://wa.me/${PHONE_NUMBER}`).catch(() =>
-      notify("تعذر الفتح", "تأكد من تثبيت تطبيق واتساب."),
-    );
-  };
 
   const handleSend = () => {
     const text = message.trim();
@@ -90,7 +84,7 @@ export default function SupportScreen() {
         {
           id: `b-${Date.now()}`,
           from: "bot",
-          text: "لم أجد إجابة جاهزة لسؤالك. تواصل معنا مباشرة عبر تليجرام أو واتساب:",
+          text: "لم أجد إجابة جاهزة لسؤالك. تواصل معنا مباشرة عبر تليجرام:",
           contact: true,
         },
       ]);
@@ -132,10 +126,6 @@ export default function SupportScreen() {
                   <MaterialIcons name="send" size={16} color={CWAAX.white} />
                   <Text style={styles.contactBtnText}>تليجرام</Text>
                 </Pressable>
-                <Pressable onPress={openWhatsapp} style={({ pressed }) => [styles.contactBtn, styles.whatsappBtn, pressed && styles.pressed]}>
-                  <MaterialIcons name="chat" size={16} color={CWAAX.white} />
-                  <Text style={styles.contactBtnText}>واتساب</Text>
-                </Pressable>
               </View>
             )}
           </View>
@@ -160,10 +150,6 @@ export default function SupportScreen() {
             <Pressable onPress={openTelegram} style={({ pressed }) => [styles.contactBtn, styles.telegramBtn, pressed && styles.pressed]}>
               <MaterialIcons name="send" size={16} color={CWAAX.white} />
               <Text style={styles.contactBtnText}>@{TELEGRAM_USERNAME}</Text>
-            </Pressable>
-            <Pressable onPress={openWhatsapp} style={({ pressed }) => [styles.contactBtn, styles.whatsappBtn, pressed && styles.pressed]}>
-              <MaterialIcons name="chat" size={16} color={CWAAX.white} />
-              <Text style={styles.contactBtnText}>واتساب</Text>
             </Pressable>
           </View>
         </View>
