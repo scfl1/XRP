@@ -40,7 +40,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.greetingRow}>
-          <View><Text style={styles.eyebrow}>صباح الخير، {user?.name || user?.username || "بك"}</Text><Text style={styles.welcome}>إليك نظرة سريعة على محفظتك</Text></View>
+          <View><Text style={styles.welcome}>إليك نظرة سريعة على محفظتك</Text></View>
           <Pressable onPress={() => router.push("/transactions")} style={({ pressed }) => [styles.history, pressed && styles.pressed]}><MaterialIcons name="history" size={18} color={CWAAX.green}/><Text style={styles.historyText}>السجل</Text></Pressable>
         </View>
 
