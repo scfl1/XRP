@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, CwaLogo, IconButton, StatusPill } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
+import { useLiveMarkets } from "@/hooks/use-live-markets";
 
 type Asset = {
   symbol: string;
@@ -23,7 +24,7 @@ type Asset = {
   tip: string;
 };
 
-const ASSETS: Asset[] = [
+const BASE_ASSETS: Asset[] = [
   {
     symbol: "BTC",
     name: "Bitcoin",
@@ -75,6 +76,11 @@ const ASSETS: Asset[] = [
 ];
 
 const TIMEFRAMES = ["24س", "7أيام", "30يوم"] as const;
+
+function formatLivePrice(n: number): string {
+  if (n >= 1) return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
+  return `$${n.toLocaleString("en-US", { maximumFractionDigits: 4 })}`;
+}
 
 const TIPS = [
   { title: "نصيحة اليوم", text: "لا تدخل صفقة بدون وقف خسارة واضح مسبقاً.", icon: "shield" as const },
@@ -150,10 +156,26 @@ export default function PredictScreen() {
   const [selected, setSelected] = useState("BTC");
   const [tf, setTf] = useState<(typeof TIMEFRAMES)[number]>("7أيام");
   const [tipIndex, setTipIndex] = useState(0);
+  const { data: live } = useLiveMarkets();
+
+  const ASSETS = useMemo(() => {
+    if (!live) return BASE_ASSETS;
+    const bySymbol = new Map(live.map((c) => [c.symbol, c]));
+    return BASE_ASSETS.map((a) => {
+      const coin = bySymbol.get(a.symbol);
+      if (!coin) return a;
+      const sign = coin.change24h >= 0 ? "+" : "";
+      return {
+        ...a,
+        price: formatLivePrice(coin.price),
+        change: `${sign}${coin.change24h.toFixed(1)}%`,
+      };
+    });
+  }, [live]);
 
   const asset = useMemo(
     () => ASSETS.find((a) => a.symbol === selected) || ASSETS[0],
-    [selected],
+    [selected, ASSETS],
   );
 
   const marketScore = 64;
@@ -214,7 +236,7 @@ export default function PredictScreen() {
             <View style={styles.assetName}>
               <Text style={styles.assetSymbol}>{item.symbol}/USDT</Text>
               <Text style={styles.assetPrice}>
-                {item.price} · <Text style={{ color: CWAAX.green }}>{item.change}</Text>
+                {item.price} · <Text style={{ color: item.change.startsWith("-") ? CWAAX.red : CWAAX.green }}>{item.change}</Text>
               </Text>
             </View>
             <View style={styles.signal}>
