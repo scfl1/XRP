@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -14,8 +16,35 @@ import { router } from "expo-router";
 import { trpc } from "@/lib/trpc";
 import * as Auth from "@/lib/_core/auth";
 
+const COUNTRY_CODES = [
+  { code: "+966", flag: "🇸🇦", name: "السعودية" },
+  { code: "+971", flag: "🇦🇪", name: "الإمارات" },
+  { code: "+965", flag: "🇰🇼", name: "الكويت" },
+  { code: "+973", flag: "🇧🇭", name: "البحرين" },
+  { code: "+974", flag: "🇶🇦", name: "قطر" },
+  { code: "+968", flag: "🇴🇲", name: "عُمان" },
+  { code: "+20", flag: "🇪🇬", name: "مصر" },
+  { code: "+962", flag: "🇯🇴", name: "الأردن" },
+  { code: "+961", flag: "🇱🇧", name: "لبنان" },
+  { code: "+964", flag: "🇮🇶", name: "العراق" },
+  { code: "+963", flag: "🇸🇾", name: "سوريا" },
+  { code: "+967", flag: "🇾🇪", name: "اليمن" },
+  { code: "+212", flag: "🇲🇦", name: "المغرب" },
+  { code: "+216", flag: "🇹🇳", name: "تونس" },
+  { code: "+213", flag: "🇩🇿", name: "الجزائر" },
+  { code: "+218", flag: "🇱🇾", name: "ليبيا" },
+  { code: "+249", flag: "🇸🇩", name: "السودان" },
+  { code: "+1", flag: "🇺🇸", name: "الولايات المتحدة" },
+  { code: "+44", flag: "🇬🇧", name: "بريطانيا" },
+  { code: "+90", flag: "🇹🇷", name: "تركيا" },
+];
+
 export default function LoginScreen() {
+  const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [identifier, setIdentifier] = useState("");
+  const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+966");
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,8 +70,11 @@ export default function LoginScreen() {
   });
 
   const handleLogin = async () => {
-    if (!identifier.trim()) {
-      alert("يرجى إدخال البريد الإلكتروني أو رقم الهاتف");
+    const finalIdentifier =
+      loginMethod === "email" ? identifier.trim() : phone.trim() ? `${countryCode}${phone.trim()}` : "";
+
+    if (!finalIdentifier) {
+      alert(loginMethod === "email" ? "يرجى إدخال البريد الإلكتروني" : "يرجى إدخال رقم الهاتف");
       return;
     }
 
@@ -52,7 +84,7 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    loginMutation.mutate({ identifier: identifier.trim(), password });
+    loginMutation.mutate({ identifier: finalIdentifier, password });
   };
 
   return (
@@ -83,19 +115,95 @@ export default function LoginScreen() {
               قم بتسجيل الدخول إلى حسابك للمتابعة
             </Text>
 
-            {/* Email / Phone */}
-            <Text style={styles.label}>البريد الإلكتروني أو رقم الهاتف</Text>
+            {/* Login method tabs */}
+            <View style={styles.methodTabs}>
+              <Pressable
+                onPress={() => setLoginMethod("email")}
+                style={[styles.methodTab, loginMethod === "email" && styles.methodTabActive]}
+              >
+                <Text style={[styles.methodTabText, loginMethod === "email" && styles.methodTabTextActive]}>
+                  بريد إلكتروني
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setLoginMethod("phone")}
+                style={[styles.methodTab, loginMethod === "phone" && styles.methodTabActive]}
+              >
+                <Text style={[styles.methodTabText, loginMethod === "phone" && styles.methodTabTextActive]}>
+                  رقم هاتف
+                </Text>
+              </Pressable>
+            </View>
 
-            <TextInput
-              style={styles.input}
-              value={identifier}
-              onChangeText={setIdentifier}
-              placeholder="أدخل البريد الإلكتروني أو رقم الهاتف"
-              placeholderTextColor="#8A8F98"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              textAlign="right"
-            />
+            {loginMethod === "email" ? (
+              <>
+                <Text style={styles.label}>البريد الإلكتروني</Text>
+                <TextInput
+                  style={styles.input}
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  placeholder="أدخل البريد الإلكتروني"
+                  placeholderTextColor="#8A8F98"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  textAlign="right"
+                />
+              </>
+            ) : (
+              <>
+                <Text style={styles.label}>رقم الهاتف</Text>
+                <View style={{ position: "relative" }}>
+                  <View style={styles.phoneRow}>
+                    <Pressable
+                      onPress={() => setShowCountryPicker((v) => !v)}
+                      style={({ pressed }) => [styles.countryBtn, pressed && styles.pressed]}
+                    >
+                      <MaterialIcons name={showCountryPicker ? "expand-less" : "expand-more"} size={18} color="#8A8F98" />
+                      <Text style={styles.countryBtnText}>{countryCode}</Text>
+                      <Text style={styles.countryFlag}>{COUNTRY_CODES.find((c) => c.code === countryCode)?.flag}</Text>
+                    </Pressable>
+
+                    <TextInput
+                      style={[styles.input, styles.phoneInput]}
+                      value={phone}
+                      onChangeText={setPhone}
+                      placeholder="5XXXXXXXX"
+                      placeholderTextColor="#8A8F98"
+                      keyboardType="phone-pad"
+                      textAlign="right"
+                    />
+                  </View>
+
+                  {showCountryPicker && (
+                    <>
+                      <Pressable style={styles.pickerBackdrop} onPress={() => setShowCountryPicker(false)} />
+                      <View style={styles.countryList}>
+                        <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+                          {COUNTRY_CODES.map((c) => (
+                            <Pressable
+                              key={c.name}
+                              onPress={() => {
+                                setCountryCode(c.code);
+                                setShowCountryPicker(false);
+                              }}
+                              style={({ pressed }) => [
+                                styles.countryOption,
+                                c.code === countryCode && styles.countryOptionActive,
+                                pressed && styles.pressed,
+                              ]}
+                            >
+                              <Text style={styles.countryOptionCode}>{c.code}</Text>
+                              <Text style={styles.countryOptionName}>{c.name}</Text>
+                              <Text style={styles.countryFlag}>{c.flag}</Text>
+                            </Pressable>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    </>
+                  )}
+                </View>
+              </>
+            )}
 
             {/* Password */}
             <View style={styles.passwordHeader}>
@@ -255,6 +363,98 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 18,
   },
+
+  pressed: { opacity: 0.7 },
+
+  methodTabs: {
+    flexDirection: "row",
+    backgroundColor: "#F1F3F5",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 18,
+  },
+
+  methodTab: {
+    flex: 1,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 9,
+  },
+
+  methodTabActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+
+  methodTabText: { color: "#737984", fontSize: 14, fontWeight: "700" },
+
+  methodTabTextActive: { color: "#111827" },
+
+  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
+
+  phoneInput: { flex: 1, marginBottom: 0 },
+
+  countryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 52,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#DDE1E7",
+    borderRadius: 12,
+    backgroundColor: "#FAFBFC",
+  },
+
+  countryBtnText: { color: "#111827", fontSize: 15, fontWeight: "700" },
+
+  countryFlag: { fontSize: 18 },
+
+  pickerBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: -400,
+    right: -400,
+    bottom: -2000,
+    zIndex: 40,
+  },
+
+  countryList: {
+    position: "absolute",
+    top: 58,
+    right: 0,
+    width: 220,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E8EC",
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    zIndex: 50,
+  },
+
+  countryOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+
+  countryOptionActive: { backgroundColor: "#F0FBF6" },
+
+  countryOptionCode: { color: "#6B7280", fontSize: 13, fontWeight: "600" },
+
+  countryOptionName: { color: "#111827", fontSize: 14, fontWeight: "600" },
 
   passwordHeader: {
     flexDirection: "row-reverse",
