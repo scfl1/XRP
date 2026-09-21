@@ -29,7 +29,7 @@ export default function ReceiveScreen() {
 
   const createDeposit = trpc.wallet.createDeposit.useMutation({
     onSuccess: () => {
-      notify("تم إرسال الإشعار", "تم إبلاغ فريقنا بعملية الإيداع، سيراجعها الأدمن ويعتمدها قريباً.");
+      notify("تم ارسال طلبك");
       setShowConfirm(false);
       setSentAmount("");
     },
@@ -44,7 +44,7 @@ export default function ReceiveScreen() {
     }
     const confirmed = await confirmAsync(
       "تأكيد الإيداع",
-      `المبلغ: ${amount} USDT\nالشبكة: ${network.name}\n\nسيصل إشعار للأدمن ببريدك الإلكتروني والمبلغ ليتحقق من العملية ويعتمدها.`,
+      `المبلغ: ${amount} USDT\nالشبكة: ${network.name}`,
       "تأكيد وإرسال",
     );
     if (!confirmed) return;
@@ -77,11 +77,9 @@ export default function ReceiveScreen() {
   const handleShare = async () => {
     if (!address) return;
 
-    const shareText = `عنواني لاستقبال USDT على شبكة ${network.name}:\n${address}`;
+    const shareText = `عنواني لاستقبال USDT على شبكة \( {network.name}:\n \){address}`;
 
     if (typeof navigator === "undefined" || !("share" in navigator)) {
-      // Native share isn't available on this browser (e.g. desktop
-      // Safari) — fall back to copying the address instead.
       copyAddress();
       return;
     }
@@ -106,8 +104,6 @@ export default function ReceiveScreen() {
 
       await navigator.share(shareData);
     } catch (error) {
-      // AbortError just means the person closed the share sheet — not
-      // an actual failure, so stay silent.
       if (error instanceof Error && error.name !== "AbortError") {
         copyAddress();
       }
@@ -221,7 +217,7 @@ export default function ReceiveScreen() {
                     style={({ pressed }) => [styles.sentBtn, pressed && styles.pressed]}
                   >
                     <MaterialIcons name="check-circle-outline" size={17} color={CWAAX.white} />
-                    <Text style={styles.sentBtnText}>لقد أرسلت المبلغ بالفعل</Text>
+                    <Text style={styles.sentBtnText}>اضغط هنا للتأكيد ايداع</Text>
                   </Pressable>
                 ) : (
                   <View style={styles.confirmBox}>
@@ -235,9 +231,6 @@ export default function ReceiveScreen() {
                       style={styles.confirmInput}
                       textAlign="center"
                     />
-                    <Text style={styles.confirmHint}>
-                      سيصل إشعار للأدمن ببريدك الإلكتروني والمبلغ ليتحقق من العملية ويعتمدها.
-                    </Text>
                     <View style={styles.confirmActions}>
                       <Pressable onPress={() => setShowConfirm(false)} style={styles.confirmCancel}>
                         <Text style={styles.confirmCancelText}>إلغاء</Text>
