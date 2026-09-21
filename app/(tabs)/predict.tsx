@@ -82,12 +82,6 @@ function formatLivePrice(n: number): string {
   return `$${n.toLocaleString("en-US", { maximumFractionDigits: 4 })}`;
 }
 
-const TIPS = [
-  { title: "نصيحة اليوم", text: "لا تدخل صفقة بدون وقف خسارة واضح مسبقاً.", icon: "shield" as const },
-  { title: "إشارة محلية", text: "مؤشر السوق العام يميل للصعود هذا الأسبوع.", icon: "trending-up" as const },
-  { title: "إدارة رأس المال", text: "يفضّل ألا تتجاوز مخاطرة الصفقة الواحدة 2% من الرصيد.", icon: "account-balance-wallet" as const },
-];
-
 function Meter({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <View style={styles.meter}>
@@ -155,7 +149,6 @@ export default function PredictScreen() {
   const router = useRouter();
   const [selected, setSelected] = useState("BTC");
   const [tf, setTf] = useState<(typeof TIMEFRAMES)[number]>("7أيام");
-  const [tipIndex, setTipIndex] = useState(0);
   const { data: live } = useLiveMarkets();
 
   const ASSETS = useMemo(() => {
@@ -286,34 +279,6 @@ export default function PredictScreen() {
           <View style={styles.assetTip}>
             <MaterialIcons name="tips-and-updates" size={18} color={CWAAX.gold} />
             <Text style={styles.assetTipText}>{asset.tip}</Text>
-          </View>
-        </Card>
-
-        <Text style={styles.sectionLabel}>لمحات سريعة</Text>
-        <Card style={styles.tipCard}>
-          <View style={styles.tipHeader}>
-            <MaterialIcons name={TIPS[tipIndex].icon} size={20} color={CWAAX.green} />
-            <Text style={styles.tipTitle}>{TIPS[tipIndex].title}</Text>
-          </View>
-          <Text style={styles.tipText}>{TIPS[tipIndex].text}</Text>
-          <View style={styles.tipDots}>
-            {TIPS.map((_, i) => (
-              <Pressable
-                key={i}
-                onPress={() => setTipIndex(i)}
-                style={[styles.dot, i === tipIndex && styles.dotActive]}
-              />
-            ))}
-          </View>
-        </Card>
-
-        <Card style={styles.note}>
-          <MaterialIcons name="lightbulb-outline" size={20} color={CWAAX.gold} />
-          <View style={styles.noteCopy}>
-            <Text style={styles.noteTitle}>تنبيه</Text>
-            <Text style={styles.noteText}>
-              كل الأرقام هنا تقديرات محلية للعرض فقط، وليست بيانات حية أو توصية استثمار.
-            </Text>
           </View>
         </Card>
       </ScrollView>
