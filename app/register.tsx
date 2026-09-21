@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -14,11 +16,36 @@ import { router, useLocalSearchParams } from "expo-router";
 import { trpc } from "@/lib/trpc";
 import * as Auth from "@/lib/_core/auth";
 
+const COUNTRY_CODES = [
+  { code: "+966", flag: "🇸🇦", name: "السعودية" },
+  { code: "+971", flag: "🇦🇪", name: "الإمارات" },
+  { code: "+965", flag: "🇰🇼", name: "الكويت" },
+  { code: "+973", flag: "🇧🇭", name: "البحرين" },
+  { code: "+974", flag: "🇶🇦", name: "قطر" },
+  { code: "+968", flag: "🇴🇲", name: "عُمان" },
+  { code: "+20", flag: "🇪🇬", name: "مصر" },
+  { code: "+962", flag: "🇯🇴", name: "الأردن" },
+  { code: "+961", flag: "🇱🇧", name: "لبنان" },
+  { code: "+964", flag: "🇮🇶", name: "العراق" },
+  { code: "+963", flag: "🇸🇾", name: "سوريا" },
+  { code: "+967", flag: "🇾🇪", name: "اليمن" },
+  { code: "+212", flag: "🇲🇦", name: "المغرب" },
+  { code: "+216", flag: "🇹🇳", name: "تونس" },
+  { code: "+213", flag: "🇩🇿", name: "الجزائر" },
+  { code: "+218", flag: "🇱🇾", name: "ليبيا" },
+  { code: "+249", flag: "🇸🇩", name: "السودان" },
+  { code: "+1", flag: "🇺🇸", name: "الولايات المتحدة" },
+  { code: "+44", flag: "🇬🇧", name: "بريطانيا" },
+  { code: "+90", flag: "🇹🇷", name: "تركيا" },
+];
+
 export default function RegisterScreen() {
   const params = useLocalSearchParams<{ ref?: string }>();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+966");
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -103,6 +130,7 @@ export default function RegisterScreen() {
       email: email.trim(),
       password,
       referralCode: referralCode.trim() || undefined,
+      phone: phone.trim() ? `${countryCode}${phone.trim()}` : undefined,
     });
   };
 
@@ -170,15 +198,56 @@ export default function RegisterScreen() {
             {/* Phone */}
             <Text style={styles.label}>رقم الهاتف</Text>
 
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="أدخل رقم الهاتف"
-              placeholderTextColor="#8A8F98"
-              keyboardType="phone-pad"
-              textAlign="right"
-            />
+            <View style={{ position: "relative" }}>
+              <View style={styles.phoneRow}>
+                <Pressable
+                  onPress={() => setShowCountryPicker((v) => !v)}
+                  style={({ pressed }) => [styles.countryBtn, pressed && styles.pressed]}
+                >
+                  <MaterialIcons name={showCountryPicker ? "expand-less" : "expand-more"} size={18} color="#8A8F98" />
+                  <Text style={styles.countryBtnText}>{countryCode}</Text>
+                  <Text style={styles.countryFlag}>{COUNTRY_CODES.find((c) => c.code === countryCode)?.flag}</Text>
+                </Pressable>
+
+                <TextInput
+                  style={[styles.input, styles.phoneInput]}
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="5XXXXXXXX"
+                  placeholderTextColor="#8A8F98"
+                  keyboardType="phone-pad"
+                  textAlign="right"
+                />
+              </View>
+
+              {showCountryPicker && (
+                <>
+                  <Pressable style={styles.pickerBackdrop} onPress={() => setShowCountryPicker(false)} />
+                  <View style={styles.countryList}>
+                    <ScrollView style={{ maxHeight: 260 }} showsVerticalScrollIndicator={false}>
+                      {COUNTRY_CODES.map((c) => (
+                        <Pressable
+                          key={c.name}
+                          onPress={() => {
+                            setCountryCode(c.code);
+                            setShowCountryPicker(false);
+                          }}
+                          style={({ pressed }) => [
+                            styles.countryOption,
+                            c.code === countryCode && styles.countryOptionActive,
+                            pressed && styles.pressed,
+                          ]}
+                        >
+                          <Text style={styles.countryOptionCode}>{c.code}</Text>
+                          <Text style={styles.countryOptionName}>{c.name}</Text>
+                          <Text style={styles.countryFlag}>{c.flag}</Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                </>
+              )}
+            </View>
 
             {/* Password */}
             <View style={styles.passwordHeader}>
@@ -385,6 +454,69 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 17,
   },
+
+  pressed: { opacity: 0.7 },
+
+  phoneRow: { flexDirection: "row", gap: 10, marginBottom: 17 },
+
+  phoneInput: { flex: 1, marginBottom: 0 },
+
+  countryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 52,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#DDE1E7",
+    borderRadius: 12,
+    backgroundColor: "#FAFBFC",
+  },
+
+  countryBtnText: { color: "#111827", fontSize: 15, fontWeight: "700" },
+
+  countryFlag: { fontSize: 18 },
+
+  pickerBackdrop: {
+    position: "absolute",
+    top: 0,
+    left: -400,
+    right: -400,
+    bottom: -2000,
+    zIndex: 40,
+  },
+
+  countryList: {
+    position: "absolute",
+    top: 58,
+    right: 0,
+    width: 220,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E8EC",
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 12,
+    zIndex: 50,
+  },
+
+  countryOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+
+  countryOptionActive: { backgroundColor: "#F0FBF6" },
+
+  countryOptionCode: { color: "#6B7280", fontSize: 13, fontWeight: "600" },
+
+  countryOptionName: { color: "#111827", fontSize: 14, fontWeight: "600" },
 
   passwordHeader: {
     flexDirection: "row-reverse",
