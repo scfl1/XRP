@@ -202,7 +202,7 @@ export default function RegisterScreen() {
             {/* Phone */}
             <Text style={styles.label}>رقم الهاتف</Text>
 
-            <View style={[styles.phonePickerContainer, showCountryPicker && styles.phonePickerOpen]}>
+            <View style={styles.phonePickerContainer}>
               <View style={styles.phoneRow}>
                 <Pressable
                   onPress={() => setShowCountryPicker((v) => !v)}
@@ -461,11 +461,30 @@ const styles = StyleSheet.create({
 
   pressed: { opacity: 0.7 },
 
-  phoneRow: {\n    width: "100%",\n    flexDirection: "row",\n    gap: 10,\n    marginBottom: 17,\n    alignItems: "stretch",\n  },
+  phonePickerContainer: {
+    position: "relative",
+    zIndex: 1000,
+    elevation: 1000,
+  },
 
-  phoneInput: {\n    flex: 1,\n    width: 0,\n    minWidth: 0,\n    flexShrink: 1,\n    marginBottom: 0,\n  },
+  phoneRow: {
+    width: "100%",
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 17,
+    alignItems: "stretch",
+  },
+
+  phoneInput: {
+    flex: 1,
+    width: 0,
+    minWidth: 0,
+    flexShrink: 1,
+    marginBottom: 0,
+  },
 
   countryBtn: {
+    flexShrink: 0,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -487,7 +506,8 @@ const styles = StyleSheet.create({
     left: -400,
     right: -400,
     bottom: -2000,
-    zIndex: 1000,\n    elevation: 1000,
+    zIndex: 1001,
+    elevation: 1001,
   },
 
   countryList: {
@@ -505,7 +525,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
     elevation: 12,
-    zIndex: 50,
+    zIndex: 1002,
+    elevation: 1002,
   },
 
   countryOption: {
