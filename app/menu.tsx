@@ -15,10 +15,10 @@ const common = [
 ];
 
 const trading = [
-  { label: "العقود الآجلة", icon: "show-chart" as const },
-  { label: "معركة السوق", icon: "flash-on" as const },
-  { label: "تجارة الاتجاه", icon: "insights" as const },
-  { label: "Tap Grid", icon: "grid-view" as const },
+  { label: "العقود الآجلة", icon: "show-chart" as const, route: "/(tabs)/trade" },
+  { label: "معركة السوق", icon: "flash-on" as const, route: "/(tabs)/trade" },
+  { label: "تجارة الاتجاه", icon: "insights" as const, route: "/(tabs)/trade" },
+  { label: "تأكيد الهوية", icon: "badge" as const, route: "/verify-identity" },
 ];
 
 export default function MenuScreen() {
@@ -105,11 +105,15 @@ export default function MenuScreen() {
         {trading.map((item) => (
           <Pressable
             key={item.label}
-            onPress={() => router.push("/(tabs)/trade")}
+            onPress={() => router.push(item.route as never)}
             style={({ pressed }) => [styles.menuRow, pressed && styles.pressed]}
           >
-            <View style={[styles.menuIcon, { backgroundColor: "#F2F0FF" }]}>
-              <MaterialIcons name={item.icon} size={19} color={CWAAX.purple} />
+            <View style={[styles.menuIcon, { backgroundColor: item.route === "/verify-identity" ? CWAAX.greenSoft : "#F2F0FF" }]}>
+              <MaterialIcons
+                name={item.icon}
+                size={19}
+                color={item.route === "/verify-identity" ? CWAAX.green : CWAAX.purple}
+              />
             </View>
             <Text style={styles.menuLabel}>{item.label}</Text>
             <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
