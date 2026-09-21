@@ -14,30 +14,10 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconButton } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
 import { notify } from "@/lib/_core/native-alert";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const STORAGE_KEY = "cwaax_identity_verified";
+import * as Auth from "@/lib/_core/auth";
+import { isIdentityVerified, markIdentityVerified } from "@/lib/identity-verification";
 
 type DocType = "id" | "passport" | null;
-
-async function readVerified(): Promise<boolean> {
-  try {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      return window.localStorage.getItem(STORAGE_KEY) === "1";
-    }
-    return (await AsyncStorage.getItem(STORAGE_KEY)) === "1";
-  } catch {
-    return false;
-  }
-}
-
-async function writeVerified(): Promise<void> {
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, "1");
-    return;
-  }
-  await AsyncStorage.setItem(STORAGE_KEY, "1");
-}
 
 function pickImageFromDevice(): Promise<string | null> {
   return new Promise((resolve) => {
@@ -71,16 +51,29 @@ function pickImageFromDevice(): Promise<string | null> {
 export default function VerifyIdentityScreen() {
   const router = useRouter();
   const [verified, setVerified] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [docType, setDocType] = useState<DocType>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    void readVerified().then((v) => {
+    let active = true;
+    void (async () => {
+      const user = await Auth.getUserInfo();
+      if (!active) return;
+      if (!user?.id) {
+        setVerified(false);
+        setLoading(false);
+        return;
+      }
+      setUserId(user.id);
+      const v = await isIdentityVerified(user.id);
+      if (!active) return;
       setVerified(v);
       setLoading(false);
-    });
+    })();
+    return () => { active = false; };
   }, []);
 
   const onPick = useCallback(async (type: DocType) => {
@@ -104,9 +97,13 @@ export default function VerifyIdentityScreen() {
       notify("أضف صورة", "التقط أو اختر صورة للوثيقة قبل التأكيد.");
       return;
     }
+    if (!userId) {
+      notify("الحساب غير متاح", "سجّل الدخول إلى الحساب ثم أعد المحاولة.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await writeVerified();
+      await markIdentityVerified(userId);
       setVerified(true);
       notify("تم توثيق الحساب بهوية");
     } finally {
@@ -142,7 +139,7 @@ export default function VerifyIdentityScreen() {
             </View>
             <Text style={styles.doneTitle}>تم توثيق الحساب بهوية</Text>
             <Text style={styles.doneSub}>
-              حسابك موثّق محلياً على هذا الجهاز. لن يُطلب منك إعادة رفع الهوية مرة أخرى هنا.
+              تم حفظ تأكيد الهوية محلياً لهذا الحساب على هذا الجهاز. إذا استخدمت حساباً آخر، سيُطلب منه تأكيد الهوية بشكل مستقل.
             </Text>
           </View>
         ) : (
