@@ -187,7 +187,6 @@ export default function PredictScreen() {
 
         <Text style={styles.kicker}>تحليلات مبسطة</Text>
         <Text style={styles.title}>توقع السوق</Text>
-        <Text style={styles.subtitle}>إشارات محلية تساعدك على رؤية أوضح — ليست نصيحة مالية</Text>
 
         <Card style={styles.hero}>
           <View style={styles.heroIcon}>
