@@ -46,6 +46,13 @@ export default function SendScreen() {
 
   const network = getNetwork(networkCode);
   const amount = Number(display) || 0;
+  const addressValid = address.trim().length >= 20;
+  const canSend =
+    amount > 0 &&
+    amount <= usdt &&
+    addressValid &&
+    !network.internal &&
+    !createWithdrawal.isPending;
 
   const pressDigit = (d: string) => {
     setDisplay((cur) => {
@@ -62,7 +69,6 @@ export default function SendScreen() {
 
   const pressOp = (op: PendingOp["op"]) => {
     const current = Number(display) || 0;
-
     if (pending) {
       const result = applyOp(pending.base, pending.op, current);
       setPending({ op, base: result });
@@ -70,20 +76,17 @@ export default function SendScreen() {
     } else {
       setPending({ op, base: current });
     }
-
     setDisplay("0");
   };
 
   const finalizeAmount = (): number => {
     const current = Number(display) || 0;
-
     if (pending) {
       const result = applyOp(pending.base, pending.op, current);
       setPending(null);
       setDisplay(String(result));
       return result;
     }
-
     return current;
   };
 
@@ -114,10 +117,7 @@ export default function SendScreen() {
     }
 
     if (address.trim().length < 20) {
-      notify(
-        "عنوان غير صالح",
-        "أدخل عنوان محفظة صحيحاً على شبكة " + network.name + ".",
-      );
+      notify("عنوان غير صالح", "أدخل عنوان محفظة صحيحاً على شبكة " + network.name + ".");
       return;
     }
 
@@ -126,16 +126,10 @@ export default function SendScreen() {
       `المبلغ: ${finalAmount} USDT\nالشبكة: ${network.name}\nالعنوان: ${address.trim()}\n\nلا يمكن التراجع عن التحويل بعد إرساله.`,
       "تأكيد وإرسال",
     );
-
     if (!confirmed) return;
 
     createWithdrawal.mutate(
-      {
-        currency: "USDT",
-        amount: finalAmount,
-        network: network.code,
-        address: address.trim(),
-      },
+      { currency: "USDT", amount: finalAmount, network: network.code, address: address.trim() },
       {
         onSuccess: () => {
           notify(
@@ -144,8 +138,7 @@ export default function SendScreen() {
             () => router.back(),
           );
         },
-        onError: (err) =>
-          notify("تعذر إرسال الطلب", err.message || "حاول مرة أخرى."),
+        onError: (err) => notify("تعذر إرسال الطلب", err.message || "حاول مرة أخرى."),
       },
     );
   };
@@ -159,38 +152,19 @@ export default function SendScreen() {
   ];
 
   return (
-    <ScreenContainer
-      className="px-5"
-      edges={["top", "left", "right"]}
-    >
+    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => router.push("/network-select")}
-          style={styles.networkPill}
-        >
-          <MaterialIcons
-            name="unfold-more"
-            size={16}
-            color={CWAAX.ink}
-          />
-
+        <Pressable onPress={() => router.push("/network-select")} style={styles.networkPill}>
+          <MaterialIcons name="unfold-more" size={16} color={CWAAX.ink} />
           <View>
             <Text style={styles.networkLabel}>الشبكة/السلسلة</Text>
             <Text style={styles.networkValue}>{network.name}</Text>
           </View>
-
           <NetworkIcon network={network} size={20} />
         </Pressable>
 
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={10}
-        >
-          <MaterialIcons
-            name="chevron-left"
-            size={26}
-            color={CWAAX.ink}
-          />
+        <Pressable onPress={() => router.back()} hitSlop={10}>
+          <MaterialIcons name="chevron-left" size={26} color={CWAAX.ink} />
         </Pressable>
       </View>
 
@@ -205,49 +179,38 @@ export default function SendScreen() {
           <Text style={styles.sendLabel}>إرسال</Text>
         </View>
 
-        <Text
-          style={styles.amount}
-          numberOfLines={1}
-        >
+        <Text style={[styles.amount, amount > 0 && styles.amountActive]} numberOfLines={1}>
           {display}
         </Text>
 
         <View style={styles.usdRow}>
-          <Text style={styles.usdValue}>
-            ${amount.toFixed(2)}
-          </Text>
-
+          <Text style={styles.usdValue}>${amount.toFixed(2)}</Text>
           <Text style={styles.usdLabel}>USD</Text>
         </View>
 
-        <View style={styles.addressRow}>
+        <View style={[styles.addressRow, addressValid && styles.addressRowValid]}>
+          <Pressable onPress={() => router.push("/qr-scanner")} hitSlop={8}>
+            <MaterialIcons name="qr-code-scanner" size={19} color={CWAAX.muted} />
+          </Pressable>
           <Pressable
-            onPress={() => router.push("/qr-scanner")}
+            onPress={async () => {
+              try {
+                if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+                  const text = (await navigator.clipboard.readText()).trim();
+                  if (text) {
+                    setAddress(text);
+                    return;
+                  }
+                }
+              } catch {
+                /* ignore */
+              }
+              notify("لصق العنوان", "الصق العنوان يدوياً داخل الحقل، أو استخدم زر الماسح.");
+            }}
             hitSlop={8}
           >
-            <MaterialIcons
-              name="qr-code-scanner"
-              size={19}
-              color={CWAAX.muted}
-            />
+            <MaterialIcons name="content-paste" size={19} color={CWAAX.muted} />
           </Pressable>
-
-          <Pressable
-            onPress={() =>
-              notify(
-                "لصق العنوان",
-                "اضغط مطولاً داخل الحقل للصق العنوان من الحافظة.",
-              )
-            }
-            hitSlop={8}
-          >
-            <MaterialIcons
-              name="content-paste"
-              size={19}
-              color={CWAAX.muted}
-            />
-          </Pressable>
-
           <TextInput
             style={styles.addressInput}
             value={address}
@@ -255,54 +218,32 @@ export default function SendScreen() {
             placeholder="عنوان المحفظة"
             placeholderTextColor="#9CA8A1"
             textAlign="right"
+            autoCapitalize="none"
+            autoCorrect={false}
           />
-
-          <Text style={styles.addressLabel}>
-            إرسال إلى
-          </Text>
+          <Text style={styles.addressLabel}>إرسال إلى</Text>
         </View>
 
+        {/* تم حذف «إضافة أموال» — لم يعد يفتح صفحة الإيداع مرة ثانية */}
         <View style={styles.quickRow}>
           <View style={{ flex: 1 }} />
-
-          <Pressable
-            onPress={() => setPercent(0.25)}
-          >
+          <Pressable onPress={() => setPercent(0.25)}>
             <Text style={styles.pct}>25%</Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => setPercent(0.5)}
-          >
+          <Pressable onPress={() => setPercent(0.5)}>
             <Text style={styles.pct}>50%</Text>
           </Pressable>
-
-          <Pressable
-            onPress={() => setPercent(1)}
-          >
-            <Text
-              style={[
-                styles.pct,
-                { color: CWAAX.green },
-              ]}
-            >
-              MAX
-            </Text>
+          <Pressable onPress={() => setPercent(1)}>
+            <Text style={[styles.pct, { color: CWAAX.green }]}>MAX</Text>
           </Pressable>
         </View>
 
         <View style={styles.balanceRow}>
           <View style={styles.balancePill}>
             <UsdtIcon size={16} />
-
-            <Text style={styles.balanceText}>
-              {usdt.toFixed(2)} USDT
-            </Text>
+            <Text style={styles.balanceText}>{usdt.toFixed(2)} USDT</Text>
           </View>
-
-          <Text style={styles.balanceLabel}>
-            رصيد المحفظة
-          </Text>
+          <Text style={styles.balanceLabel}>رصيد المحفظة</Text>
         </View>
 
         <View style={styles.keypad}>
@@ -313,58 +254,34 @@ export default function SendScreen() {
                 onPress={() => pressOp(op)}
                 style={({ pressed }) => [
                   styles.opKey,
-                  pending?.op === op &&
-                    styles.opKeyActive,
+                  pending?.op === op && styles.opKeyActive,
                   pressed && styles.pressed,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.opText,
-                    pending?.op === op &&
-                      styles.opTextActive,
-                  ]}
-                >
-                  {op}
-                </Text>
+                <Text style={[styles.opText, pending?.op === op && styles.opTextActive]}>{op}</Text>
               </Pressable>
             ))}
           </View>
 
           <View style={styles.digitsGrid}>
             {ROWS.map((row, i) => (
-              <View
-                key={i}
-                style={styles.digitRow}
-              >
+              <View key={i} style={styles.digitRow}>
                 {row.map((d) =>
                   d === "back" ? (
                     <Pressable
                       key={d}
                       onPress={pressBackspace}
-                      style={({ pressed }) => [
-                        styles.digitKey,
-                        pressed && styles.pressed,
-                      ]}
+                      style={({ pressed }) => [styles.digitKey, pressed && styles.pressed]}
                     >
-                      <MaterialIcons
-                        name="backspace"
-                        size={18}
-                        color={CWAAX.ink}
-                      />
+                      <MaterialIcons name="backspace" size={18} color={CWAAX.ink} />
                     </Pressable>
                   ) : (
                     <Pressable
                       key={d}
                       onPress={() => pressDigit(d)}
-                      style={({ pressed }) => [
-                        styles.digitKey,
-                        pressed && styles.pressed,
-                      ]}
+                      style={({ pressed }) => [styles.digitKey, pressed && styles.pressed]}
                     >
-                      <Text style={styles.digitText}>
-                        {d}
-                      </Text>
+                      <Text style={styles.digitText}>{d}</Text>
                     </Pressable>
                   ),
                 )}
@@ -379,15 +296,12 @@ export default function SendScreen() {
         disabled={createWithdrawal.isPending}
         style={({ pressed }) => [
           styles.submit,
-          (pressed ||
-            createWithdrawal.isPending) &&
-            styles.pressed,
+          canSend && styles.submitActive,
+          (pressed || createWithdrawal.isPending) && styles.pressed,
         ]}
       >
         <Text style={styles.submitText}>
-          {createWithdrawal.isPending
-            ? "جاري الإرسال..."
-            : "إرسال"}
+          {createWithdrawal.isPending ? "جاري الإرسال..." : "إرسال"}
         </Text>
       </Pressable>
     </ScreenContainer>
@@ -402,7 +316,6 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     marginBottom: 10,
   },
-
   networkPill: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -412,30 +325,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-
-  networkLabel: {
-    color: CWAAX.muted,
-    fontSize: 9,
-    textAlign: "right",
-  },
-
-  networkValue: {
-    color: CWAAX.ink,
-    fontSize: 13,
-    fontWeight: "900",
-    textAlign: "right",
-  },
-
-  networkDot: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-  },
-
-  content: {
-    paddingBottom: 20,
-  },
-
+  networkLabel: { color: CWAAX.muted, fontSize: 9, textAlign: "right" },
+  networkValue: { color: CWAAX.ink, fontSize: 13, fontWeight: "900", textAlign: "right" },
+  networkDot: { width: 18, height: 18, borderRadius: 9 },
+  content: { paddingBottom: 20 },
   currencyRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -443,44 +336,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 14,
   },
-
-  currencyText: {
-    color: CWAAX.ink,
-    fontSize: 17,
-    fontWeight: "900",
-  },
-
-  sendLabel: {
-    color: CWAAX.muted,
-    fontSize: 15,
-  },
-
-  amount: {
-    color: "#B9C2BD",
-    fontSize: 52,
-    fontWeight: "800",
-    textAlign: "center",
-    marginTop: 14,
-  },
-
-  usdRow: {
-    flexDirection: "row-reverse",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 6,
-  },
-
-  usdValue: {
-    color: CWAAX.muted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  usdLabel: {
-    color: CWAAX.muted,
-    fontSize: 13,
-  },
-
+  currencyText: { color: CWAAX.ink, fontSize: 17, fontWeight: "900" },
+  sendLabel: { color: CWAAX.muted, fontSize: 15 },
+  amount: { color: "#B9C2BD", fontSize: 52, fontWeight: "800", textAlign: "center", marginTop: 14 },
+  amountActive: { color: CWAAX.ink },
+  usdRow: { flexDirection: "row-reverse", justifyContent: "center", gap: 6, marginTop: 6 },
+  usdValue: { color: CWAAX.muted, fontSize: 13, fontWeight: "700" },
+  usdLabel: { color: CWAAX.muted, fontSize: 13 },
   addressRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -492,66 +354,22 @@ const styles = StyleSheet.create({
     height: 56,
     marginTop: 26,
   },
-
-  addressInput: {
-    flex: 1,
-    color: CWAAX.ink,
-    fontSize: 13,
-  },
-
-  addressLabel: {
-    color: CWAAX.muted,
-    fontSize: 12,
-  },
-
-  quickRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 16,
-    marginTop: 20,
-  },
-
-  pct: {
-    color: CWAAX.ink,
-    fontSize: 12,
-    fontWeight: "900",
-  },
-
+  addressRowValid: { borderColor: CWAAX.green },
+  addressInput: { flex: 1, color: CWAAX.ink, fontSize: 13 },
+  addressLabel: { color: CWAAX.muted, fontSize: 12 },
+  quickRow: { flexDirection: "row-reverse", alignItems: "center", gap: 16, marginTop: 20 },
+  pct: { color: CWAAX.ink, fontSize: 12, fontWeight: "900" },
   balanceRow: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: 14,
   },
-
-  balancePill: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 6,
-  },
-
-  balanceText: {
-    color: CWAAX.ink,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-
-  balanceLabel: {
-    color: CWAAX.muted,
-    fontSize: 11,
-  },
-
-  keypad: {
-    flexDirection: "row",
-    marginTop: 18,
-    gap: 8,
-  },
-
-  opsCol: {
-    width: 66,
-    gap: 8,
-  },
-
+  balancePill: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
+  balanceText: { color: CWAAX.ink, fontSize: 13, fontWeight: "900" },
+  balanceLabel: { color: CWAAX.muted, fontSize: 11 },
+  keypad: { flexDirection: "row", marginTop: 18, gap: 8 },
+  opsCol: { width: 66, gap: 8 },
   opKey: {
     flex: 1,
     backgroundColor: CWAAX.surface,
@@ -559,45 +377,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  opKeyActive: {
-    backgroundColor: CWAAX.green,
-  },
-
-  opText: {
-    color: CWAAX.ink,
-    fontSize: 20,
-    fontWeight: "800",
-  },
-
-  opTextActive: {
-    color: CWAAX.white,
-  },
-
-  digitsGrid: {
-    flex: 1,
-    gap: 8,
-  },
-
-  digitRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-
+  opKeyActive: { backgroundColor: CWAAX.green },
+  opText: { color: CWAAX.ink, fontSize: 20, fontWeight: "800" },
+  opTextActive: { color: CWAAX.white },
+  digitsGrid: { flex: 1, gap: 8 },
+  digitRow: { flexDirection: "row", gap: 8 },
   digitKey: {
     flex: 1,
     height: 58,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
+    backgroundColor: CWAAX.surface,
   },
-
-  digitText: {
-    color: CWAAX.ink,
-    fontSize: 24,
-    fontWeight: "700",
-  },
-
+  digitText: { color: CWAAX.ink, fontSize: 24, fontWeight: "700" },
   submit: {
     backgroundColor: "#CBD5CF",
     height: 54,
@@ -607,14 +400,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     marginBottom: 8,
   },
-
-  submitText: {
-    color: CWAAX.white,
-    fontSize: 15,
-    fontWeight: "900",
-  },
-
-  pressed: {
-    opacity: 0.6,
-  },
+  submitActive: { backgroundColor: CWAAX.green },
+  submitText: { color: CWAAX.white, fontSize: 15, fontWeight: "900" },
+  pressed: { opacity: 0.6 },
 });
