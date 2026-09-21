@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -62,6 +62,7 @@ export default function SendScreen() {
 
   const pressOp = (op: PendingOp["op"]) => {
     const current = Number(display) || 0;
+
     if (pending) {
       const result = applyOp(pending.base, pending.op, current);
       setPending({ op, base: result });
@@ -69,17 +70,20 @@ export default function SendScreen() {
     } else {
       setPending({ op, base: current });
     }
+
     setDisplay("0");
   };
 
   const finalizeAmount = (): number => {
     const current = Number(display) || 0;
+
     if (pending) {
       const result = applyOp(pending.base, pending.op, current);
       setPending(null);
       setDisplay(String(result));
       return result;
     }
+
     return current;
   };
 
@@ -102,12 +106,18 @@ export default function SendScreen() {
     }
 
     if (network.internal) {
-      notify("غير متاح حالياً", "التحويل الداخلي بين حسابات CwaAX قيد التطوير ولم يُفعَّل بعد. اختر شبكة بلوكتشين حقيقية للإرسال.");
+      notify(
+        "غير متاح حالياً",
+        "التحويل الداخلي بين حسابات CwaAX قيد التطوير ولم يُفعَّل بعد. اختر شبكة بلوكتشين حقيقية للإرسال.",
+      );
       return;
     }
 
     if (address.trim().length < 20) {
-      notify("عنوان غير صالح", "أدخل عنوان محفظة صحيحاً على شبكة " + network.name + ".");
+      notify(
+        "عنوان غير صالح",
+        "أدخل عنوان محفظة صحيحاً على شبكة " + network.name + ".",
+      );
       return;
     }
 
@@ -116,60 +126,128 @@ export default function SendScreen() {
       `المبلغ: ${finalAmount} USDT\nالشبكة: ${network.name}\nالعنوان: ${address.trim()}\n\nلا يمكن التراجع عن التحويل بعد إرساله.`,
       "تأكيد وإرسال",
     );
+
     if (!confirmed) return;
 
     createWithdrawal.mutate(
-      { currency: "USDT", amount: finalAmount, network: network.code, address: address.trim() },
+      {
+        currency: "USDT",
+        amount: finalAmount,
+        network: network.code,
+        address: address.trim(),
+      },
       {
         onSuccess: () => {
-          notify("تم إرسال الطلب", `طلب إرسال ${finalAmount} USDT عبر ${network.name} قيد المراجعة.`, () => router.back());
+          notify(
+            "تم إرسال الطلب",
+            `طلب إرسال ${finalAmount} USDT عبر ${network.name} قيد المراجعة.`,
+            () => router.back(),
+          );
         },
-        onError: (err) => notify("تعذر إرسال الطلب", err.message || "حاول مرة أخرى."),
+        onError: (err) =>
+          notify("تعذر إرسال الطلب", err.message || "حاول مرة أخرى."),
       },
     );
   };
 
   const OPS: PendingOp["op"][] = ["+", "-", "×", "÷"];
-  const ROWS = [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], [".", "0", "back"]];
+  const ROWS = [
+    ["7", "8", "9"],
+    ["4", "5", "6"],
+    ["1", "2", "3"],
+    [".", "0", "back"],
+  ];
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
+    <ScreenContainer
+      className="px-5"
+      edges={["top", "left", "right"]}
+    >
       <View style={styles.header}>
-        <Pressable onPress={() => router.push("/network-select")} style={styles.networkPill}>
-          <MaterialIcons name="unfold-more" size={16} color={CWAAX.ink} />
+        <Pressable
+          onPress={() => router.push("/network-select")}
+          style={styles.networkPill}
+        >
+          <MaterialIcons
+            name="unfold-more"
+            size={16}
+            color={CWAAX.ink}
+          />
+
           <View>
             <Text style={styles.networkLabel}>الشبكة/السلسلة</Text>
             <Text style={styles.networkValue}>{network.name}</Text>
           </View>
+
           <NetworkIcon network={network} size={20} />
         </Pressable>
 
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <MaterialIcons name="chevron-left" size={26} color={CWAAX.ink} />
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={10}
+        >
+          <MaterialIcons
+            name="chevron-left"
+            size={26}
+            color={CWAAX.ink}
+          />
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.currencyRow}>
           <UsdtIcon size={22} />
           <Text style={styles.currencyText}>USDT</Text>
           <Text style={styles.sendLabel}>إرسال</Text>
         </View>
 
-        <Text style={styles.amount} numberOfLines={1}>{display}</Text>
+        <Text
+          style={styles.amount}
+          numberOfLines={1}
+        >
+          {display}
+        </Text>
 
         <View style={styles.usdRow}>
-          <Text style={styles.usdValue}>${amount.toFixed(2)}</Text>
+          <Text style={styles.usdValue}>
+            ${amount.toFixed(2)}
+          </Text>
+
           <Text style={styles.usdLabel}>USD</Text>
         </View>
 
         <View style={styles.addressRow}>
-          <Pressable onPress={() => router.push("/qr-scanner")} hitSlop={8}>
-            <MaterialIcons name="qr-code-scanner" size={19} color={CWAAX.muted} />
+          <Pressable
+            onPress={() => router.push("/qr-scanner")}
+            hitSlop={8}
+          >
+            <MaterialIcons
+              name="qr-code-scanner"
+              size={19}
+              color={CWAAX.muted}
+            />
           </Pressable>
-          <Pressable onPress={() => notify("لصق العنوان", "اضغط مطولاً داخل الحقل للصق العنوان من الحافظة.")} hitSlop={8}>
-            <MaterialIcons name="content-paste" size={19} color={CWAAX.muted} />
+
+          <Pressable
+            onPress={() =>
+              notify(
+                "لصق العنوان",
+                "اضغط مطولاً داخل الحقل للصق العنوان من الحافظة.",
+              )
+            }
+            hitSlop={8}
+          >
+            <MaterialIcons
+              name="content-paste"
+              size={19}
+              color={CWAAX.muted}
+            />
           </Pressable>
+
           <TextInput
             style={styles.addressInput}
             value={address}
@@ -178,25 +256,53 @@ export default function SendScreen() {
             placeholderTextColor="#9CA8A1"
             textAlign="right"
           />
-          <Text style={styles.addressLabel}>إرسال إلى</Text>
+
+          <Text style={styles.addressLabel}>
+            إرسال إلى
+          </Text>
         </View>
 
         <View style={styles.quickRow}>
-          <Pressable onPress={() => router.push("/deposit")}>
-            <Text style={styles.addFunds}>إضافة أموال</Text>
-          </Pressable>
           <View style={{ flex: 1 }} />
-          <Pressable onPress={() => setPercent(0.25)}><Text style={styles.pct}>25%</Text></Pressable>
-          <Pressable onPress={() => setPercent(0.5)}><Text style={styles.pct}>50%</Text></Pressable>
-          <Pressable onPress={() => setPercent(1)}><Text style={[styles.pct, { color: CWAAX.green }]}>MAX</Text></Pressable>
+
+          <Pressable
+            onPress={() => setPercent(0.25)}
+          >
+            <Text style={styles.pct}>25%</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setPercent(0.5)}
+          >
+            <Text style={styles.pct}>50%</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setPercent(1)}
+          >
+            <Text
+              style={[
+                styles.pct,
+                { color: CWAAX.green },
+              ]}
+            >
+              MAX
+            </Text>
+          </Pressable>
         </View>
 
         <View style={styles.balanceRow}>
           <View style={styles.balancePill}>
             <UsdtIcon size={16} />
-            <Text style={styles.balanceText}>{usdt.toFixed(2)} USDT</Text>
+
+            <Text style={styles.balanceText}>
+              {usdt.toFixed(2)} USDT
+            </Text>
           </View>
-          <Text style={styles.balanceLabel}>رصيد المحفظة</Text>
+
+          <Text style={styles.balanceLabel}>
+            رصيد المحفظة
+          </Text>
         </View>
 
         <View style={styles.keypad}>
@@ -205,24 +311,60 @@ export default function SendScreen() {
               <Pressable
                 key={op}
                 onPress={() => pressOp(op)}
-                style={({ pressed }) => [styles.opKey, pending?.op === op && styles.opKeyActive, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.opKey,
+                  pending?.op === op &&
+                    styles.opKeyActive,
+                  pressed && styles.pressed,
+                ]}
               >
-                <Text style={[styles.opText, pending?.op === op && styles.opTextActive]}>{op}</Text>
+                <Text
+                  style={[
+                    styles.opText,
+                    pending?.op === op &&
+                      styles.opTextActive,
+                  ]}
+                >
+                  {op}
+                </Text>
               </Pressable>
             ))}
           </View>
 
           <View style={styles.digitsGrid}>
             {ROWS.map((row, i) => (
-              <View key={i} style={styles.digitRow}>
+              <View
+                key={i}
+                style={styles.digitRow}
+              >
                 {row.map((d) =>
                   d === "back" ? (
-                    <Pressable key={d} onPress={pressBackspace} style={({ pressed }) => [styles.digitKey, pressed && styles.pressed]}>
-                      <MaterialIcons name="backspace" size={18} color={CWAAX.ink} />
+                    <Pressable
+                      key={d}
+                      onPress={pressBackspace}
+                      style={({ pressed }) => [
+                        styles.digitKey,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <MaterialIcons
+                        name="backspace"
+                        size={18}
+                        color={CWAAX.ink}
+                      />
                     </Pressable>
                   ) : (
-                    <Pressable key={d} onPress={() => pressDigit(d)} style={({ pressed }) => [styles.digitKey, pressed && styles.pressed]}>
-                      <Text style={styles.digitText}>{d}</Text>
+                    <Pressable
+                      key={d}
+                      onPress={() => pressDigit(d)}
+                      style={({ pressed }) => [
+                        styles.digitKey,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text style={styles.digitText}>
+                        {d}
+                      </Text>
                     </Pressable>
                   ),
                 )}
@@ -232,48 +374,247 @@ export default function SendScreen() {
         </View>
       </ScrollView>
 
-      <Pressable onPress={handleSend} disabled={createWithdrawal.isPending} style={({ pressed }) => [styles.submit, (pressed || createWithdrawal.isPending) && styles.pressed]}>
-        <Text style={styles.submitText}>{createWithdrawal.isPending ? "جاري الإرسال..." : "إرسال"}</Text>
+      <Pressable
+        onPress={handleSend}
+        disabled={createWithdrawal.isPending}
+        style={({ pressed }) => [
+          styles.submit,
+          (pressed ||
+            createWithdrawal.isPending) &&
+            styles.pressed,
+        ]}
+      >
+        <Text style={styles.submitText}>
+          {createWithdrawal.isPending
+            ? "جاري الإرسال..."
+            : "إرسال"}
+        </Text>
       </Pressable>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", paddingTop: 12, marginBottom: 10 },
-  networkPill: { flexDirection: "row-reverse", alignItems: "center", gap: 8, backgroundColor: CWAAX.surface, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  networkLabel: { color: CWAAX.muted, fontSize: 9, textAlign: "right" },
-  networkValue: { color: CWAAX.ink, fontSize: 13, fontWeight: "900", textAlign: "right" },
-  networkDot: { width: 18, height: 18, borderRadius: 9 },
-  content: { paddingBottom: 20 },
-  currencyRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8, justifyContent: "center", marginTop: 14 },
-  currencyText: { color: CWAAX.ink, fontSize: 17, fontWeight: "900" },
-  sendLabel: { color: CWAAX.muted, fontSize: 15 },
-  amount: { color: "#B9C2BD", fontSize: 52, fontWeight: "800", textAlign: "center", marginTop: 14 },
-  usdRow: { flexDirection: "row-reverse", justifyContent: "center", gap: 6, marginTop: 6 },
-  usdValue: { color: CWAAX.muted, fontSize: 13, fontWeight: "700" },
-  usdLabel: { color: CWAAX.muted, fontSize: 13 },
-  addressRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 16, paddingHorizontal: 14, height: 56, marginTop: 26 },
-  addressInput: { flex: 1, color: CWAAX.ink, fontSize: 13 },
-  addressLabel: { color: CWAAX.muted, fontSize: 12 },
-  quickRow: { flexDirection: "row-reverse", alignItems: "center", gap: 16, marginTop: 20 },
-  addFunds: { color: CWAAX.ink, fontSize: 11, fontWeight: "800" },
-  pct: { color: CWAAX.ink, fontSize: 12, fontWeight: "900" },
-  balanceRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginTop: 14 },
-  balancePill: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
-  balanceText: { color: CWAAX.ink, fontSize: 13, fontWeight: "900" },
-  balanceLabel: { color: CWAAX.muted, fontSize: 11 },
-  keypad: { flexDirection: "row", marginTop: 18, gap: 8 },
-  opsCol: { width: 66, gap: 8 },
-  opKey: { flex: 1, backgroundColor: CWAAX.surface, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  opKeyActive: { backgroundColor: CWAAX.green },
-  opText: { color: CWAAX.ink, fontSize: 20, fontWeight: "800" },
-  opTextActive: { color: CWAAX.white },
-  digitsGrid: { flex: 1, gap: 8 },
-  digitRow: { flexDirection: "row", gap: 8 },
-  digitKey: { flex: 1, height: 58, alignItems: "center", justifyContent: "center", borderRadius: 12 },
-  digitText: { color: CWAAX.ink, fontSize: 24, fontWeight: "700" },
-  submit: { backgroundColor: "#CBD5CF", height: 54, borderRadius: 16, alignItems: "center", justifyContent: "center", marginTop: 14, marginBottom: 8 },
-  submitText: { color: CWAAX.white, fontSize: 15, fontWeight: "900" },
-  pressed: { opacity: 0.6 },
+  header: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 12,
+    marginBottom: 10,
+  },
+
+  networkPill: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: CWAAX.surface,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  networkLabel: {
+    color: CWAAX.muted,
+    fontSize: 9,
+    textAlign: "right",
+  },
+
+  networkValue: {
+    color: CWAAX.ink,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+
+  networkDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+  },
+
+  content: {
+    paddingBottom: 20,
+  },
+
+  currencyRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 14,
+  },
+
+  currencyText: {
+    color: CWAAX.ink,
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  sendLabel: {
+    color: CWAAX.muted,
+    fontSize: 15,
+  },
+
+  amount: {
+    color: "#B9C2BD",
+    fontSize: 52,
+    fontWeight: "800",
+    textAlign: "center",
+    marginTop: 14,
+  },
+
+  usdRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 6,
+  },
+
+  usdValue: {
+    color: CWAAX.muted,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  usdLabel: {
+    color: CWAAX.muted,
+    fontSize: 13,
+  },
+
+  addressRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: CWAAX.line,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    height: 56,
+    marginTop: 26,
+  },
+
+  addressInput: {
+    flex: 1,
+    color: CWAAX.ink,
+    fontSize: 13,
+  },
+
+  addressLabel: {
+    color: CWAAX.muted,
+    fontSize: 12,
+  },
+
+  quickRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 16,
+    marginTop: 20,
+  },
+
+  pct: {
+    color: CWAAX.ink,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  balanceRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 14,
+  },
+
+  balancePill: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 6,
+  },
+
+  balanceText: {
+    color: CWAAX.ink,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  balanceLabel: {
+    color: CWAAX.muted,
+    fontSize: 11,
+  },
+
+  keypad: {
+    flexDirection: "row",
+    marginTop: 18,
+    gap: 8,
+  },
+
+  opsCol: {
+    width: 66,
+    gap: 8,
+  },
+
+  opKey: {
+    flex: 1,
+    backgroundColor: CWAAX.surface,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  opKeyActive: {
+    backgroundColor: CWAAX.green,
+  },
+
+  opText: {
+    color: CWAAX.ink,
+    fontSize: 20,
+    fontWeight: "800",
+  },
+
+  opTextActive: {
+    color: CWAAX.white,
+  },
+
+  digitsGrid: {
+    flex: 1,
+    gap: 8,
+  },
+
+  digitRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  digitKey: {
+    flex: 1,
+    height: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+  },
+
+  digitText: {
+    color: CWAAX.ink,
+    fontSize: 24,
+    fontWeight: "700",
+  },
+
+  submit: {
+    backgroundColor: "#CBD5CF",
+    height: 54,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+    marginBottom: 8,
+  },
+
+  submitText: {
+    color: CWAAX.white,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+
+  pressed: {
+    opacity: 0.6,
+  },
 });
