@@ -86,7 +86,13 @@ export default function RegisterScreen() {
     },
     onError: (err) => {
       setLoading(false);
-      alert(err.message || "تعذر إنشاء الحساب");
+      // Prefer the server message (now correctly passed for validation errors).
+      const msg =
+        err?.message &&
+        err.message !== "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى"
+          ? err.message
+          : "تعذر إنشاء الحساب. تحقق من البيانات أو جرّب بريدًا / اسم مستخدم آخر.";
+      alert(msg);
     },
   });
 
