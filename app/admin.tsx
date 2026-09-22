@@ -9,7 +9,7 @@ import { notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 
-const TABS = ["نظرة عامة", "المستخدمون", "الإيداعات", "السحوبات"] as const;
+const TABS = ["نظرة عامة", "المستخدمون", "الإيداعات", "السحوبات", "الإشعارات"] as const;
 type Tab = (typeof TABS)[number];
 
 const LEVEL_COLORS = [CWAAX.green, CWAAX.gold, CWAAX.purple];
@@ -148,6 +148,18 @@ export default function AdminScreen() {
     enabled: isAdmin,
     refetchInterval: isMutating ? false : 10000,
     refetchOnWindowFocus: true,
+  });
+
+  const adminNotifications = trpc.admin.listNotifications.useQuery(undefined, {
+    enabled: isAdmin && tab === "الإشعارات",
+  });
+
+  const deleteNotification = trpc.admin.deleteNotification.useMutation({
+    onSuccess: () => {
+      utils.admin.listNotifications.invalidate();
+      notify("تم الحذف", "تم حذف الإشعار بنجاح.");
+    },
+    onError: (e) => notify("تعذر الحذف", e.message),
   });
 
   if (authLoading || !user) {
@@ -374,6 +386,51 @@ export default function AdminScreen() {
                 ))
               ) : (
                 <Text style={styles.empty}>لا يوجد مستخدمون مطابقون.</Text>
+              )}
+            </Card>
+          </>
+        ) : tab === "الإشعارات" ? (
+          <>
+            <Pressable
+              onPress={() => setBroadcastOpen(true)}
+              style={({ pressed }) => [styles.broadcastBtn, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="campaign" size={19} color={CWAAX.white} />
+              <Text style={styles.broadcastText}>إرسال إشعار لجميع المستخدمين</Text>
+            </Pressable>
+            <Text style={styles.section}>جميع الإشعارات</Text>
+            <Card>
+              {adminNotifications.isLoading ? (
+                <ActivityIndicator color={CWAAX.green} style={{ marginVertical: 20 }} />
+              ) : (adminNotifications.data || []).length ? (
+                (adminNotifications.data as any[]).map((n) => (
+                  <View key={n.id} style={styles.notifRow}>
+                    <View style={styles.notifCopy}>
+                      <Text style={styles.notifTitle}>{n.title}</Text>
+                      <Text style={styles.notifMsg} numberOfLines={2}>
+                        {n.message}
+                      </Text>
+                      <Text style={styles.notifMeta}>
+                        {n.userId ? `مستخدم #${n.userId}` : "للجميع"} ·{" "}
+                        {new Date(n.createdAt).toLocaleString("ar")}
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={() =>
+                        deleteNotification.mutate({ notificationId: n.id })
+                      }
+                      disabled={deleteNotification.isPending}
+                      style={({ pressed }) => [
+                        styles.notifDeleteBtn,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <MaterialIcons name="delete-outline" size={20} color={CWAAX.red} />
+                    </Pressable>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.empty}>لا توجد إشعارات.</Text>
               )}
             </Card>
           </>
@@ -1656,4 +1713,40 @@ const styles = StyleSheet.create({
   currencyChipActive: { backgroundColor: CWAAX.green, borderColor: CWAAX.green },
   currencyChipText: { color: CWAAX.ink, fontSize: 10, fontWeight: "800" },
   currencyChipTextActive: { color: CWAAX.white },
+  notifRow: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: 10,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: CWAAX.line,
+  },
+  notifCopy: { flex: 1 },
+  notifTitle: {
+    color: CWAAX.ink,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  notifMsg: {
+    color: CWAAX.muted,
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 4,
+    textAlign: "right",
+  },
+  notifMeta: {
+    color: "#A1AAA5",
+    fontSize: 9,
+    marginTop: 6,
+    textAlign: "right",
+  },
+  notifDeleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#FEECEC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
