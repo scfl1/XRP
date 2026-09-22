@@ -1066,13 +1066,27 @@ export async function listNotificationsForUser(userId: number) {
     return [];
   }
 
+  // New users must not see broadcast notifications that were sent before they registered.
+  const userRow = (
+    await db
+      .select({ createdAt: users.createdAt })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+  )[0];
+
+  const userCreatedAt = userRow?.createdAt ?? new Date(0);
+
   const rows = await db
     .select()
     .from(notifications)
     .where(
       or(
         eq(notifications.userId, userId),
-        sql`${notifications.userId} is null`,
+        and(
+          sql`${notifications.userId} is null`,
+          gte(notifications.createdAt, userCreatedAt),
+        ),
       ),
     )
     .orderBy(desc(notifications.createdAt))
@@ -1101,6 +1115,52 @@ export async function listNotificationsForUser(userId: number) {
     ...n,
     read: readSet.has(n.id),
   }));
+}
+
+export async function listAllNotifications() {
+  const db = await getDb();
+
+  if (!db) {
+    return [];
+  }
+
+  return db
+    .select()
+    .from(notifications)
+    .orderBy(desc(notifications.createdAt))
+    .limit(100);
+}
+
+export async function deleteNotification(notificationId: number, adminId: number) {
+  const db = await getDb();
+
+  if (!db) {
+    throw new Error("Database not available");
+  }
+
+  // Remove read receipts first, then the notification itself.
+  await db
+    .delete(notificationReads)
+    .where(eq(notificationReads.notificationId, notificationId));
+
+  const deleted = await db
+    .delete(notifications)
+    .where(eq(notifications.id, notificationId))
+    .returning({ id: notifications.id });
+
+  if (!deleted.length) {
+    throw new Error("Notification not found");
+  }
+
+  await db.insert(auditLogs).values({
+    adminId,
+    action: "delete_notification",
+    entity: "notification",
+    entityId: notificationId,
+    metadata: JSON.stringify({ notificationId }),
+  });
+
+  return { success: true as const };
 }
 
 export async function markNotificationRead(
