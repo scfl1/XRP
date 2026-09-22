@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
@@ -8,6 +9,12 @@ import { ONE_YEAR_MS } from "../shared/const.js";
 import { ENV } from "./_core/env";
 
 const requestInput = z.object({ currency: z.string().min(2).max(16), amount: z.number().positive().finite(), network: z.string().max(32).optional() });
+
+/** User-facing auth errors must use TRPCError so the client sees the real message
+ *  (plain `Error` becomes INTERNAL_SERVER_ERROR and gets replaced by a generic message). */
+function badRequest(message: string): never {
+  throw new TRPCError({ code: "BAD_REQUEST", message });
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,26 +36,84 @@ export const appRouter = router({
     }),
     register: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(120), username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_]+$/), email: z.string().trim().email().max(320), password: z.string().min(8).max(128), referralCode: z.string().trim().max(32).optional(), phone: z.string().trim().max(32).optional() })).mutation(async ({ ctx, input }) => {
       const email = input.email.toLowerCase();
-      if (await db.getUserByEmail(email)) throw new Error("البريد الإلكتروني مستخدم بالفعل");
-      if (await db.getUserByUsername(input.username)) throw new Error("اسم المستخدم مستخدم بالفعل");
-      if (input.phone && (await db.getUserByPhone(input.phone))) throw new Error("رقم الهاتف مستخدم بالفعل");
-      const user = await db.createLocalUser({ name: input.name, username: input.username, email, passwordHash: hashPassword(input.password), referralCode: input.referralCode, phone: input.phone });
-      if (!user) throw new Error("تعذر إنشاء الحساب");
-      const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
-      return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: user.lastSignedIn } };
+      if (await db.getUserByEmail(email)) badRequest("البريد الإلكتروني مستخدم بالفعل");
+      if (await db.getUserByUsername(input.username)) badRequest("اسم المستخدم مستخدم بالفعل");
+      if (input.phone && (await db.getUserByPhone(input.phone))) badRequest("رقم الهاتف مستخدم بالفعل");
+
+      let user;
+      try {
+        user = await db.createLocalUser({
+          name: input.name,
+          username: input.username,
+          email,
+          passwordHash: hashPassword(input.password),
+          referralCode: input.referralCode,
+          phone: input.phone,
+        });
+      } catch (err: any) {
+        const msg = String(err?.message || err || "");
+        // Postgres unique_violation
+        if (msg.includes("unique") || msg.includes("duplicate") || err?.code === "23505") {
+          if (msg.toLowerCase().includes("email")) badRequest("البريد الإلكتروني مستخدم بالفعل");
+          if (msg.toLowerCase().includes("username")) badRequest("اسم المستخدم مستخدم بالفعل");
+          if (msg.toLowerCase().includes("phone")) badRequest("رقم الهاتف مستخدم بالفعل");
+          if (msg.toLowerCase().includes("referral")) badRequest("رمز الإحالة مستخدم بالفعل، جرّب اسم مستخدم آخر");
+          badRequest("البيانات مستخدمة بالفعل، تحقق من البريد أو اسم المستخدم أو الهاتف");
+        }
+        throw err;
+      }
+
+      if (!user) badRequest("تعذر إنشاء الحساب");
+
+      const token = await sdk.signSession(
+        { openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" },
+        { expiresInMs: ONE_YEAR_MS },
+      );
+      return {
+        token,
+        user: {
+          id: user.id,
+          openId: user.openId,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          lastSignedIn: user.lastSignedIn,
+        },
+      };
     }),
     login: publicProcedure.input(z.object({ identifier: z.string().trim().min(3).max(320), password: z.string().min(1).max(128) })).mutation(async ({ ctx, input }) => {
       const user = await db.getUserByEmailOrUsername(input.identifier.includes("@") ? input.identifier.toLowerCase() : input.identifier);
-      if (!user || !user.passwordHash || !verifyPassword(input.password, user.passwordHash)) throw new Error("بيانات تسجيل الدخول غير صحيحة");
-      if (user.isBanned) throw new Error(user.bannedReason ? `تم حظر هذا الحساب: ${user.bannedReason}` : "تم حظر هذا الحساب. تواصل مع الدعم.");
+      if (!user || !user.passwordHash || !verifyPassword(input.password, user.passwordHash)) {
+        badRequest("بيانات تسجيل الدخول غير صحيحة");
+      }
+      if (user.isBanned) {
+        badRequest(user.bannedReason ? `تم حظر هذا الحساب: ${user.bannedReason}` : "تم حظر هذا الحساب. تواصل مع الدعم.");
+      }
       await db.updateUserLastSignedIn(user.id);
-      const token = await sdk.signSession({ openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" }, { expiresInMs: ONE_YEAR_MS });
-      return { token, user: { id: user.id, openId: user.openId, name: user.name, username: user.username, email: user.email, role: user.role, lastSignedIn: new Date() } };
+      const token = await sdk.signSession(
+        { openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" },
+        { expiresInMs: ONE_YEAR_MS },
+      );
+      return {
+        token,
+        user: {
+          id: user.id,
+          openId: user.openId,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          lastSignedIn: new Date(),
+        },
+      };
     }),
     logout: publicProcedure.mutation(() => ({ success: true } as const)),
     changePassword: protectedProcedure.input(z.object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(8).max(128) })).mutation(async ({ ctx, input }) => {
       const user = await db.getUserByOpenId(ctx.user.openId);
-      if (!user || !user.passwordHash || !verifyPassword(input.currentPassword, user.passwordHash)) throw new Error("كلمة المرور الحالية غير صحيحة");
+      if (!user || !user.passwordHash || !verifyPassword(input.currentPassword, user.passwordHash)) {
+        badRequest("كلمة المرور الحالية غير صحيحة");
+      }
       await db.updateUserPassword(user.id, hashPassword(input.newPassword));
       return { success: true } as const;
     }),
