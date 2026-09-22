@@ -84,6 +84,8 @@ export const appRouter = router({
     setUserPassword: adminProcedure.input(z.object({ userId: z.number().int().positive(), newPassword: z.string().min(8).max(128) })).mutation(async ({ input }) => { await db.updateUserPassword(input.userId, hashPassword(input.newPassword)); return { success: true } as const; }),
     adjustBalance: adminProcedure.input(z.object({ userId: z.number().int().positive(), currency: z.string().min(2).max(16), amount: z.number().positive().finite(), direction: z.enum(["credit", "debit"]), note: z.string().max(300).optional() })).mutation(({ ctx, input }) => db.adminAdjustBalance({ ...input, adminId: ctx.user.id })),
     sendNotification: adminProcedure.input(z.object({ userId: z.number().int().positive().nullable(), title: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(2000) })).mutation(({ ctx, input }) => db.sendNotification({ ...input, sentBy: ctx.user.id })),
+    listNotifications: adminProcedure.query(() => db.listAllNotifications()),
+    deleteNotification: adminProcedure.input(z.object({ notificationId: z.number().int().positive() })).mutation(({ ctx, input }) => db.deleteNotification(input.notificationId, ctx.user.id)),
   }),
   notifications: router({
     list: protectedProcedure.query(({ ctx }) => db.listNotificationsForUser(ctx.user.id)),
