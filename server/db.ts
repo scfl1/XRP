@@ -30,7 +30,6 @@ import {
 } from "../drizzle/schema";
 
 import { ENV } from "./_core/env";
-import { TRADE_DAILY_RATE } from "../constants/cwaax";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _databaseUrl = "";
@@ -744,7 +743,7 @@ export async function adminAdjustBalance(params: {
    TRADE CONTRACTS
 ========================= */
 
-const TRADE_DAILY_RATE_DB = TRADE_DAILY_RATE.toFixed(6);
+const TRADE_DAILY_RATE = "0.020000";
 const TRADE_DURATION_DAYS = 365;
 
 /*
@@ -796,7 +795,7 @@ export async function startTradeContract(params: {
   // this is what keeps every user's countdown identical.
   const nextPayoutAt = nextGlobalPayoutAnchor(now);
   const endsAt = new Date(now.getTime() + TRADE_DURATION_DAYS * 24 * 60 * 60 * 1000);
-  const immediateProfit = Number((amount * TRADE_DAILY_RATE).toFixed(8));
+  const immediateProfit = Number((amount * Number(TRADE_DAILY_RATE)).toFixed(8));
 
   return db.transaction(async (tx) => {
     // One active contract per plan amount per user. This is also enforced by
@@ -835,7 +834,7 @@ export async function startTradeContract(params: {
       userId: params.userId,
       currency: "USDT",
       principal: amount.toFixed(8),
-      dailyRate: TRADE_DAILY_RATE_DB,
+      dailyRate: TRADE_DAILY_RATE,
       durationDays: TRADE_DURATION_DAYS,
       // The immediate activation profit is counted as payout #1 right
       // away — the user doesn't wait a full cycle to see their first
@@ -913,15 +912,6 @@ export async function processDueTradePayouts(now = new Date()) {
 
   const nowIso = now.toISOString();
   let paid = 0;
-
-  // Keep existing active contracts aligned with the advertised 3.5% daily rate.
-  // This changes future payouts only; it does not create retroactive credits.
-  await db.update(tradeContracts)
-    .set({ dailyRate: TRADE_DAILY_RATE_DB })
-    .where(and(
-      eq(tradeContracts.status, "active"),
-      sql`${tradeContracts.dailyRate} <> ${TRADE_DAILY_RATE_DB}`,
-    ));
 
   // عدة دورات لصرف الأيام المتأخرة (حتى 30 يوماً كحد أقصى لكل تشغيل)
   for (let round = 0; round < 30; round++) {
