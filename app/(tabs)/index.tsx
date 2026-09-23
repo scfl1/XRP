@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
@@ -26,10 +26,20 @@ export default function HomeScreen() {
   const total = formatAmount(usdt, currency);
   const [notice, setNotice] = useState("");
   const showNotice = (message: string) => { setNotice(message); setTimeout(() => setNotice(""), 2200); };
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await balances.refetch();
+    setRefreshing(false);
+  }, [balances]);
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={CWAAX.green} colors={[CWAAX.green]} />}
+      >
         <View style={styles.header}>
           <CwaLogo />
           <View style={styles.headerActions}>
