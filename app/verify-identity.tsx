@@ -138,9 +138,6 @@ export default function VerifyIdentityScreen() {
               <MaterialIcons name="verified-user" size={42} color={CWAAX.green} />
             </View>
             <Text style={styles.doneTitle}>تم توثيق الحساب بهوية</Text>
-            <Text style={styles.doneSub}>
-              تم حفظ تأكيد الهوية محلياً لهذا الحساب على هذا الجهاز. إذا استخدمت حساباً آخر، سيُطلب منه تأكيد الهوية بشكل مستقل.
-            </Text>
           </View>
         ) : (
           <>
