@@ -15,7 +15,7 @@ import { IconButton } from "@/components/cwaax-ui";
 import { CWAAX } from "@/constants/cwaax";
 import { notify } from "@/lib/_core/native-alert";
 import * as Auth from "@/lib/_core/auth";
-import { isIdentityVerified, markIdentityVerified } from "@/lib/identity-verification";
+import { isIdentityVerified } from "@/lib/identity-verification";
 
 type DocType = "id" | "passport" | null;
 
@@ -101,14 +101,14 @@ export default function VerifyIdentityScreen() {
       notify("الحساب غير متاح", "سجّل الدخول إلى الحساب ثم أعد المحاولة.");
       return;
     }
-    setSubmitting(true);
-    try {
-      await markIdentityVerified(userId);
-      setVerified(true);
-      notify("تم توثيق الحساب بهوية");
-    } finally {
-      setSubmitting(false);
-    }
+    // SECURITY: Selecting an image is not proof of identity.
+    // No KYC/OCR/document-authenticity provider or secure review endpoint is
+    // configured in this project. Keep the account unverified until one is
+    // integrated; never set a local verified flag based on an arbitrary image.
+    notify(
+      "لم يتم توثيق الهوية",
+      "التطبيق لا يتحقق حالياً من نوع الوثيقة أو أصالتها. يلزم ربط خدمة تحقق هوية آمنة أو مراجعة إدارية موثوقة قبل قبول الهوية أو جواز السفر."
+    );
   }, [docType, preview, verified]);
 
   if (loading) {
