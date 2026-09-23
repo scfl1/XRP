@@ -38,12 +38,15 @@ export function useLiveMarkets() {
   const [data, setData] = useState<MarketCoin[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const mounted = useRef(true);
+  const loadRef = useRef<(isManualRefresh?: boolean) => Promise<void>>(async () => {});
 
   useEffect(() => {
     mounted.current = true;
 
-    async function load() {
+    async function load(isManualRefresh = false) {
+      if (isManualRefresh && mounted.current) setRefreshing(true);
       try {
         const symbolsParam = encodeURIComponent(JSON.stringify(TOP_SYMBOLS.map((s) => `${s}USDT`)));
         const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbolsParam}`);
@@ -76,15 +79,18 @@ export function useLiveMarkets() {
             setError("لم يتم إرجاع أي بيانات أسعار.");
           }
           setLoading(false);
+          setRefreshing(false);
         }
       } catch (err) {
         if (mounted.current) {
           setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
+          setRefreshing(false);
         }
       }
     }
 
+    loadRef.current = load;
     load();
     const interval = setInterval(load, 45000);
 
@@ -94,5 +100,7 @@ export function useLiveMarkets() {
     };
   }, []);
 
-  return { data, error, loading };
+  const refetch = () => loadRef.current(true);
+
+  return { data, error, loading, refreshing, refetch };
 }
