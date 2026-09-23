@@ -13,24 +13,36 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLiveMarkets } from "@/hooks/use-live-markets";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [hidden, setHidden] = useState(false);
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user });
   const markets = useLiveMarkets();
-  const usdt = Number(balances.data?.find((b:any) => b.currency === "USDT")?.amount ?? 0);
+  const usdt = Number(balances.data?.find((b: any) => b.currency === "USDT")?.amount ?? 0);
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
   const total = formatAmount(usdt, currency);
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
+    if (refreshing) return;
+
     setRefreshing(true);
+
     try {
       await balances.refetch();
-      await markets.refetch?.();
+
+      if (markets.refetch) {
+        await markets.refetch();
+      }
+
+      await queryClient.invalidateQueries();
+    } catch (error) {
+      console.log("Home refresh error:", error);
     } finally {
       setRefreshing(false);
     }
@@ -42,8 +54,12 @@ export default function HomeScreen() {
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
       <ScrollView
+        style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { flexGrow: 1 }
+        ]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -54,7 +70,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <CwaLogo />
           <View style={styles.headerActions}>
-            <IconButton icon="search" label="البحث" onPress={() => showNotice("ابحث عن أصل أو سوق")}/>
+            <IconButton icon="search" label="البحث" onPress={() => showNotice("ابحث عن أصل أو سوق")} />
             <IconButton icon="notifications-none" label="الإشعارات" onPress={() => router.push("/notifications")} />
             <IconButton icon="account-circle" label="الحساب" onPress={() => router.push("/menu")} />
           </View>
@@ -62,22 +78,22 @@ export default function HomeScreen() {
 
         <View style={styles.greetingRow}>
           <View><Text style={styles.welcome}>إليك نظرة سريعة على محفظتك</Text></View>
-          <Pressable onPress={() => router.push("/transactions")} style={({ pressed }) => [styles.history, pressed && styles.pressed]}><MaterialIcons name="history" size={18} color={CWAAX.green}/><Text style={styles.historyText}>السجل</Text></Pressable>
+          <Pressable onPress={() => router.push("/transactions")} style={({ pressed }) => [styles.history, pressed && styles.pressed]}><MaterialIcons name="history" size={18} color={CWAAX.green} /><Text style={styles.historyText}>السجل</Text></Pressable>
         </View>
 
         <Card style={styles.assetCard}>
-          <View style={styles.assetTop}><Text style={styles.cardLabel}>إجمالي الأصول</Text><Pressable onPress={() => setHidden(!hidden)} style={({ pressed }) => [pressed && styles.pressed]}><MaterialIcons name={hidden ? "visibility-off" : "visibility"} size={20} color={CWAAX.white}/></Pressable></View>
+          <View style={styles.assetTop}><Text style={styles.cardLabel}>إجمالي الأصول</Text><Pressable onPress={() => setHidden(!hidden)} style={({ pressed }) => [pressed && styles.pressed]}><MaterialIcons name={hidden ? "visibility-off" : "visibility"} size={20} color={CWAAX.white} /></Pressable></View>
           <Text style={styles.assetValue}>{hidden ? "••••••" : total}</Text>
-          <View style={styles.assetBottom}><View style={styles.changeBadge}><MaterialIcons name="trending-up" size={15} color={CWAAX.white}/><Text style={styles.changeText}>متاح</Text></View><Text style={styles.assetSub}>رصيد USDT</Text></View>
-          <View style={styles.assetGlowOne}/><View style={styles.assetGlowTwo}/>
+          <View style={styles.assetBottom}><View style={styles.changeBadge}><MaterialIcons name="trending-up" size={15} color={CWAAX.white} /><Text style={styles.changeText}>متاح</Text></View><Text style={styles.assetSub}>رصيد USDT</Text></View>
+          <View style={styles.assetGlowOne} /><View style={styles.assetGlowTwo} />
         </Card>
 
-        <View style={styles.quickGrid}>{quickActions.map((action) => <Pressable key={action.label} onPress={() => router.push(action.route as never)} style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}><View style={styles.quickIcon}><MaterialIcons name={action.icon} size={21} color={CWAAX.green}/></View><Text style={styles.quickLabel}>{action.label}</Text></Pressable>)}</View>
+        <View style={styles.quickGrid}>{quickActions.map((action) => <Pressable key={action.label} onPress={() => router.push(action.route as never)} style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}><View style={styles.quickIcon}><MaterialIcons name={action.icon} size={21} color={CWAAX.green} /></View><Text style={styles.quickLabel}>{action.label}</Text></Pressable>)}</View>
 
-        <Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [styles.promo, pressed && styles.pressed]}><View style={styles.promoIcon}><MaterialIcons name="bolt" size={24} color={CWAAX.gold}/></View><View style={styles.promoCopy}><Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text><Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text></View><MaterialIcons name="chevron-left" size={22} color={CWAAX.ink}/></Pressable>
+        <Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [styles.promo, pressed && styles.pressed]}><View style={styles.promoIcon}><MaterialIcons name="bolt" size={24} color={CWAAX.gold} /></View><View style={styles.promoCopy}><Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text><Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text></View><MaterialIcons name="chevron-left" size={22} color={CWAAX.ink} /></Pressable>
 
         <SectionTitle title="ابدأ مع CwaAX" action="عرض الكل" onAction={() => router.push("/menu")} />
-        <View style={styles.startRow}><Card style={styles.startCard} onPress={() => router.push("/receive")}><View style={[styles.startIcon, { backgroundColor: "#E9F7EF" }]}><MaterialIcons name="call-received" size={21} color={CWAAX.green}/></View><Text style={styles.startTitle}>استقبل عملة</Text><Text style={styles.startSub}>أضف أول أصل لمحفظتك</Text></Card><Card style={styles.startCard} onPress={() => router.push("/trade")}><View style={[styles.startIcon, { backgroundColor: "#FFF3DD" }]}><MaterialIcons name="swap-horizontal-circle" size={21} color={CWAAX.gold}/></View><Text style={styles.startTitle}>جرّب التبديل</Text><Text style={styles.startSub}>بدّل أصولك بسهولة</Text></Card></View>
+        <View style={styles.startRow}><Card style={styles.startCard} onPress={() => router.push("/receive")}><View style={[styles.startIcon, { backgroundColor: "#E9F7EF" }]}><MaterialIcons name="call-received" size={21} color={CWAAX.green} /></View><Text style={styles.startTitle}>استقبل عملة</Text><Text style={styles.startSub}>أضف أول أصل لمحفظتك</Text></Card><Card style={styles.startCard} onPress={() => router.push("/trade")}><View style={[styles.startIcon, { backgroundColor: "#FFF3DD" }]}><MaterialIcons name="swap-horizontal-circle" size={21} color={CWAAX.gold} /></View><Text style={styles.startTitle}>جرّب التبديل</Text><Text style={styles.startSub}>بدّل أصولك بسهولة</Text></Card></View>
 
         <SectionTitle title="الأسواق" action="كل الأسواق" onAction={() => router.push("/trade")} />
         <Card style={styles.marketCard}>
@@ -111,7 +127,7 @@ export default function HomeScreen() {
         </Card>
         <View style={{ height: 24 }} />
       </ScrollView>
-      {notice ? <View style={styles.toast}><MaterialIcons name="info-outline" size={18} color={CWAAX.white}/><Text style={styles.toastText}>{notice}</Text></View> : null}
+      {notice ? <View style={styles.toast}><MaterialIcons name="info-outline" size={18} color={CWAAX.white} /><Text style={styles.toastText}>{notice}</Text></View> : null}
     </ScreenContainer>
   );
 }
