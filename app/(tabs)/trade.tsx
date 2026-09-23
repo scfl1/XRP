@@ -152,7 +152,7 @@ export default function TradeScreen() {
                     <Text style={styles.planSub}>عقد تداول USDT</Text>
                   </View>
                   <View style={styles.ratePill}>
-                    <Text style={styles.rateValue}>2%</Text>
+                    <Text style={styles.rateValue}>3.5%</Text>
                     <Text style={styles.rateLabel}>يومياً</Text>
                   </View>
                 </View>
