@@ -66,7 +66,7 @@ export default function TradeScreen() {
       notify("الرصيد غير كافٍ", `رصيدك المتاح ${usdtBalance.toFixed(2)} USDT.`);
       return;
     }
-    const dailyProfit = amount * 0.02;
+    const dailyProfit = amount * 0.035;
     const confirmed = await confirmAsync(
       "تأكيد بدء العقد",
       `المبلغ: ${amount.toFixed(2)} USDT\nالربح اليومي التقديري: ${dailyProfit.toFixed(2)} USDT\n\nسيتم حجز المبلغ من رصيدك فوراً عند التأكيد.`,
@@ -127,7 +127,7 @@ export default function TradeScreen() {
         <SectionTitle title="خطط التداول" action={`${TRADE_PLANS.length} خطة`} />
         <View style={styles.planList}>
           {TRADE_PLANS.map((plan) => {
-            const daily = plan.amount * 0.02;
+            const daily = plan.amount * 0.035;
             const existing = (contracts.data || []).find(
               (contract: any) => contract.status === "active" && Number(contract.principal) === plan.amount,
             );
