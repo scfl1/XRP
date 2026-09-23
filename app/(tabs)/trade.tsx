@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
-import { CWAAX, TRADE_PLANS } from "@/constants/cwaax";
+import { CWAAX, TRADE_DAILY_RATE, TRADE_PLANS } from "@/constants/cwaax";
 import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
@@ -66,7 +66,7 @@ export default function TradeScreen() {
       notify("الرصيد غير كافٍ", `رصيدك المتاح ${usdtBalance.toFixed(2)} USDT.`);
       return;
     }
-    const dailyProfit = amount * 0.035;
+    const dailyProfit = amount * TRADE_DAILY_RATE;
     const confirmed = await confirmAsync(
       "تأكيد بدء العقد",
       `المبلغ: ${amount.toFixed(2)} USDT\nالربح اليومي التقديري: ${dailyProfit.toFixed(2)} USDT\n\nسيتم حجز المبلغ من رصيدك فوراً عند التأكيد.`,
@@ -127,7 +127,7 @@ export default function TradeScreen() {
         <SectionTitle title="خطط التداول" action={`${TRADE_PLANS.length} خطة`} />
         <View style={styles.planList}>
           {TRADE_PLANS.map((plan) => {
-            const daily = plan.amount * 0.035;
+            const daily = plan.amount * TRADE_DAILY_RATE;
             const existing = (contracts.data || []).find(
               (contract: any) => contract.status === "active" && Number(contract.principal) === plan.amount,
             );
@@ -152,7 +152,7 @@ export default function TradeScreen() {
                     <Text style={styles.planSub}>عقد تداول USDT</Text>
                   </View>
                   <View style={styles.ratePill}>
-                    <Text style={styles.rateValue}>3.5%</Text>
+                    <Text style={styles.rateValue}>{(TRADE_DAILY_RATE * 100).toFixed(1)}%</Text>
                     <Text style={styles.rateLabel}>يومياً</Text>
                   </View>
                 </View>
