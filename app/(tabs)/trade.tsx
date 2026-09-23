@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { Card, CoinMark, CwaLogo, IconButton, SectionTitle } from "@/components/cwaax-ui";
@@ -14,12 +14,6 @@ export default function TradeScreen() {
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user, staleTime: 15_000 });
   const contracts = trpc.trade.contracts.useQuery(undefined, { enabled: !!user, staleTime: 10_000 });
-  const [refreshing, setRefreshing] = useState(false);
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([balances.refetch(), contracts.refetch()]);
-    setRefreshing(false);
-  };
   const startContract = trpc.trade.startContract.useMutation({
     onSuccess: async () => {
       await Promise.all([balances.refetch(), contracts.refetch()]);
@@ -92,11 +86,7 @@ export default function TradeScreen() {
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={CWAAX.green} colors={[CWAAX.green]} />}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <CwaLogo />
           <IconButton icon="tune" label="إعدادات التداول" onPress={() => notify("عقود التداول", "اختر مبلغ العقد من البطاقات أدناه.")} />
