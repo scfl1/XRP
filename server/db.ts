@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 import {
   and,
@@ -35,6 +36,53 @@ import { TRADE_DAILY_RATE } from "../constants/cwaax";
 let _db: ReturnType<typeof drizzle> | null = null;
 let _databaseUrl = "";
 
+type PgClient = ReturnType<typeof postgres>;
+type Db = ReturnType<typeof drizzle>;
+
+/*
+ * Cloudflare Workers forbid re-using a network connection that was opened
+ * by a different request ("Cannot perform I/O on behalf of a different
+ * request"). A module-level client shared between fetch requests and the
+ * cron job makes a request wait forever on a socket owned by another
+ * request; Cloudflare then kills it and returns its own HTML error page
+ * — which the app reports as `Unexpected token '<', "<!DOCTYPE"...`.
+ *
+ * The fix (per Cloudflare's Hyperdrive guidance) is one client PER
+ * request/invocation. Hyperdrive is the real connection pool, so creating
+ * a postgres.js client per request is cheap.
+ */
+type DbScope = { db: Db; clients: PgClient[]; url: string };
+const dbScope = new AsyncLocalStorage<DbScope>();
+
+function openClient(url: string): { client: PgClient; db: Db } {
+  const client = postgres(url, {
+    prepare: false, // Supabase transaction pooler (PgBouncer)
+    max: 3,
+    idle_timeout: 20,
+    connect_timeout: 10,
+    max_lifetime: 60 * 30,
+  });
+  return { client, db: drizzle(client) };
+}
+
+/** Run `fn` (one Worker fetch/scheduled invocation) with its own DB client. */
+export async function runWithDatabase<T>(
+  databaseUrl: string,
+  fn: () => Promise<T>,
+  ctx?: { waitUntil(promise: Promise<unknown>): void },
+): Promise<T> {
+  const { client, db } = openClient(databaseUrl);
+  const scope: DbScope = { db, clients: [client], url: databaseUrl };
+  try {
+    return await dbScope.run(scope, fn);
+  } finally {
+    const closing = Promise.allSettled(
+      scope.clients.map((c) => c.end({ timeout: 5 })),
+    );
+    if (ctx) ctx.waitUntil(closing);
+  }
+}
+
 export function configureDatabase(databaseUrl: string) {
   if (databaseUrl && databaseUrl !== _databaseUrl) {
     _databaseUrl = databaseUrl;
@@ -43,6 +91,11 @@ export function configureDatabase(databaseUrl: string) {
 }
 
 export async function getDb() {
+  const scoped = dbScope.getStore();
+  if (scoped) {
+    return scoped.db;
+  }
+
   if (_db) {
     return _db;
   }
@@ -229,33 +282,59 @@ async function withDbRetry<T>(operation: () => Promise<T>): Promise<T> {
   throw lastError;
 }
 
+/*
+ * Retries a DB operation and, after a failure, opens a brand-new client so
+ * the next attempt does not reuse a dead connection. Used on the login /
+ * registration / session-lookup path.
+ */
+async function withFreshDbRetry<T>(
+  operation: (db: Db) => Promise<T>,
+): Promise<T | undefined> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= DB_RETRY_ATTEMPTS; attempt++) {
+    try {
+      const db = await getDb();
+      if (!db) return undefined;
+      return await operation(db);
+    } catch (error) {
+      lastError = error;
+      console.warn(
+        `[Database] Query failed (attempt ${attempt}/${DB_RETRY_ATTEMPTS}):`,
+        error instanceof Error ? error.message : error,
+      );
+
+      // Drop the (possibly dead) client so the next attempt reconnects.
+      const scoped = dbScope.getStore();
+      if (scoped) {
+        const fresh = openClient(scoped.url);
+        scoped.clients.push(fresh.client);
+        scoped.db = fresh.db;
+      } else {
+        _db = null;
+      }
+
+      if (attempt < DB_RETRY_ATTEMPTS) {
+        await delay(DB_RETRY_DELAY_MS * attempt);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function getUserByEmailOrUsername(
   identifier: string,
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return withDbRetry(async () => (
+  return withFreshDbRetry(async (db) => (
     await db
       .select()
       .from(users)
       .where(
         or(
-          eq(
-            users.email,
-            identifier.toLowerCase(),
-          ),
-          eq(
-            users.username,
-            identifier,
-          ),
-          eq(
-            users.phone,
-            identifier,
-          ),
+          eq(users.email, identifier.toLowerCase()),
+          eq(users.username, identifier),
+          eq(users.phone, identifier),
         ),
       )
       .limit(1)
@@ -265,90 +344,41 @@ export async function getUserByEmailOrUsername(
 export async function getUserByEmail(
   email: string,
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(
-        eq(
-          users.email,
-          email.toLowerCase(),
-        ),
-      )
+  return withFreshDbRetry(async (db) => (
+    await db.select().from(users)
+      .where(eq(users.email, email.toLowerCase()))
       .limit(1)
-  )[0];
+  )[0]);
 }
 
 export async function getUserByPhone(
   phone: string,
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(
-        eq(
-          users.phone,
-          phone,
-        ),
-      )
+  return withFreshDbRetry(async (db) => (
+    await db.select().from(users)
+      .where(eq(users.phone, phone))
       .limit(1)
-  )[0];
+  )[0]);
 }
 
 export async function getUserByUsername(
   username: string,
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(
-        eq(users.username, username),
-      )
+  return withFreshDbRetry(async (db) => (
+    await db.select().from(users)
+      .where(eq(users.username, username))
       .limit(1)
-  )[0];
+  )[0]);
 }
 
 export async function getUserByReferralCode(
   code: string,
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(
-        eq(
-          users.referralCode,
-          code.trim().toUpperCase(),
-        ),
-      )
+  return withFreshDbRetry(async (db) => (
+    await db.select().from(users)
+      .where(eq(users.referralCode, code.trim().toUpperCase()))
       .limit(1)
-  )[0];
+  )[0]);
 }
 
 export async function createLocalUser(
@@ -361,86 +391,63 @@ export async function createLocalUser(
     phone?: string;
   },
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    throw new Error(
-      "Database not available",
-    );
-  }
-
-  const openId =
-    `local_${randomUUID()}`;
+  // Generated once, outside the retry loop, so a retry can detect whether
+  // an earlier attempt already committed (idempotent insert).
+  const openId = `local_${randomUUID()}`;
 
   // The user's own referral code is derived from their (already unique,
   // alphanumeric) username, uppercased, prefixed like the rest of the
-  // brand's codes (e.g. "CWAAX-AHMED928"). Reusing the username guarantees
-  // uniqueness without a extra collision-retry loop.
-  const ownReferralCode =
-    `CWAAX-${data.username.toUpperCase()}`;
+  // brand's codes (e.g. "CWAAX-AHMED928").
+  const ownReferralCode = `CWAAX-${data.username.toUpperCase()}`;
 
   let referredById: number | undefined;
 
   if (data.referralCode?.trim()) {
-    const inviter =
-      await getUserByReferralCode(
-        data.referralCode,
-      );
+    const inviter = await getUserByReferralCode(data.referralCode);
     if (inviter) {
       referredById = inviter.id;
     }
   }
 
-  const inserted =
-    await db
+  const user = await withFreshDbRetry(async (db) => {
+    const existing = (
+      await db.select().from(users).where(eq(users.openId, openId)).limit(1)
+    )[0];
+    if (existing) return existing;
+
+    const inserted = await db
       .insert(users)
       .values({
         openId,
         name: data.name,
         username: data.username,
-        email:
-          data.email.toLowerCase(),
+        email: data.email.toLowerCase(),
         phone: data.phone || undefined,
-        passwordHash:
-          data.passwordHash,
+        passwordHash: data.passwordHash,
         loginMethod: "email",
         role: "user",
-        referralCode:
-          ownReferralCode,
+        referralCode: ownReferralCode,
         referredById,
       })
-      .returning({
-        id: users.id,
-      });
+      .returning({ id: users.id });
 
-  const id =
-    inserted[0]?.id ?? 0;
+    const id = inserted[0]?.id ?? 0;
 
-  return (
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1)
-  )[0];
+    return (
+      await db.select().from(users).where(eq(users.id, id)).limit(1)
+    )[0];
+  });
+
+  if (!user) throw new Error("Database not available");
+  return user;
 }
 
 export async function getUserByOpenId(
   openId: string,
 ) {
-  const db = await getDb();
-
-  if (!db) {
-    return undefined;
-  }
-
-  return withDbRetry(async () => (
-    await db
-      .select()
-      .from(users)
-      .where(
-        eq(users.openId, openId),
-      )
+  return withFreshDbRetry(async (db) => (
+    await db.select().from(users)
+      .where(eq(users.openId, openId))
       .limit(1)
   )[0]);
 }
