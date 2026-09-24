@@ -1,6 +1,7 @@
 name = "cwaax"
 main = "worker/index.ts"
 compatibility_date = "2026-09-05"
+compatibility_flags = ["nodejs_compat"]
 
 [assets]
 directory = "./dist"
@@ -16,4 +17,4 @@ id = "84cd18cebe8a49f79e170ea4c5c9b6df"
 API_ALLOWED_ORIGINS = "https://cwaax.vfshj.workers.dev"
 
 [triggers]
-crons = ["* * * * *"]
+crons = ["0 * * * *"]
