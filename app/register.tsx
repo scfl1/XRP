@@ -42,7 +42,6 @@ const COUNTRY_CODES = [
 
 export default function RegisterScreen() {
   const params = useLocalSearchParams<{ ref?: string }>();
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+966");
@@ -91,27 +90,12 @@ export default function RegisterScreen() {
         err?.message &&
         err.message !== "حدث خطأ غير متوقع، الرجاء المحاولة مرة أخرى"
           ? err.message
-          : "تعذر إنشاء الحساب. تحقق من البيانات أو جرّب بريدًا / اسم مستخدم آخر.";
+          : "تعذر إنشاء الحساب. تحقق من البيانات أو جرّب بريداً إلكترونياً آخر.";
       alert(msg);
     },
   });
 
   const handleRegister = async () => {
-    if (!username.trim()) {
-      alert("يرجى إدخال اسم المستخدم");
-      return;
-    }
-
-    if (username.trim().length < 3) {
-      alert("يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل");
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
-      alert("اسم المستخدم يجب أن يحتوي على أحرف إنجليزية وأرقام و(_) فقط، بدون مسافات أو رموز");
-      return;
-    }
-
     if (!email.trim()) {
       alert("يرجى إدخال البريد الإلكتروني");
       return;
@@ -134,9 +118,19 @@ export default function RegisterScreen() {
 
     setLoading(true);
 
+    // توليد اسم مستخدم تلقائياً من جزء البريد قبل @
+    const emailLocal = email.trim().split("@")[0] || "user";
+    const autoUsername = emailLocal
+      .replace(/[^a-zA-Z0-9_]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 60) || "user";
+    const finalUsername =
+      autoUsername.length >= 3 ? autoUsername : `${autoUsername}${Date.now().toString().slice(-4)}`;
+
     registerMutation.mutate({
-      name: username.trim(),
-      username: username.trim(),
+      name: finalUsername,
+      username: finalUsername,
       email: email.trim(),
       password,
       referralCode: referralCode.trim() || undefined,
@@ -177,19 +171,6 @@ export default function RegisterScreen() {
             <Text style={styles.description}>
               أنشئ حساب CwaAX جديد وابدأ الآن
             </Text>
-
-            {/* Username */}
-            <Text style={styles.label}>اسم المستخدم</Text>
-
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              placeholder="أدخل اسم المستخدم"
-              placeholderTextColor="#8A8F98"
-              autoCapitalize="none"
-              textAlign="right"
-            />
 
             {/* Email */}
             <Text style={styles.label}>البريد الإلكتروني</Text>
