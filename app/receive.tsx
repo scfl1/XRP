@@ -59,7 +59,12 @@ export default function ReceiveScreen() {
   useEffect(() => {
     setQrUri(null);
     if (!address) return;
-    QRCode.toDataURL(address, { margin: 1, width: 400, color: { dark: "#101A16", light: "#00000000" } })
+    QRCode.toDataURL(address, {
+      margin: 2,
+      width: 400,
+      errorCorrectionLevel: "M",
+      color: { dark: "#101A16", light: "#FFFFFF" },
+    })
       .then(setQrUri)
       .catch(() => setQrUri(null));
   }, [address]);
@@ -77,7 +82,7 @@ export default function ReceiveScreen() {
   const handleShare = async () => {
     if (!address) return;
 
-    const shareText = `عنواني لاستقبال USDT على شبكة \( {network.name}:\n \){address}`;
+    const shareText = `عنواني لاستقبال USDT على شبكة ${network.name}:\n${address}`;
 
     if (typeof navigator === "undefined" || !("share" in navigator)) {
       copyAddress();
