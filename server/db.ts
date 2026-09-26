@@ -31,7 +31,7 @@ import {
 } from "../drizzle/schema";
 
 import { ENV } from "./_core/env";
-import { TRADE_DAILY_RATE } from "../constants/cwaax";
+import { TRADE_DAILY_RATE } from "../constants/phanx";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _databaseUrl = "";
@@ -397,8 +397,8 @@ export async function createLocalUser(
 
   // The user's own referral code is derived from their (already unique,
   // alphanumeric) username, uppercased, prefixed like the rest of the
-  // brand's codes (e.g. "CWAAX-AHMED928").
-  const ownReferralCode = `CWAAX-${data.username.toUpperCase()}`;
+  // brand's codes (e.g. "PHANX-AHMED928").
+  const ownReferralCode = `PHANX-${data.username.toUpperCase()}`;
 
   let referredById: number | undefined;
 
@@ -783,7 +783,8 @@ export async function adminAdjustBalance(params: {
    TRADE CONTRACTS
 ========================= */
 
-const TRADE_DAILY_RATE_DB = TRADE_DAILY_RATE.toFixed(6);
+// Daily profit rate: 25% (0.25) — kept in sync with constants/phanx.ts
+const TRADE_DAILY_RATE_DB = TRADE_DAILY_RATE.toFixed(6); // "0.250000"
 const TRADE_DURATION_DAYS = 365;
 
 /*
@@ -835,6 +836,7 @@ export async function startTradeContract(params: {
   // this is what keeps every user's countdown identical.
   const nextPayoutAt = nextGlobalPayoutAnchor(now);
   const endsAt = new Date(now.getTime() + TRADE_DURATION_DAYS * 24 * 60 * 60 * 1000);
+  // Immediate activation profit = principal × 25%
   const immediateProfit = Number((amount * TRADE_DAILY_RATE).toFixed(8));
 
   return db.transaction(async (tx) => {
@@ -953,7 +955,7 @@ export async function processDueTradePayouts(now = new Date()) {
   const nowIso = now.toISOString();
   let paid = 0;
 
-  // Keep existing active contracts aligned with the advertised 3.5% daily rate.
+  // Keep existing active contracts aligned with the advertised 25% daily rate.
   // This changes future payouts only; it does not create retroactive credits.
   await db.update(tradeContracts)
     .set({ dailyRate: TRADE_DAILY_RATE_DB })
@@ -1394,39 +1396,33 @@ export async function createDepositRequest(
   return result[0]?.id ?? 0;
 }
 
-export async function listDepositRequests() {
+export async function listDepositRequests(opts?: { pendingOnly?: boolean }) {
   const db = await getDb();
 
   if (!db) {
     return [];
   }
 
-  return db
+  const q = db
     .select({
-      request:
-        depositRequests,
-
+      request: depositRequests,
       user: {
         id: users.id,
         name: users.name,
         email: users.email,
-        username:
-          users.username,
+        username: users.username,
       },
     })
     .from(depositRequests)
-    .leftJoin(
-      users,
-      eq(
-        users.id,
-        depositRequests.userId,
-      ),
-    )
-    .orderBy(
-      desc(
-        depositRequests.createdAt,
-      ),
-    );
+    .leftJoin(users, eq(users.id, depositRequests.userId));
+
+  if (opts?.pendingOnly) {
+    return q
+      .where(eq(depositRequests.status, "pending"))
+      .orderBy(desc(depositRequests.createdAt));
+  }
+
+  return q.orderBy(desc(depositRequests.createdAt));
 }
 
 /* =========================
@@ -1553,39 +1549,33 @@ export async function createWithdrawalRequest(
   );
 }
 
-export async function listWithdrawalRequests() {
+export async function listWithdrawalRequests(opts?: { pendingOnly?: boolean }) {
   const db = await getDb();
 
   if (!db) {
     return [];
   }
 
-  return db
+  const q = db
     .select({
-      request:
-        withdrawalRequests,
-
+      request: withdrawalRequests,
       user: {
         id: users.id,
         name: users.name,
         email: users.email,
-        username:
-          users.username,
+        username: users.username,
       },
     })
     .from(withdrawalRequests)
-    .leftJoin(
-      users,
-      eq(
-        users.id,
-        withdrawalRequests.userId,
-      ),
-    )
-    .orderBy(
-      desc(
-        withdrawalRequests.createdAt,
-      ),
-    );
+    .leftJoin(users, eq(users.id, withdrawalRequests.userId));
+
+  if (opts?.pendingOnly) {
+    return q
+      .where(eq(withdrawalRequests.status, "pending"))
+      .orderBy(desc(withdrawalRequests.createdAt));
+  }
+
+  return q.orderBy(desc(withdrawalRequests.createdAt));
 }
 
 /* =========================
