@@ -34,31 +34,42 @@ export const appRouter = router({
         lastSignedIn: user.lastSignedIn,
       };
     }),
-    register: publicProcedure.input(z.object({ name: z.string().trim().min(2).max(120).optional(), username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_]+$/).optional(), email: z.string().trim().email().max(320), password: z.string().min(8).max(128), referralCode: z.string().trim().max(32).optional(), phone: z.string().trim().max(32).optional() })).mutation(async ({ ctx, input }) => {
+    register: publicProcedure.input(z.object({
+      name: z.string().trim().min(2).max(120).optional(),
+      username: z.string().trim().min(3).max(64).regex(/^[a-zA-Z0-9_]+$/).optional(),
+      email: z.string().trim().email().max(320),
+      password: z.string().min(8).max(128),
+      referralCode: z.string().trim().max(32).optional(),
+      phone: z.string().trim().max(32).optional(),
+    })).mutation(async ({ ctx, input }) => {
       const email = input.email.toLowerCase();
       if (await db.getUserByEmail(email)) badRequest("البريد الإلكتروني مستخدم بالفعل");
       if (input.phone && (await db.getUserByPhone(input.phone))) badRequest("رقم الهاتف مستخدم بالفعل");
 
-      // توليد اسم مستخدم تلقائياً من البريد إن لم يُرسل
-      let baseUsername =
-        (input.username && input.username.trim()) ||
-        email.split("@")[0].replace(/[^a-zA-Z0-9_]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "").slice(0, 50) ||
-        "user";
-      if (baseUsername.length < 3) baseUsername = `user${baseUsername}`;
+      // Generate username from email if not provided (username field removed from UI)
+      const baseFromEmail = email.split("@")[0]
+        .replace(/[^a-zA-Z0-9_]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")
+        .slice(0, 24) || "user";
+      let username = (input.username || baseFromEmail).toLowerCase();
+      if (username.length < 3) username = `${username}${Math.floor(100 + Math.random() * 900)}`;
 
-      let username = baseUsername;
+      // Ensure uniqueness by appending digits if needed
       if (await db.getUserByUsername(username)) {
-        // إضافة لاحقة رقمية لتجنب التعارض
         for (let i = 0; i < 20; i++) {
-          const candidate = `${baseUsername}${Math.floor(1000 + Math.random() * 9000)}`.slice(0, 64);
+          const candidate = `${username.slice(0, 20)}${Math.floor(100 + Math.random() * 900)}`;
           if (!(await db.getUserByUsername(candidate))) {
             username = candidate;
             break;
           }
         }
+        if (await db.getUserByUsername(username)) {
+          badRequest("تعذر إنشاء الحساب، حاول مرة أخرى");
+        }
       }
 
-      const displayName = (input.name && input.name.trim()) || username;
+      const displayName = (input.name || username).trim();
 
       let user;
       try {
@@ -75,9 +86,9 @@ export const appRouter = router({
         // Postgres unique_violation
         if (msg.includes("unique") || msg.includes("duplicate") || err?.code === "23505") {
           if (msg.toLowerCase().includes("email")) badRequest("البريد الإلكتروني مستخدم بالفعل");
-          if (msg.toLowerCase().includes("username")) badRequest("تعذر إنشاء الحساب، جرّب مرة أخرى");
+          if (msg.toLowerCase().includes("username")) badRequest("تعذر إنشاء الحساب، حاول مرة أخرى");
           if (msg.toLowerCase().includes("phone")) badRequest("رقم الهاتف مستخدم بالفعل");
-          if (msg.toLowerCase().includes("referral")) badRequest("رمز الإحالة مستخدم بالفعل");
+          if (msg.toLowerCase().includes("referral")) badRequest("رمز الإحالة مستخدم بالفعل، جرّب مرة أخرى");
           badRequest("البيانات مستخدمة بالفعل، تحقق من البريد أو الهاتف");
         }
         throw err;
@@ -86,7 +97,7 @@ export const appRouter = router({
       if (!user) badRequest("تعذر إنشاء الحساب");
 
       const token = await sdk.signSession(
-        { openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" },
+        { openId: user.openId, appId: ENV.appId, name: user.name || user.username || "Phan-x" },
         { expiresInMs: ONE_YEAR_MS },
       );
       return {
@@ -112,7 +123,7 @@ export const appRouter = router({
       }
       await db.updateUserLastSignedIn(user.id);
       const token = await sdk.signSession(
-        { openId: user.openId, appId: ENV.appId, name: user.name || user.username || "CwaAX" },
+        { openId: user.openId, appId: ENV.appId, name: user.name || user.username || "Phan-x" },
         { expiresInMs: ONE_YEAR_MS },
       );
       return {
@@ -166,8 +177,12 @@ export const appRouter = router({
     users: adminProcedure.input(z.object({ search: z.string().max(320).optional() }).optional()).query(({ input }) => db.listUsers(input?.search)),
     userDetail: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => db.getAdminUserDetail(input.userId)),
     referralsAtLevel: adminProcedure.input(z.object({ userId: z.number().int().positive(), level: z.union([z.literal(1), z.literal(2), z.literal(3)]) })).query(({ input }) => db.getReferralsAtLevel(input.userId, input.level)),
-    deposits: adminProcedure.query(() => db.listDepositRequests()),
-    withdrawals: adminProcedure.query(() => db.listWithdrawalRequests()),
+    deposits: adminProcedure
+      .input(z.object({ pendingOnly: z.boolean().optional() }).optional())
+      .query(({ input }) => db.listDepositRequests({ pendingOnly: input?.pendingOnly })),
+    withdrawals: adminProcedure
+      .input(z.object({ pendingOnly: z.boolean().optional() }).optional())
+      .query(({ input }) => db.listWithdrawalRequests({ pendingOnly: input?.pendingOnly })),
     approveDeposit: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.approveDeposit(input.requestId, ctx.user.id)),
     rejectDeposit: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.rejectDeposit(input.requestId, ctx.user.id)),
     approveWithdrawal: adminProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(({ ctx, input }) => db.approveWithdrawal(input.requestId, ctx.user.id)),
