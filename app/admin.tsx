@@ -19,6 +19,20 @@ function fmt(n: number | string | undefined | null) {
   return v.toLocaleString("en-US", { maximumFractionDigits: 4 });
 }
 
+/** تنسيق التاريخ والوقت بالعربية */
+function fmtDate(value: string | Date | number | null | undefined) {
+  if (value == null || value === "") return "—";
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("ar", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function AdminScreen() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -441,13 +455,31 @@ export default function AdminScreen() {
               <TextInput
                 value={query}
                 onChangeText={setQuery}
-                placeholder="ابحث برقم الطلب"
+                placeholder={
+                  tab === "الإيداعات"
+                    ? "ابحث بالبريد أو رقم الطلب"
+                    : "ابحث بالبريد أو عنوان المحفظة أو رقم الطلب"
+                }
                 placeholderTextColor="#9CA8A1"
                 style={styles.searchInput}
               />
             </View>
             <Card>
-              {(tab === "الإيداعات" ? deposits.data || [] : withdrawals.data || []).map((x: any) => (
+              {(tab === "الإيداعات" ? deposits.data || [] : withdrawals.data || [])
+                .filter((x: any) => {
+                  const q = query.trim().toLowerCase();
+                  if (!q) return true;
+                  const idMatch = String(x?.request?.id ?? "").includes(q);
+                  const email = String(x?.user?.email ?? "").toLowerCase();
+                  const name = String(x?.user?.name ?? "").toLowerCase();
+                  const username = String(x?.user?.username ?? "").toLowerCase();
+                  const emailMatch =
+                    email.includes(q) || name.includes(q) || username.includes(q);
+                  if (tab === "الإيداعات") return idMatch || emailMatch;
+                  const address = String(x?.request?.address ?? "").toLowerCase();
+                  return idMatch || emailMatch || address.includes(q);
+                })
+                .map((x: any) => (
                 <RequestRow
                   key={x.request.id}
                   row={x}
@@ -643,6 +675,10 @@ function RequestRow({
           {r.network ? ` · ${r.network}` : ""}
         </Text>
         {type === "wd" && <Text style={styles.requestAddress}>{r.address}</Text>}
+        <Text style={styles.requestDate}>
+          {fmtDate(r.createdAt)}
+          {r.approvedAt ? ` · اعتماد: ${fmtDate(r.approvedAt)}` : ""}
+        </Text>
       </View>
       <View style={styles.requestActions}>
         {pending ? (
@@ -697,6 +733,11 @@ function UserRow({ user, onPress }: { user: any; onPress: () => void }) {
         <Text style={styles.userEmail} numberOfLines={1}>
           {user.email || user.openId}
         </Text>
+        {!!user.createdAt && (
+          <Text style={styles.userDate} numberOfLines={1}>
+            إنشاء الحساب: {fmtDate(user.createdAt)}
+          </Text>
+        )}
         <View style={styles.userChips}>
           <View style={styles.chip}>
             <MaterialIcons name="group-add" size={11} color={CWAAX.green} />
@@ -772,6 +813,10 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
   const u = detail.data?.user;
   const referral = detail.data?.referral;
   const balances = detail.data?.balances || [];
+  const invitedBy = detail.data?.invitedBy as
+    | { id: number; name: string | null; username: string | null; email: string | null; referralCode: string | null }
+    | null
+    | undefined;
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
@@ -800,6 +845,11 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                 <View style={{ flex: 1 }}>
                   <Text style={styles.sheetName}>{u.name || u.username || "بدون اسم"}</Text>
                   <Text style={styles.sheetSub}>{u.email || u.openId}</Text>
+                  {!!u.createdAt && (
+                    <Text style={styles.sheetDate}>
+                      إنشاء الحساب: {fmtDate(u.createdAt)}
+                    </Text>
+                  )}
                   <View style={styles.userChips}>
                     <StatusPill tone={u.role === "admin" ? "success" : "warning"}>
                       {u.role}
@@ -811,6 +861,19 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                 <Pressable onPress={onClose} hitSlop={10}>
                   <MaterialIcons name="close" size={22} color={CWAAX.muted} />
                 </Pressable>
+              </View>
+
+              <View style={styles.invitedByBox}>
+                <MaterialIcons name="person-add" size={16} color={CWAAX.green} />
+                <Text style={styles.invitedByText}>
+                  {invitedBy
+                    ? `تمت دعوته بواسطة: ${invitedBy.name || invitedBy.username || "بدون اسم"}${
+                        invitedBy.username ? ` (@${invitedBy.username})` : ""
+                      }${invitedBy.email ? ` · ${invitedBy.email}` : ""}${
+                        invitedBy.referralCode ? ` · كود: ${invitedBy.referralCode}` : ""
+                      }`
+                    : "لم يتم دعوته من أي مستخدم (تسجيل مباشر)"}
+                </Text>
               </View>
 
               {u.isBanned && !!u.bannedReason && (
@@ -1552,6 +1615,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   requestAddress: { color: CWAAX.muted, fontSize: 8, textAlign: "right", marginTop: 3 },
+  requestDate: { color: CWAAX.muted, fontSize: 8, textAlign: "right", marginTop: 4 },
   requestActions: { alignItems: "flex-end", gap: 5 },
   approve: {
     backgroundColor: CWAAX.greenSoft,
@@ -1597,6 +1661,27 @@ const styles = StyleSheet.create({
   userCopy: { flex: 1 },
   userName: { color: CWAAX.ink, textAlign: "right", fontSize: 11, fontWeight: "800" },
   userEmail: { color: CWAAX.muted, textAlign: "right", fontSize: 8, marginTop: 2 },
+  userDate: { color: CWAAX.muted, textAlign: "right", fontSize: 8, marginTop: 3 },
+  sheetDate: { color: CWAAX.muted, textAlign: "right", fontSize: 9, marginTop: 4 },
+  invitedByBox: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: CWAAX.greenSoft,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  invitedByText: {
+    flex: 1,
+    color: CWAAX.ink,
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "right",
+    lineHeight: 18,
+  },
   userChips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: 6, marginTop: 6 },
   chip: {
     flexDirection: "row-reverse",
