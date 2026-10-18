@@ -381,6 +381,34 @@ export async function getUserByReferralCode(
   )[0]);
 }
 
+// Charset avoids visually-ambiguous characters (0/O, 1/I/L) so codes are
+// easy to read aloud and type back in by hand.
+const REFERRAL_CODE_CHARSET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+function randomReferralSuffix(length: number): string {
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    out += REFERRAL_CODE_CHARSET[Math.floor(Math.random() * REFERRAL_CODE_CHARSET.length)];
+  }
+  return out;
+}
+
+/**
+ * Generates a short, random, brand-prefixed referral code (e.g.
+ * "CW-7F3K9Q") that carries no personal information (unlike the old
+ * username-derived format), and makes sure it isn't already taken.
+ */
+async function generateUniqueReferralCode(): Promise<string> {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    // Codes get a touch longer on retry, in the extremely unlikely event
+    // of repeated collisions, so this always terminates with something unique.
+    const code = `CW-${randomReferralSuffix(6 + Math.floor(attempt / 3))}`;
+    if (!(await getUserByReferralCode(code))) return code;
+  }
+  // Practically unreachable, but guarantees a unique value regardless.
+  return `CW-${randomReferralSuffix(10)}`;
+}
+
 export async function createLocalUser(
   data: {
     name: string;
@@ -395,10 +423,9 @@ export async function createLocalUser(
   // an earlier attempt already committed (idempotent insert).
   const openId = `local_${randomUUID()}`;
 
-  // The user's own referral code is derived from their (already unique,
-  // alphanumeric) username, uppercased, prefixed like the rest of the
-  // brand's codes (e.g. "CWAAX-AHMED928").
-  const ownReferralCode = `CWAAX-${data.username.toUpperCase()}`;
+  // The user's own referral code is a short random code (e.g. "CW-7F3K9Q"),
+  // not derived from their username, so it doesn't leak it to strangers.
+  const ownReferralCode = await generateUniqueReferralCode();
 
   let referredById: number | undefined;
 
