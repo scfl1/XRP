@@ -9,9 +9,36 @@ import { notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 
 const TIERS = [
-  { level: 1, rate: "10%", color: CWAAX.green, bg: CWAAX.greenSoft, icon: "person" as const, label: "المستوى الأول", desc: "من دعوتهم مباشرة" },
-  { level: 2, rate: "5%", color: CWAAX.gold, bg: "#FBF2E1", icon: "people" as const, label: "المستوى الثاني", desc: "من دعاهم أصدقاؤك" },
-  { level: 3, rate: "2.5%", color: CWAAX.purple, bg: "#EEECFB", icon: "hub" as const, label: "المستوى الثالث", desc: "الدائرة الثالثة" },
+  {
+    level: 1,
+    rate: "10%",
+    base: "#2B2111",
+    accent: "#F0B93E",
+    glow: "rgba(240,185,62,0.22)",
+    icon: "workspace-premium" as const,
+    label: "المستوى الأول",
+    desc: "من دعوتهم مباشرة",
+  },
+  {
+    level: 2,
+    rate: "5%",
+    base: "#0E2A20",
+    accent: "#2BC989",
+    glow: "rgba(43,201,137,0.2)",
+    icon: "groups" as const,
+    label: "المستوى الثاني",
+    desc: "من دعاهم أصدقاؤك",
+  },
+  {
+    level: 3,
+    rate: "2.5%",
+    base: "#201A3B",
+    accent: "#9B8CFF",
+    glow: "rgba(155,140,255,0.22)",
+    icon: "hub" as const,
+    label: "المستوى الثالث",
+    desc: "الدائرة الثالثة",
+  },
 ];
 
 export default function ReferralScreen() {
@@ -99,16 +126,24 @@ export default function ReferralScreen() {
             const count = stats.data?.levelCounts?.[i] ?? 0;
             const earned = stats.data?.levelEarnings?.[i] ?? 0;
             return (
-              <View key={tier.level} style={[styles.tierCard, { backgroundColor: tier.bg }]}>
-                <View style={[styles.tierIcon, { backgroundColor: tier.color }]}>
-                  <MaterialIcons name={tier.icon} size={18} color={CWAAX.white} />
+              <View key={tier.level} style={[styles.tierCard, { backgroundColor: tier.base }]}>
+                <View style={[styles.tierGlow, { backgroundColor: tier.glow }]} />
+
+                <View style={styles.tierRankBadge}>
+                  <Text style={styles.tierRankText}>{tier.level}</Text>
                 </View>
-                <Text style={[styles.tierRate, { color: tier.color }]}>{tier.rate}</Text>
+
+                <View style={[styles.tierIcon, { backgroundColor: tier.accent }]}>
+                  <MaterialIcons name={tier.icon} size={19} color={tier.base} />
+                </View>
+
+                <Text style={[styles.tierRate, { color: tier.accent }]}>{tier.rate}</Text>
                 <Text style={styles.tierLabel}>{tier.label}</Text>
                 <Text style={styles.tierDesc}>{tier.desc}</Text>
+
                 <View style={styles.tierFooter}>
                   <Text style={styles.tierCount}>{count} شخص</Text>
-                  <Text style={[styles.tierEarned, { color: tier.color }]}>+{earned.toFixed(2)} USDT</Text>
+                  <Text style={[styles.tierEarned, { color: tier.accent }]}>+{earned.toFixed(2)} USDT</Text>
                 </View>
               </View>
             );
@@ -135,8 +170,8 @@ export default function ReferralScreen() {
           ) : (
             stats.data.history.map((row: any, idx: number) => (
               <View key={row.id} style={[styles.rewardRow, idx > 0 && styles.rewardRowBorder]}>
-                <View style={[styles.rewardIcon, { backgroundColor: TIERS[row.level - 1]?.bg ?? CWAAX.greenSoft }]}>
-                  <Text style={[styles.rewardLevel, { color: TIERS[row.level - 1]?.color ?? CWAAX.green }]}>L{row.level}</Text>
+                <View style={[styles.rewardIcon, { backgroundColor: TIERS[row.level - 1]?.base ?? CWAAX.ink }]}>
+                  <Text style={[styles.rewardLevel, { color: TIERS[row.level - 1]?.accent ?? CWAAX.green }]}>L{row.level}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rewardName}>عمولة من {row.sourceName || row.sourceUsername || "مستخدم"}</Text>
@@ -176,14 +211,39 @@ const styles = StyleSheet.create({
 
   section: { color: CWAAX.muted, fontSize: 12, fontWeight: "800", textAlign: "right", marginTop: 26, marginBottom: 10 },
   tiers: { flexDirection: "row", gap: 10 },
-  tierCard: { flex: 1, borderRadius: 18, padding: 12, alignItems: "center" },
-  tierIcon: { width: 34, height: 34, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 8 },
-  tierRate: { fontSize: 20, fontWeight: "900" },
-  tierLabel: { color: CWAAX.ink, fontSize: 11, fontWeight: "800", marginTop: 4, textAlign: "center" },
-  tierDesc: { color: CWAAX.muted, fontSize: 9, marginTop: 2, textAlign: "center" },
-  tierFooter: { marginTop: 10, alignItems: "center", borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.06)", paddingTop: 8, width: "100%" },
-  tierCount: { color: CWAAX.muted, fontSize: 9 },
-  tierEarned: { fontSize: 11, fontWeight: "900", marginTop: 2 },
+  tierCard: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 13,
+    paddingTop: 15,
+    alignItems: "center",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  tierGlow: { position: "absolute", top: -34, left: -28, width: 110, height: 110, borderRadius: 55 },
+  tierRankBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tierRankText: { color: "rgba(255,255,255,0.85)", fontSize: 10, fontWeight: "900" },
+  tierIcon: { width: 38, height: 38, borderRadius: 13, alignItems: "center", justifyContent: "center", marginBottom: 9 },
+  tierRate: { fontSize: 21, fontWeight: "900" },
+  tierLabel: { color: CWAAX.white, fontSize: 11, fontWeight: "800", marginTop: 5, textAlign: "center" },
+  tierDesc: { color: "rgba(255,255,255,0.55)", fontSize: 9, marginTop: 3, textAlign: "center" },
+  tierFooter: { marginTop: 11, alignItems: "center", borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.12)", paddingTop: 9, width: "100%" },
+  tierCount: { color: "rgba(255,255,255,0.6)", fontSize: 9 },
+  tierEarned: { fontSize: 11, fontWeight: "900", marginTop: 3 },
 
   infoCard: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 8, marginTop: 16, backgroundColor: CWAAX.surface },
   infoText: { flex: 1, color: CWAAX.muted, fontSize: 10.5, lineHeight: 16, textAlign: "right" },
