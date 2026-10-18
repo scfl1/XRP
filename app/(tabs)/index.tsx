@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   welcome: { color: CWAAX.ink, fontSize: 18, fontWeight: "800", textAlign: "right" },
   history: { flexDirection: "row", alignItems: "center", gap: 5, padding: 8 },
   historyText: { color: CWAAX.green, fontWeight: "700", fontSize: 12 },
-  assetCard: { backgroundColor: CWAAX.green, borderColor: CWAAX.green, minHeight: 158, overflow: "hidden", marginBottom: 20 },
+  assetCard: { backgroundColor: "#121212", borderColor: "#121212", minHeight: 158, overflow: "hidden", marginBottom: 20 },
   assetTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   cardLabel: { color: "#C6EBD7", fontSize: 13, fontWeight: "700" },
   assetValue: { color: CWAAX.white, fontSize: 34, fontWeight: "900", letterSpacing: -1, marginTop: 14, textAlign: "right" },
