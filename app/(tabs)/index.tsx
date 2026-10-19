@@ -1,8 +1,7 @@
 import { useRouter, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { LinearGradient } from "expo-linear-gradient";
 import { ScreenContainer } from "@/components/screen-container";
 import { formatAmount } from "@/constants/currencies";
 import type { CurrencyCode } from "@/lib/_core/preferences";
@@ -10,6 +9,11 @@ import * as Preferences from "@/lib/_core/preferences";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useLiveMarkets } from "@/hooks/use-live-markets";
+
+// بديل بسيط بدون مكتبات: لون مسطّح بدل التدرج
+function LinearGradient({ colors, style, children }: { colors: readonly string[]; style?: any; children?: React.ReactNode; start?: any; end?: any }) {
+  return <View style={[style, { backgroundColor: colors[0] }]}>{children}</View>;
+}
 
 // ألوان التصميم الداكن (مطابقة للصورة)
 const C = {
@@ -157,7 +161,7 @@ export default function HomeScreen() {
               iconColors={["#4A7BFF", "#2142D6"]}
               border="rgba(74,123,255,0.6)"
               chevron="#4A7BFF"
-              onPress={() => router.push("/withdraw")}
+              onPress={() => router.push("/send")}
             />
           </View>
 
