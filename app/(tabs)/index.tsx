@@ -2,6 +2,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import Svg, { Circle, Path } from "react-native-svg";
 import { ScreenContainer } from "@/components/screen-container";
 import { formatAmount } from "@/constants/currencies";
 import type { CurrencyCode } from "@/lib/_core/preferences";
@@ -13,6 +14,20 @@ import { useLiveMarkets } from "@/hooks/use-live-markets";
 // بديل بسيط بدون مكتبات: لون مسطّح بدل التدرج
 function LinearGradient({ colors, style, children }: { colors: readonly string[]; style?: any; children?: React.ReactNode; start?: any; end?: any }) {
   return <View style={[style, { backgroundColor: colors[0] }]}>{children}</View>;
+}
+
+// شعار USDT (Tether) الحقيقي
+function UsdtLogo({ size = 28 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32">
+      <Circle cx="16" cy="16" r="16" fill="#26A17B" />
+      <Path
+        fill="#FFFFFF"
+        fillRule="evenodd"
+        d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.393-.202 7.694-1.073 7.694-2.116 0-1.043-3.301-1.914-7.694-2.117"
+      />
+    </Svg>
+  );
 }
 
 // ألوان التصميم الداكن (مطابقة للصورة)
@@ -85,22 +100,22 @@ export default function HomeScreen() {
             </View>
 
             <Pressable onPress={() => router.push("/menu")} style={styles.profileRow}>
-              <View style={styles.avatar}>
-                <MaterialIcons name="person" size={30} color={C.text} />
-                <View style={styles.onlineDot} />
-              </View>
               <View>
                 <Text style={styles.welcome}>مرحباً بك</Text>
                 <Text style={styles.welcomeSub}>في محفظة CwaAX</Text>
+              </View>
+              <View style={styles.avatar}>
+                <MaterialIcons name="person" size={30} color={C.text} />
+                <View style={styles.onlineDot} />
               </View>
             </Pressable>
           </View>
 
           {/* أزرار دائرية: بحث / إشعارات / تحديث */}
           <View style={styles.actionsRow}>
-            <RoundButton icon="search" onPress={() => showNotice("ابحث عن أصل أو سوق")} />
-            <RoundButton icon="notifications-none" dot onPress={() => router.push("/notifications")} />
             <RoundButton icon={refreshing ? "hourglass-empty" : "sync"} onPress={handleRefresh} />
+            <RoundButton icon="notifications-none" dot onPress={() => router.push("/notifications")} />
+            <RoundButton icon="search" onPress={() => showNotice("ابحث عن أصل أو سوق")} />
           </View>
 
           {/* بطاقة إجمالي الأصول */}
@@ -119,10 +134,10 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.assetValue}>{hidden ? "••••••" : total}</Text>
               <View style={styles.usdtPill}>
-                <View style={styles.usdtCoin}><Text style={styles.usdtCoinText}>₮</Text></View>
-                <Text style={styles.usdtText}>USDT</Text>
-                <Text style={styles.usdtLabel}>رصيد</Text>
                 <MaterialIcons name="keyboard-arrow-down" size={18} color={C.text} />
+                <Text style={styles.usdtLabel}>رصيد</Text>
+                <Text style={styles.usdtText}>USDT</Text>
+                <UsdtLogo size={28} />
               </View>
             </View>
 
@@ -132,27 +147,13 @@ export default function HomeScreen() {
               <View style={styles.walletBody}>
                 <View style={styles.walletClasp} />
               </View>
-              <LinearGradient colors={["#2FE39A", "#0E9E5C"]} style={styles.bigCoin}>
-                <Text style={styles.bigCoinText}>₮</Text>
-              </LinearGradient>
-              <LinearGradient colors={["#2FE39A", "#0E9E5C"]} style={styles.smallCoin}>
-                <Text style={styles.smallCoinText}>₮</Text>
-              </LinearGradient>
+              <View style={styles.bigCoin}><UsdtLogo size={60} /></View>
+              <View style={styles.smallCoin}><UsdtLogo size={30} /></View>
             </View>
           </LinearGradient>
 
           {/* إيداع / سحب */}
           <View style={styles.dwRow}>
-            <BigAction
-              title="إيداع"
-              subtitle="إضافة رصيد إلى محفظتك"
-              icon="file-download"
-              colors={["#0F6B45", "#0A3D2B"]}
-              iconColors={["#2FE39A", "#12A765"]}
-              border="rgba(47,227,154,0.55)"
-              chevron={C.green}
-              onPress={() => router.push("/receive")}
-            />
             <BigAction
               title="سحب"
               subtitle="سحب الأموال إلى محفظتك"
@@ -162,6 +163,16 @@ export default function HomeScreen() {
               border="rgba(74,123,255,0.6)"
               chevron="#4A7BFF"
               onPress={() => router.push("/send")}
+            />
+            <BigAction
+              title="إيداع"
+              subtitle="إضافة رصيد إلى محفظتك"
+              icon="file-download"
+              colors={["#0F6B45", "#0A3D2B"]}
+              iconColors={["#2FE39A", "#12A765"]}
+              border="rgba(47,227,154,0.55)"
+              chevron={C.green}
+              onPress={() => router.push("/receive")}
             />
           </View>
 
@@ -194,7 +205,7 @@ export default function HomeScreen() {
               </View>
               <View style={styles.promoCopy}>
                 <Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text>
-                <Text style={styles.promoSubtitle}>فعل المصادقة الثنائية لتحصل على حماية أعلى</Text>
+                <Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text>
               </View>
               <View style={styles.promoIcon}>
                 <MaterialIcons name="bolt" size={34} color="#3A2A00" />
@@ -315,14 +326,14 @@ function BigAction(props: {
         end={{ x: 0, y: 1 }}
         style={[styles.dwCard, { borderColor: props.border }]}
       >
-        <LinearGradient colors={props.iconColors} style={styles.dwIcon}>
-          <MaterialIcons name={props.icon} size={28} color={C.text} />
-        </LinearGradient>
-        <View style={styles.dwCopy}>
-          <Text style={styles.dwTitle}>{props.title}</Text>
-          <Text style={styles.dwSub} numberOfLines={1}>{props.subtitle}</Text>
+        <View style={styles.dwTop}>
+          <LinearGradient colors={props.iconColors} style={styles.dwIcon}>
+            <MaterialIcons name={props.icon} size={30} color={C.text} />
+          </LinearGradient>
+          <MaterialIcons name="chevron-left" size={30} color={props.chevron} />
         </View>
-        <MaterialIcons name="chevron-left" size={30} color={props.chevron} />
+        <Text style={styles.dwTitle}>{props.title}</Text>
+        <Text style={styles.dwSub}>{props.subtitle}</Text>
       </LinearGradient>
     </Pressable>
   );
@@ -382,19 +393,17 @@ const styles = StyleSheet.create({
 
   assetCard: {
     borderRadius: 26, borderWidth: 1, borderColor: "rgba(47,227,154,0.35)",
-    padding: 18, minHeight: 160, flexDirection: "row", overflow: "hidden", marginBottom: 14,
+    padding: 18, minHeight: 170, flexDirection: "row-reverse", overflow: "hidden", marginBottom: 14,
   },
-  assetTextCol: { flex: 1, justifyContent: "space-between" },
+  assetTextCol: { flex: 1, justifyContent: "space-between", alignItems: "flex-end" },
   assetTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   cardLabel: { color: C.text, fontSize: 15, fontWeight: "700" },
-  assetValue: { color: C.text, fontSize: 40, fontWeight: "900", letterSpacing: -1, textAlign: "right", marginVertical: 6 },
+  assetValue: { color: C.text, fontSize: 40, fontWeight: "900", letterSpacing: -1, textAlign: "left", marginVertical: 6 },
   usdtPill: {
-    flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start",
+    flexDirection: "row", alignItems: "center", gap: 8,
     backgroundColor: "rgba(10,30,26,0.8)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 22, paddingHorizontal: 10, paddingVertical: 6,
   },
-  usdtCoin: { width: 26, height: 26, borderRadius: 13, backgroundColor: "#26A17B", alignItems: "center", justifyContent: "center" },
-  usdtCoinText: { color: C.text, fontWeight: "900", fontSize: 15 },
   usdtText: { color: C.text, fontWeight: "800", fontSize: 14 },
   usdtLabel: { color: C.muted, fontSize: 12 },
 
@@ -410,25 +419,23 @@ const styles = StyleSheet.create({
   walletClasp: { width: 18, height: 26, borderRadius: 8, backgroundColor: "#1B5A45", marginRight: -6 },
   bigCoin: {
     position: "absolute", width: 66, height: 66, borderRadius: 33, alignItems: "center", justifyContent: "center",
-    borderWidth: 3, borderColor: "#7FF3C0", top: 28,
+    borderWidth: 3, borderColor: "#7FF3C0", top: 28, overflow: "hidden",
   },
-  bigCoinText: { color: C.text, fontSize: 34, fontWeight: "900" },
   smallCoin: {
-    position: "absolute", width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: "#7FF3C0", bottom: 14, right: 6,
+    position: "absolute", width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: "#7FF3C0", bottom: 14, right: 6, overflow: "hidden",
   },
-  smallCoinText: { color: C.text, fontSize: 18, fontWeight: "900" },
 
   dwRow: { flexDirection: "row", gap: 12, marginBottom: 14 },
   dwWrap: { flex: 1 },
   dwCard: {
-    borderRadius: 22, borderWidth: 1.5, paddingVertical: 14, paddingHorizontal: 12,
-    flexDirection: "row", alignItems: "center", gap: 10, minHeight: 84,
+    borderRadius: 24, borderWidth: 1.5, padding: 14, minHeight: 150, justifyContent: "space-between",
   },
-  dwIcon: { width: 54, height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center" },
+  dwTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  dwIcon: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center" },
   dwCopy: { flex: 1 },
-  dwTitle: { color: C.text, fontSize: 20, fontWeight: "900", textAlign: "right" },
-  dwSub: { color: "#D5E4DF", fontSize: 11, textAlign: "right", marginTop: 3 },
+  dwTitle: { color: C.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
+  dwSub: { color: "#D5E4DF", fontSize: 12, lineHeight: 18, textAlign: "right", marginTop: 4 },
 
   quickCard: {
     flexDirection: "row", justifyContent: "space-between", backgroundColor: C.card,
