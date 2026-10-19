@@ -65,7 +65,18 @@ export default function HomeScreen() {
           <View style={styles.assetGlowOne}/><View style={styles.assetGlowTwo}/>
         </Card>
 
-        <View style={styles.quickGrid}>{quickActions.map((action) => <Pressable key={action.label} onPress={() => router.push(action.route as never)} style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}><View style={styles.quickIcon}><MaterialIcons name={action.icon} size={21} color={CWAAX.green}/></View><Text style={styles.quickLabel}>{action.label}</Text></Pressable>)}</View>
+        <Card style={styles.quickCard}>
+          <View style={styles.quickGrid}>
+            {quickActions.map((action) => (
+              <Pressable key={action.label} onPress={() => router.push(action.route as never)} style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}>
+                <View style={[styles.quickIcon, action.filled ? { backgroundColor: action.tone } : { backgroundColor: CWAAX.white, borderWidth: 1.5, borderColor: action.tone + "3D" }]}>
+                  <MaterialIcons name={action.icon} size={22} color={action.filled ? CWAAX.white : action.tone} />
+                </View>
+                <Text style={styles.quickLabel}>{action.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
 
         <Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [styles.promo, pressed && styles.pressed]}><View style={styles.promoIcon}><MaterialIcons name="bolt" size={24} color={CWAAX.gold}/></View><View style={styles.promoCopy}><Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text><Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text></View><MaterialIcons name="chevron-left" size={22} color={CWAAX.ink}/></Pressable>
 
@@ -127,8 +138,23 @@ const styles = StyleSheet.create({
   changeText: { color: CWAAX.white, fontWeight: "800", fontSize: 12 }, assetSub: { color: "#B4E2C9", fontSize: 12, fontWeight: "600" },
   assetGlowOne: { position: "absolute", width: 160, height: 160, borderRadius: 100, borderWidth: 22, borderColor: "rgba(255,255,255,.08)", right: -64, top: -90 },
   assetGlowTwo: { position: "absolute", width: 100, height: 100, borderRadius: 80, borderWidth: 14, borderColor: "rgba(255,255,255,.08)", right: 54, bottom: -76 },
-  quickGrid: { flexDirection: "row", justifyContent: "space-between", marginBottom: 22 },
-  quickItem: { alignItems: "center", width: "19%" }, quickIcon: { width: 44, height: 44, borderRadius: 15, backgroundColor: CWAAX.greenSoft, justifyContent: "center", alignItems: "center", marginBottom: 7 }, quickLabel: { color: CWAAX.ink, fontSize: 11, fontWeight: "700", textAlign: "center" },
+  quickCard: { paddingVertical: 18, paddingHorizontal: 10, marginBottom: 22 },
+  quickGrid: { flexDirection: "row", justifyContent: "space-between" },
+  quickItem: { alignItems: "center", width: "19%" },
+  quickIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 8,
+    shadowColor: "#15231c",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  quickLabel: { color: CWAAX.ink, fontSize: 10.5, fontWeight: "600", textAlign: "center" },
   promo: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "#FFF9EC", padding: 13, borderRadius: 17, marginBottom: 24, borderWidth: 1, borderColor: "#F8E6BA" }, promoIcon: { width: 40, height: 40, borderRadius: 13, backgroundColor: "#FFF1CC", justifyContent: "center", alignItems: "center" }, promoCopy: { flex: 1 }, promoTitle: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", textAlign: "right" }, promoSubtitle: { color: CWAAX.muted, fontSize: 11, marginTop: 4, textAlign: "right" },
   startRow: { flexDirection: "row", gap: 10, marginBottom: 25 }, startCard: { flex: 1, borderRadius: 18, padding: 14 }, startIcon: { width: 38, height: 38, borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 12 }, startTitle: { fontSize: 13, color: CWAAX.ink, fontWeight: "800", textAlign: "right" }, startSub: { color: CWAAX.muted, fontSize: 10, marginTop: 5, lineHeight: 15, textAlign: "right" },
   marketCard: { paddingVertical: 3 }, marketRow: { minHeight: 65, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 }, marketBorder: { borderBottomWidth: 1, borderBottomColor: CWAAX.line }, marketIcon: { width: 33, height: 33, borderRadius: 16 }, marketName: { flex: 1 }, marketSymbol: { color: CWAAX.ink, fontWeight: "800", fontSize: 12 }, marketMeta: { color: CWAAX.muted, fontSize: 10, marginTop: 2 }, marketPrice: { alignItems: "flex-end" }, priceText: { color: CWAAX.ink, fontSize: 12, fontWeight: "800" }, positive: { color: CWAAX.green, fontSize: 11, fontWeight: "700", marginTop: 3 }, negative: { color: "#D95C55", fontSize: 11, fontWeight: "700", marginTop: 3 }, marketLoading: { color: CWAAX.muted, fontSize: 12, textAlign: "center", paddingVertical: 24 }, pressed: { opacity: 0.62 }, toast: { position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: CWAAX.ink, padding: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }, toastText: { color: CWAAX.white, fontSize: 12, fontWeight: "700" },
