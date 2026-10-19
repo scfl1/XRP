@@ -1,21 +1,20 @@
 export const TRADE_DAILY_RATE = 0.035;
 
 export const CWAAX = {
-  green: "#00E5A0",
-  neon: "#00FFC2",
-  blue: "#176BFF",
-  card: "#0D1B22",
-  cardRaised: "#10252C",
-  greenDark: "#006B52",
-  greenSoft: "#103C36",
-  ink: "#F3FAF8",
-  muted: "#9EB4B6",
-  line: "#24434A",
-  surface: "#102027",
+  green: "#20E58A",
+  greenDark: "#0A9F61",
+  greenSoft: "#123C31",
+  ink: "#F4FFFA",
+  muted: "#8EA9A0",
+  line: "#1D4B40",
+  border: "#1D4B40",
+  surface: "#102B29",
   white: "#FFFFFF",
-  red: "#D95C55",
-  gold: "#FFD43B",
-  purple: "#9B5CFF",
+  red: "#FF6B73",
+  gold: "#F5C33B",
+  purple: "#A77BFF",
+  blue: "#347CFF",
+  background: "#061C1B",
 } as const;
 
 const PLAN_COIN_CYCLE = [
@@ -31,6 +30,7 @@ const TRADE_AMOUNTS = [
 
 export const TRADE_PLANS = TRADE_AMOUNTS.map((amount, index) => ({
   amount,
+  color: ["#20E58A", "#347CFF", "#A77BFF", "#F5C33B"][index % 4],
   // The last (highest) plan is always Bitcoin; every other plan cycles
   // through a curated list of real, distinct coins for visual variety.
   coin: index === TRADE_AMOUNTS.length - 1 ? "BTC" : PLAN_COIN_CYCLE[index % PLAN_COIN_CYCLE.length],
