@@ -182,16 +182,18 @@ export default function SendScreen() {
           style={[styles.networkPill, webCursor]}
           activeOpacity={0.7}
         >
-          <MaterialIcons name="unfold-more" size={16} color={CWAAX.ink} />
+          <MaterialIcons name="unfold-more" size={15} color={CWAAX.muted} />
           <View>
             <Text style={styles.networkLabel}>الشبكة/السلسلة</Text>
             <Text style={styles.networkValue}>{network.name}</Text>
           </View>
-          <NetworkIcon network={network} size={20} />
+          <View style={styles.networkAvatar}>
+            <NetworkIcon network={network} size={18} />
+          </View>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={webCursor} activeOpacity={0.7}>
-          <MaterialIcons name="chevron-left" size={26} color={CWAAX.ink} />
+        <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={[styles.backBtn, webCursor]} activeOpacity={0.7}>
+          <MaterialIcons name="chevron-left" size={22} color={CWAAX.ink} />
         </TouchableOpacity>
       </View>
 
@@ -221,10 +223,10 @@ export default function SendScreen() {
           <TouchableOpacity
             onPress={() => router.push("/qr-scanner")}
             hitSlop={8}
-            style={webCursor}
+            style={[styles.addressIconBtn, webCursor]}
             activeOpacity={0.7}
           >
-            <MaterialIcons name="qr-code-scanner" size={19} color={CWAAX.muted} />
+            <MaterialIcons name="qr-code-scanner" size={17} color={CWAAX.ink} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={async () => {
@@ -243,10 +245,10 @@ export default function SendScreen() {
               showToast("الصق العنوان يدوياً في الحقل");
             }}
             hitSlop={8}
-            style={webCursor}
+            style={[styles.addressIconBtn, webCursor]}
             activeOpacity={0.7}
           >
-            <MaterialIcons name="content-paste" size={19} color={CWAAX.muted} />
+            <MaterialIcons name="content-paste" size={17} color={CWAAX.ink} />
           </TouchableOpacity>
           <TextInput
             style={styles.addressInput}
@@ -263,13 +265,13 @@ export default function SendScreen() {
 
         <View style={styles.quickRow}>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity onPress={() => setPercent(0.25)} style={webCursor} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setPercent(0.25)} style={[styles.pctChip, webCursor]} activeOpacity={0.7}>
             <Text style={styles.pct}>25%</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPercent(0.5)} style={webCursor} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setPercent(0.5)} style={[styles.pctChip, webCursor]} activeOpacity={0.7}>
             <Text style={styles.pct}>50%</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPercent(1)} style={webCursor} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setPercent(1)} style={[styles.pctChip, styles.pctChipMax, webCursor]} activeOpacity={0.7}>
             <Text style={[styles.pct, { color: CWAAX.green }]}>MAX</Text>
           </TouchableOpacity>
         </View>
@@ -305,10 +307,10 @@ export default function SendScreen() {
                   <TouchableOpacity
                     key={d}
                     onPress={pressBackspace}
-                    style={[styles.digitKey, webCursor]}
+                    style={[styles.digitKey, styles.backKey, webCursor]}
                     activeOpacity={0.65}
                   >
-                    <MaterialIcons name="backspace" size={18} color={CWAAX.ink} />
+                    <MaterialIcons name="backspace" size={17} color={CWAAX.red} />
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
@@ -339,6 +341,9 @@ export default function SendScreen() {
         <Text style={styles.submitText}>
           {createWithdrawal.isPending ? "جاري الإرسال..." : "إرسال"}
         </Text>
+        <View style={styles.submitIcon}>
+          <MaterialIcons name="arrow-back" size={16} color={canSend ? CWAAX.green : CWAAX.muted} />
+        </View>
       </TouchableOpacity>
 
       {toast ? (
@@ -362,14 +367,16 @@ const styles = StyleSheet.create({
   networkPill: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: CWAAX.surface,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
+  networkAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
   networkLabel: { color: CWAAX.muted, fontSize: 9, textAlign: "right" },
   networkValue: { color: CWAAX.ink, fontSize: 13, fontWeight: "900", textAlign: "right" },
+  backBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: CWAAX.surface, alignItems: "center", justifyContent: "center" },
   content: { paddingBottom: 8 },
   currencyRow: {
     flexDirection: "row-reverse",
@@ -388,19 +395,23 @@ const styles = StyleSheet.create({
   addressRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: 10,
-    borderWidth: 1,
+    gap: 8,
+    borderWidth: 1.5,
     borderColor: CWAAX.line,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    height: 52,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    height: 54,
     marginTop: 18,
+    backgroundColor: CWAAX.surface,
   },
-  addressRowValid: { borderColor: CWAAX.green },
+  addressRowValid: { borderColor: CWAAX.green, backgroundColor: CWAAX.greenSoft },
+  addressIconBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
   addressInput: { flex: 1, color: CWAAX.ink, fontSize: 13, paddingVertical: 8 },
-  addressLabel: { color: CWAAX.muted, fontSize: 12 },
-  quickRow: { flexDirection: "row-reverse", alignItems: "center", gap: 16, marginTop: 14 },
-  pct: { color: CWAAX.ink, fontSize: 12, fontWeight: "900", padding: 6 },
+  addressLabel: { color: CWAAX.muted, fontSize: 12, marginRight: 4 },
+  quickRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginTop: 14 },
+  pctChip: { backgroundColor: CWAAX.surface, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  pctChipMax: { backgroundColor: CWAAX.greenSoft },
+  pct: { color: CWAAX.ink, fontSize: 12, fontWeight: "900" },
   balanceRow: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
@@ -410,40 +421,45 @@ const styles = StyleSheet.create({
   balancePill: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
   balanceText: { color: CWAAX.ink, fontSize: 13, fontWeight: "900" },
   balanceLabel: { color: CWAAX.muted, fontSize: 11 },
-  keypad: { flexDirection: "row", marginTop: 12, gap: 8, flexShrink: 0 },
-  opsCol: { width: 66, gap: 8 },
+  keypad: { flexDirection: "row", marginTop: 14, gap: 10, flexShrink: 0 },
+  opsCol: { width: 58, gap: 10, alignItems: "center" },
   opKey: {
-    flex: 1,
-    minHeight: 52,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: CWAAX.surface,
-    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
   opKeyActive: { backgroundColor: CWAAX.green },
-  opText: { color: CWAAX.ink, fontSize: 20, fontWeight: "800" },
+  opText: { color: CWAAX.ink, fontSize: 19, fontWeight: "800" },
   opTextActive: { color: CWAAX.white },
-  digitsGrid: { flex: 1, gap: 8 },
-  digitRow: { flexDirection: "row", gap: 8 },
+  digitsGrid: { flex: 1, gap: 10 },
+  digitRow: { flexDirection: "row", justifyContent: "space-between" },
   digitKey: {
-    flex: 1,
-    height: 52,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 12,
     backgroundColor: CWAAX.surface,
   },
-  digitText: { color: CWAAX.ink, fontSize: 24, fontWeight: "700" },
+  backKey: { backgroundColor: "#FDECEB" },
+  digitText: { color: CWAAX.ink, fontSize: 21, fontWeight: "700" },
   submit: {
+    flexDirection: "row-reverse",
     backgroundColor: "#CBD5CF",
-    height: 54,
-    borderRadius: 16,
+    height: 56,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 12,
+    gap: 10,
+    marginTop: 14,
     marginBottom: 8,
+    paddingHorizontal: 6,
   },
   submitActive: { backgroundColor: CWAAX.green },
+  submitIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
   submitText: { color: CWAAX.white, fontSize: 15, fontWeight: "900" },
   pressed: { opacity: 0.6 },
   toast: {
