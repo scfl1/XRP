@@ -171,12 +171,12 @@ function AuthGate() {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#102B29",
+          backgroundColor: "#FFFFFF",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator size="large" color="#20E58A" />
+        <ActivityIndicator size="large" color="#078A5B" />
       </View>
     );
   }
@@ -186,12 +186,12 @@ function AuthGate() {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#102B29",
+          backgroundColor: "#FFFFFF",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator size="large" color="#20E58A" />
+        <ActivityIndicator size="large" color="#078A5B" />
       </View>
     );
   }
