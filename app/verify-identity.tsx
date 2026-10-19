@@ -18,6 +18,7 @@ import * as Auth from "@/lib/_core/auth";
 import { isIdentityVerified, markIdentityVerified } from "@/lib/identity-verification";
 
 type DocType = "id" | "passport" | null;
+type Slot = "front" | "back" | "face" | "passport";
 
 function pickImageFromDevice(): Promise<string | null> {
   return new Promise((resolve) => {
@@ -28,7 +29,8 @@ function pickImageFromDevice(): Promise<string | null> {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    input.capture = "environment";
+    // لا نضع capture هنا عمداً، حتى يعرض المتصفح خيار "المعرض/الصور"
+    // بالإضافة إلى خيار الكاميرا بدل فتح الكاميرا مباشرة فقط.
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) {
@@ -54,7 +56,10 @@ export default function VerifyIdentityScreen() {
   const [userId, setUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [docType, setDocType] = useState<DocType>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [frontPreview, setFrontPreview] = useState<string | null>(null);
+  const [backPreview, setBackPreview] = useState<string | null>(null);
+  const [passportPreview, setPassportPreview] = useState<string | null>(null);
+  const [facePreview, setFacePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -76,16 +81,34 @@ export default function VerifyIdentityScreen() {
     return () => { active = false; };
   }, []);
 
-  const onPick = useCallback(async (type: DocType) => {
+  const selectDocType = useCallback((type: DocType) => {
     if (verified) return;
     setDocType(type);
+    setFrontPreview(null);
+    setBackPreview(null);
+    setPassportPreview(null);
+    setFacePreview(null);
+  }, [verified]);
+
+  const onPick = useCallback(async (slot: Slot) => {
+    if (verified) return;
     const uri = await pickImageFromDevice();
     if (!uri) {
-      notify("لم يتم اختيار صورة", "اختر صورة واضحة للهوية أو جواز السفر.");
+      notify("لم يتم اختيار صورة", "اختر صورة واضحة من الكاميرا أو من المعرض.");
       return;
     }
-    setPreview(uri);
+    if (slot === "front") setFrontPreview(uri);
+    else if (slot === "back") setBackPreview(uri);
+    else if (slot === "passport") setPassportPreview(uri);
+    else setFacePreview(uri);
   }, [verified]);
+
+  const isComplete =
+    docType === "id"
+      ? !!(frontPreview && backPreview && facePreview)
+      : docType === "passport"
+        ? !!(passportPreview && facePreview)
+        : false;
 
   const onConfirm = useCallback(async () => {
     if (verified) return;
@@ -93,8 +116,10 @@ export default function VerifyIdentityScreen() {
       notify("اختر نوع الوثيقة", "حدد هوية وطنية أو جواز سفر أولاً.");
       return;
     }
-    if (!preview) {
-      notify("أضف صورة", "التقط أو اختر صورة للوثيقة قبل التأكيد.");
+    if (!isComplete) {
+      notify("أكمل الصور المطلوبة", docType === "id"
+        ? "ارفع صورة وجه الهوية، وخلف الهوية، وصورة وجهك."
+        : "ارفع صورة جواز السفر وصورة وجهك.");
       return;
     }
     if (!userId) {
@@ -109,7 +134,7 @@ export default function VerifyIdentityScreen() {
     } finally {
       setSubmitting(false);
     }
-  }, [docType, preview, verified]);
+  }, [docType, isComplete, userId, verified]);
 
   if (loading) {
     return (
@@ -122,6 +147,36 @@ export default function VerifyIdentityScreen() {
       </ScreenContainer>
     );
   }
+
+  const renderSlot = (
+    slot: Slot,
+    label: string,
+    preview: string | null,
+    icon: keyof typeof MaterialIcons.glyphMap = "photo-camera",
+  ) => (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={styles.slotLabel}>{label}</Text>
+      {preview ? (
+        <View style={styles.previewWrap}>
+          <Image source={{ uri: preview }} style={styles.preview} resizeMode="contain" />
+          <Pressable
+            onPress={() => onPick(slot)}
+            style={({ pressed }) => [styles.changeBtn, pressed && styles.pressed]}
+          >
+            <Text style={styles.changeText}>تغيير الصورة</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          onPress={() => onPick(slot)}
+          style={({ pressed }) => [styles.uploadBox, pressed && styles.pressed]}
+        >
+          <MaterialIcons name={icon} size={26} color={CWAAX.muted} />
+          <Text style={styles.uploadText}>التقط صورة أو اخترها من المعرض</Text>
+        </Pressable>
+      )}
+    </View>
+  );
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
@@ -142,13 +197,13 @@ export default function VerifyIdentityScreen() {
         ) : (
           <>
             <Text style={styles.hint}>
-              ارفع صورة واضحة لوثيقة رسمية فقط: هوية وطنية أو جواز سفر. لا تُقبل صور أخرى.
+              ارفع صوراً واضحة لوثيقة رسمية فقط: هوية وطنية أو جواز سفر، بالإضافة إلى صورة لوجهك. لا تُقبل صور أخرى.
             </Text>
 
             <Text style={styles.section}>نوع الوثيقة</Text>
             <View style={styles.docRow}>
               <Pressable
-                onPress={() => onPick("id")}
+                onPress={() => selectDocType("id")}
                 style={({ pressed }) => [
                   styles.docBtn,
                   docType === "id" && styles.docBtnActive,
@@ -165,7 +220,7 @@ export default function VerifyIdentityScreen() {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => onPick("passport")}
+                onPress={() => selectDocType("passport")}
                 style={({ pressed }) => [
                   styles.docBtn,
                   docType === "passport" && styles.docBtnActive,
@@ -183,25 +238,21 @@ export default function VerifyIdentityScreen() {
               </Pressable>
             </View>
 
-            <Text style={styles.section}>صورة الوثيقة</Text>
-            {preview ? (
-              <View style={styles.previewWrap}>
-                <Image source={{ uri: preview }} style={styles.preview} resizeMode="contain" />
-                <Pressable
-                  onPress={() => onPick(docType || "id")}
-                  style={({ pressed }) => [styles.changeBtn, pressed && styles.pressed]}
-                >
-                  <Text style={styles.changeText}>تغيير الصورة</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => onPick(docType || "id")}
-                style={({ pressed }) => [styles.uploadBox, pressed && styles.pressed]}
-              >
-                <MaterialIcons name="photo-camera" size={28} color={CWAAX.muted} />
-                <Text style={styles.uploadText}>التقط أو اختر صورة الهوية / الجواز</Text>
-              </Pressable>
+            {docType === "id" && (
+              <>
+                <Text style={styles.section}>صور الهوية الوطنية (3 صور)</Text>
+                {renderSlot("front", "الوجه الأمامي للهوية", frontPreview, "badge")}
+                {renderSlot("back", "الوجه الخلفي للهوية", backPreview, "flip-to-back")}
+                {renderSlot("face", "صورة وجهك (سيلفي)", facePreview, "face")}
+              </>
+            )}
+
+            {docType === "passport" && (
+              <>
+                <Text style={styles.section}>صور جواز السفر (صورتان)</Text>
+                {renderSlot("passport", "صورة جواز السفر", passportPreview, "menu-book")}
+                {renderSlot("face", "صورة وجهك (سيلفي)", facePreview, "face")}
+              </>
             )}
 
             <Pressable
@@ -209,7 +260,7 @@ export default function VerifyIdentityScreen() {
               disabled={submitting}
               style={({ pressed }) => [
                 styles.confirmBtn,
-                (!preview || !docType || submitting) && styles.confirmDisabled,
+                (!isComplete || submitting) && styles.confirmDisabled,
                 pressed && styles.pressed,
               ]}
             >
@@ -248,6 +299,13 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginBottom: 10,
   },
+  slotLabel: {
+    color: CWAAX.muted,
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "right",
+    marginBottom: 8,
+  },
   docRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 20 },
   docBtn: {
     flex: 1,
@@ -267,18 +325,17 @@ const styles = StyleSheet.create({
     borderColor: CWAAX.line,
     borderStyle: "dashed",
     borderRadius: 16,
-    height: 160,
+    height: 140,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     backgroundColor: CWAAX.surface,
-    marginBottom: 20,
   },
   uploadText: { color: CWAAX.muted, fontSize: 12, fontWeight: "700" },
-  previewWrap: { marginBottom: 20 },
+  previewWrap: {},
   preview: {
     width: "100%",
-    height: 200,
+    height: 180,
     borderRadius: 16,
     backgroundColor: CWAAX.surface,
   },
@@ -292,6 +349,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    marginTop: 6,
   },
   confirmDisabled: { opacity: 0.5 },
   confirmText: { color: CWAAX.white, fontSize: 14, fontWeight: "900" },
