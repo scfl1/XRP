@@ -1,17 +1,14 @@
-export const themeColors: {
-  primary: { light: string; dark: string };
-  background: { light: string; dark: string };
-  surface: { light: string; dark: string };
-  foreground: { light: string; dark: string };
-  muted: { light: string; dark: string };
-  border: { light: string; dark: string };
-  success: { light: string; dark: string };
-  warning: { light: string; dark: string };
-  error: { light: string; dark: string };
+/** @type {const} */
+const themeColors = {
+  primary: { light: '#00E5A0', dark: '#00E5A0' },
+  background: { light: '#061216', dark: '#061216' },
+  surface: { light: '#0D1B22', dark: '#0D1B22' },
+  foreground: { light: '#F3FAF8', dark: '#F3FAF8' },
+  muted: { light: '#9EB4B6', dark: '#9EB4B6' },
+  border: { light: '#24434A', dark: '#24434A' },
+  success: { light: '#00E5A0', dark: '#00E5A0' },
+  warning: { light: '#FFD43B', dark: '#FFD43B' },
+  error: { light: '#EF4444', dark: '#F87171' },
 };
 
-declare const themeConfig: {
-  themeColors: typeof themeColors;
-};
-
-export default themeConfig;
+module.exports = { themeColors };
