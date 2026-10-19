@@ -52,9 +52,9 @@ export const TRANSACTIONS = [
 ];
 
 export const quickActions = [
-  { label: "دفع", icon: "call-made" as const, route: "/send" },
-  { label: "استقبال", icon: "call-received" as const, route: "/receive" },
-  { label: "شراء / بيع", icon: "swap-vertical-circle" as const, route: "/trade" },
-  { label: "تبديل", icon: "compare-arrows" as const, route: "/trade" },
-  { label: "أكثر", icon: "more-horiz" as const, route: "/menu" },
+  { label: "دفع", icon: "north-east" as const, route: "/send", tone: CWAAX.ink, filled: true },
+  { label: "استقبال", icon: "south-west" as const, route: "/receive", tone: CWAAX.green, filled: false },
+  { label: "شراء / بيع", icon: "swap-vert" as const, route: "/trade", tone: CWAAX.gold, filled: true },
+  { label: "تبديل", icon: "autorenew" as const, route: "/trade", tone: CWAAX.purple, filled: false },
+  { label: "أكثر", icon: "apps" as const, route: "/menu", tone: CWAAX.muted, filled: false },
 ];
