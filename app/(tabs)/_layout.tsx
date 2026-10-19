@@ -3,21 +3,19 @@ import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useColors } from "@/hooks/use-colors";
 
 export default function TabLayout() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 10 : Math.max(insets.bottom, 8);
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: "#9AA59F",
+        tabBarActiveTintColor: "#00E5A0",
+        tabBarInactiveTintColor: "#8CA6AA",
         tabBarButton: HapticTab,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginBottom: 2 },
-        tabBarStyle: { height: 63 + bottomPadding, paddingTop: 8, paddingBottom: bottomPadding, backgroundColor: colors.background, borderTopColor: "#E7ECE9", borderTopWidth: 1 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "800", marginBottom: 2 },
+        tabBarStyle: { height: 68 + bottomPadding, paddingTop: 8, paddingBottom: bottomPadding, backgroundColor: "#08161C", borderTopColor: "#1B444A", borderTopWidth: 1.5, elevation: 16, shadowColor: "#00E5A0", shadowOpacity: 0.08, shadowRadius: 16 },
       }}
     >
       <Tabs.Screen name="messages" options={{ title: "المحادثات", tabBarIcon: ({ color }) => <IconSymbol size={22} name="message.fill" color={color} /> }} />
