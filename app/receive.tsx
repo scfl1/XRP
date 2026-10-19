@@ -4,18 +4,33 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import QRCode from "qrcode";
 import { ScreenContainer } from "@/components/screen-container";
-import { IconButton } from "@/components/cwaax-ui";
 import { NetworkIcon } from "@/components/network-icon";
 import { UsdtIcon } from "@/components/usdt-icon";
-import { CWAAX } from "@/constants/cwaax";
 import { getNetwork } from "@/constants/networks";
 import { DEPOSIT_ADDRESSES } from "@/constants/receive-addresses";
 import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { getSelectedNetwork, subscribeNetwork } from "@/lib/_core/network-store";
 import { trpc } from "@/lib/trpc";
 
-const BLACK = "#16191C";
-const BLACK_SOFT = "#2A2F34";
+
+// ألوان الثيم الداكن (نفس الصفحة الرئيسية)
+const D = {
+  bg: "#04100D",
+  card: "#0B1A17",
+  card2: "#12241F",
+  border: "rgba(255,255,255,0.10)",
+  greenBorder: "rgba(47,227,154,0.45)",
+  text: "#FFFFFF",
+  muted: "#9FB3AD",
+  green: "#19D27C",
+  greenDeep: "#0F6B45",
+  greenSoft: "rgba(25,210,124,0.15)",
+  red: "#FF5C5C",
+  redSoft: "rgba(255,92,92,0.16)",
+};
+
+const BLACK = "#04100D";
+const BLACK_SOFT = "#1E8F5E";
 
 export default function ReceiveScreen() {
   const router = useRouter();
@@ -119,12 +134,15 @@ export default function ReceiveScreen() {
   };
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+    <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <IconButton icon="arrow-forward" label="رجوع" onPress={() => router.back()} />
+          <Pressable onPress={() => router.back()} hitSlop={10} style={({ pressed }) => [styles.backBtn, pressed && styles.pressed]}>
+            <MaterialIcons name="arrow-forward" size={22} color={D.text} />
+          </Pressable>
           <Text style={styles.title}>استقبال</Text>
-          <View style={{ width: 42 }} />
+          <View style={{ width: 44 }} />
         </View>
 
         <View style={styles.badgeRow}>
@@ -161,7 +179,7 @@ export default function ReceiveScreen() {
                 value={sentAmount}
                 onChangeText={setSentAmount}
                 placeholder="مثال: 50"
-                placeholderTextColor="#9CA8A1"
+                placeholderTextColor="#5F746D"
                 keyboardType="decimal-pad"
                 style={styles.confirmInput}
                 textAlign="center"
@@ -175,7 +193,7 @@ export default function ReceiveScreen() {
                   disabled={createDeposit.isPending}
                   style={({ pressed }) => [styles.confirmSubmit, (pressed || createDeposit.isPending) && styles.pressed]}
                 >
-                  <MaterialIcons name="arrow-back" size={16} color={CWAAX.white} />
+                  <MaterialIcons name="arrow-back" size={16} color={"#FFFFFF"} />
                   <Text style={styles.confirmSubmitText}>
                     {createDeposit.isPending ? "جاري الإرسال..." : "تأكيد الإرسال"}
                   </Text>
@@ -187,7 +205,7 @@ export default function ReceiveScreen() {
 
         {mode === "offchain" ? (
           <View style={styles.comingSoon}>
-            <MaterialIcons name="hourglass-empty" size={30} color={CWAAX.muted} />
+            <MaterialIcons name="hourglass-empty" size={30} color={D.muted} />
             <Text style={styles.comingSoonText}>
               التحويل الداخلي بين حسابات CwaAX قيد التطوير ولم يُفعَّل بعد.
             </Text>
@@ -212,7 +230,7 @@ export default function ReceiveScreen() {
                     <NetworkIcon network={network} size={18} />
                   </View>
                   <Text style={styles.selectorValue}>{network.name}</Text>
-                  <MaterialIcons name="unfold-more" size={14} color={CWAAX.muted} />
+                  <MaterialIcons name="unfold-more" size={14} color={D.muted} />
                 </Pressable>
               </View>
             </View>
@@ -220,7 +238,7 @@ export default function ReceiveScreen() {
             <View style={styles.qrCard}>
               <View style={styles.qrBrandRow}>
                 <Pressable onPress={handleShare} hitSlop={8} style={styles.shareBtn}>
-                  <MaterialIcons name="ios-share" size={18} color={CWAAX.ink} />
+                  <MaterialIcons name="ios-share" size={18} color={D.text} />
                 </Pressable>
                 <View style={{ alignItems: "flex-end" }}>
                   <Text style={styles.brand}>CwaAX</Text>
@@ -230,7 +248,7 @@ export default function ReceiveScreen() {
 
               {!address ? (
                 <View style={styles.noAddress}>
-                  <MaterialIcons name="error-outline" size={30} color={CWAAX.muted} />
+                  <MaterialIcons name="error-outline" size={30} color={D.muted} />
                   <Text style={styles.noAddressText}>
                     الاستقبال عبر شبكة {network.name} غير متاح حالياً.
                   </Text>
@@ -251,7 +269,7 @@ export default function ReceiveScreen() {
 
                   <Pressable onPress={copyAddress} style={({ pressed }) => [styles.copyBtn, pressed && styles.pressed]}>
                     <View style={styles.copyBtnIcon}>
-                      <MaterialIcons name="content-copy" size={14} color={CWAAX.white} />
+                      <MaterialIcons name="content-copy" size={14} color={"#FFFFFF"} />
                     </View>
                     <Text style={styles.copyBtnText}>نسخ العنوان</Text>
                   </Pressable>
@@ -261,7 +279,7 @@ export default function ReceiveScreen() {
 
             {address ? (
               <View style={styles.noteRow}>
-                <MaterialIcons name="info-outline" size={16} color={CWAAX.muted} />
+                <MaterialIcons name="info-outline" size={16} color={D.muted} />
                 <Text style={styles.note}>
                   فقط رمز USDT على شبكة {network.name} المُرسل إلى هذا العنوان سيصل إلى محفظتك. إرسال أي عملة أو شبكة أخرى قد يؤدي لفقدانها.
                 </Text>
@@ -270,54 +288,57 @@ export default function ReceiveScreen() {
           </>
         )}
       </ScrollView>
+    </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: D.bg, paddingHorizontal: 20 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: D.greenBorder, backgroundColor: D.card, alignItems: "center", justifyContent: "center" },
   content: { paddingTop: 12, paddingBottom: 30 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
-  title: { color: CWAAX.ink, fontSize: 19, fontWeight: "900" },
+  title: { color: D.text, fontSize: 19, fontWeight: "900" },
   badgeRow: { alignItems: "center", marginBottom: 16 },
-  freeBadge: { backgroundColor: CWAAX.greenSoft, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  freeBadgeText: { color: CWAAX.green, fontSize: 11, fontWeight: "800" },
-  tabs: { flexDirection: "row", backgroundColor: CWAAX.surface, borderRadius: 999, padding: 4, marginBottom: 22 },
+  freeBadge: { borderWidth: 1, borderColor: D.greenBorder, backgroundColor: D.greenSoft, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  freeBadgeText: { color: D.green, fontSize: 11, fontWeight: "800" },
+  tabs: { flexDirection: "row", backgroundColor: D.card, borderWidth: 1, borderColor: D.border, borderRadius: 999, padding: 4, marginBottom: 22 },
   tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 999 },
   tabActive: {
-    backgroundColor: BLACK,
+    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
     shadowColor: BLACK,
     shadowOpacity: 0.28,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
     elevation: 3,
   },
-  tabText: { color: CWAAX.muted, fontSize: 12, fontWeight: "800" },
-  tabTextActive: { color: CWAAX.white },
+  tabText: { color: D.muted, fontSize: 12, fontWeight: "800" },
+  tabTextActive: { color: "#FFFFFF" },
   comingSoon: { alignItems: "center", paddingVertical: 50, gap: 12 },
-  comingSoonText: { color: CWAAX.muted, fontSize: 12, textAlign: "center", lineHeight: 19, paddingHorizontal: 20 },
+  comingSoonText: { color: D.muted, fontSize: 12, textAlign: "center", lineHeight: 19, paddingHorizontal: 20 },
   selectorsRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
   selectorCol: { flex: 1 },
-  selectorLabel: { color: CWAAX.muted, fontSize: 10, textAlign: "right", marginBottom: 6 },
-  selectorPill: { flexDirection: "row-reverse", alignItems: "center", gap: 8, backgroundColor: CWAAX.white, borderWidth: 1.5, borderColor: CWAAX.line, borderRadius: 999, paddingHorizontal: 8, height: 46 },
-  selectorAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: CWAAX.surface, alignItems: "center", justifyContent: "center" },
-  selectorValue: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", flex: 1, textAlign: "right" },
-  qrCard: { backgroundColor: CWAAX.surface, borderRadius: 26, padding: 18, alignItems: "center" },
+  selectorLabel: { color: D.muted, fontSize: 10, textAlign: "right", marginBottom: 6 },
+  selectorPill: { flexDirection: "row-reverse", alignItems: "center", gap: 8, backgroundColor: D.card, borderWidth: 1.5, borderColor: D.border, borderRadius: 999, paddingHorizontal: 8, height: 46 },
+  selectorAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
+  selectorValue: { color: D.text, fontSize: 13, fontWeight: "800", flex: 1, textAlign: "right" },
+  qrCard: { backgroundColor: D.card, borderWidth: 1, borderColor: D.greenBorder, borderRadius: 26, padding: 18, alignItems: "center" },
   qrBrandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 16 },
-  shareBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
-  brand: { color: CWAAX.ink, fontSize: 20, fontWeight: "900" },
-  brandSub: { color: CWAAX.muted, fontSize: 9, fontWeight: "700", letterSpacing: 1, marginTop: 2 },
-  qrFrame: { width: 220, height: 220, backgroundColor: "#fff", borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 18, borderWidth: 2, borderColor: CWAAX.line },
+  shareBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
+  brand: { color: D.text, fontSize: 20, fontWeight: "900" },
+  brandSub: { color: D.muted, fontSize: 9, fontWeight: "700", letterSpacing: 1, marginTop: 2 },
+  qrFrame: { width: 220, height: 220, backgroundColor: "#fff", borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 18, borderWidth: 2, borderColor: D.border },
   qrImage: { width: 200, height: 200 },
   qrBadge: { position: "absolute", width: 36, height: 36, borderRadius: 18, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff", shadowColor: "#15231c", shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  addressLabel: { color: CWAAX.muted, fontSize: 10, marginBottom: 8 },
-  addressChip: { backgroundColor: CWAAX.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: CWAAX.line },
-  address: { color: CWAAX.green, fontSize: 13, fontWeight: "800", textAlign: "center", lineHeight: 20 },
+  addressLabel: { color: D.muted, fontSize: 10, marginBottom: 8 },
+  addressChip: { backgroundColor: D.card2, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: D.border },
+  address: { color: D.green, fontSize: 13, fontWeight: "800", textAlign: "center", lineHeight: 20 },
   copyBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 8,
     marginTop: 14,
-    backgroundColor: BLACK,
+    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 9,
@@ -328,18 +349,18 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   copyBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: BLACK_SOFT, alignItems: "center", justifyContent: "center" },
-  copyBtnText: { color: CWAAX.white, fontSize: 12.5, fontWeight: "800", marginLeft: 6 },
+  copyBtnText: { color: "#FFFFFF", fontSize: 12.5, fontWeight: "800", marginLeft: 6 },
   noAddress: { alignItems: "center", paddingVertical: 40, gap: 10 },
-  noAddressText: { color: CWAAX.muted, fontSize: 12, textAlign: "center", paddingHorizontal: 20 },
+  noAddressText: { color: D.muted, fontSize: 12, textAlign: "center", paddingHorizontal: 20 },
   noteRow: { flexDirection: "row-reverse", gap: 8, marginTop: 18, paddingHorizontal: 4 },
-  note: { flex: 1, color: CWAAX.muted, fontSize: 10.5, lineHeight: 17, textAlign: "right" },
+  note: { flex: 1, color: D.muted, fontSize: 10.5, lineHeight: 17, textAlign: "right" },
   pressed: { opacity: 0.6 },
   sentBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: BLACK,
+    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
     borderRadius: 999,
     height: 54,
     marginTop: 4,
@@ -352,10 +373,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 7 },
     elevation: 4,
   },
-  sentBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
-  sentBtnText: { color: CWAAX.white, fontSize: 13, fontWeight: "800" },
+  sentBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: D.green, alignItems: "center", justifyContent: "center" },
+  sentBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   confirmBox: {
-    backgroundColor: CWAAX.surface,
+    backgroundColor: D.card,
     borderRadius: 16,
     padding: 16,
     marginTop: 4,
@@ -363,17 +384,17 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-  confirmLabel: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "center", marginBottom: 10 },
-  confirmInput: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: CWAAX.line, height: 46, fontSize: 15, fontWeight: "800", color: CWAAX.ink },
-  confirmHint: { color: CWAAX.muted, fontSize: 10, textAlign: "center", marginTop: 10, lineHeight: 16 },
+  confirmLabel: { color: D.text, fontSize: 12, fontWeight: "800", textAlign: "center", marginBottom: 10 },
+  confirmInput: { backgroundColor: D.card2, borderRadius: 12, borderWidth: 1, borderColor: D.border, height: 46, fontSize: 15, fontWeight: "800", color: D.text },
+  confirmHint: { color: D.muted, fontSize: 10, textAlign: "center", marginTop: 10, lineHeight: 16 },
   confirmActions: { flexDirection: "row", gap: 8, marginTop: 14 },
-  confirmCancel: { flex: 1, height: 48, borderRadius: 999, borderWidth: 1.5, borderColor: CWAAX.line, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
-  confirmCancelText: { color: CWAAX.ink, fontSize: 12, fontWeight: "800" },
+  confirmCancel: { flex: 1, height: 48, borderRadius: 999, borderWidth: 1.5, borderColor: D.border, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
+  confirmCancelText: { color: D.text, fontSize: 12, fontWeight: "800" },
   confirmSubmit: {
     flex: 2,
     height: 48,
     borderRadius: 999,
-    backgroundColor: BLACK,
+    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row-reverse",
@@ -384,5 +405,5 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
-  confirmSubmitText: { color: CWAAX.white, fontSize: 12, fontWeight: "800" },
+  confirmSubmitText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
 });
