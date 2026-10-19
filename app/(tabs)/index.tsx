@@ -69,7 +69,7 @@ export default function HomeScreen() {
           <View style={styles.quickGrid}>
             {quickActions.map((action) => (
               <Pressable key={action.label} onPress={() => router.push(action.route as never)} style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}>
-                <View style={[styles.quickIcon, action.filled ? { backgroundColor: action.tone } : { backgroundColor: CWAAX.white, borderWidth: 1.5, borderColor: action.tone + "3D" }]}>
+                <View style={[styles.quickIcon, action.filled ? { backgroundColor: action.tone } : { backgroundColor: CWAAX.card, borderWidth: 1.5, borderColor: action.tone + "3D" }]}>
                   <MaterialIcons name={action.icon} size={22} color={action.filled ? CWAAX.white : action.tone} />
                 </View>
                 <Text style={styles.quickLabel}>{action.label}</Text>
