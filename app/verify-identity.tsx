@@ -20,7 +20,9 @@ import { isIdentityVerified, markIdentityVerified } from "@/lib/identity-verific
 type DocType = "id" | "passport" | null;
 type Slot = "front" | "back" | "face" | "passport";
 
-function pickImageFromDevice(): Promise<string | null> {
+type ImageSource = "camera" | "gallery";
+
+function pickImageFromDevice(source: ImageSource): Promise<string | null> {
   return new Promise((resolve) => {
     if (Platform.OS !== "web" || typeof document === "undefined") {
       resolve(null);
@@ -29,8 +31,12 @@ function pickImageFromDevice(): Promise<string | null> {
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*";
-    // لا نضع capture هنا عمداً، حتى يعرض المتصفح خيار "المعرض/الصور"
-    // بالإضافة إلى خيار الكاميرا بدل فتح الكاميرا مباشرة فقط.
+    if (source === "camera") {
+      // يفرض فتح تطبيق الكاميرا مباشرة بدل معرض الصور (مدعوم على متصفحات
+      // الجوال). بدون هذا السطر كانت بعض المتصفحات/الـWebView تفتح
+      // المعرض فقط دون عرض خيار الكاميرا إطلاقاً.
+      input.setAttribute("capture", "environment");
+    }
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) {
@@ -90,9 +96,9 @@ export default function VerifyIdentityScreen() {
     setFacePreview(null);
   }, [verified]);
 
-  const onPick = useCallback(async (slot: Slot) => {
+  const onPick = useCallback(async (slot: Slot, source: ImageSource) => {
     if (verified) return;
-    const uri = await pickImageFromDevice();
+    const uri = await pickImageFromDevice(source);
     if (!uri) {
       notify("لم يتم اختيار صورة", "اختر صورة واضحة من الكاميرا أو من المعرض.");
       return;
@@ -159,21 +165,44 @@ export default function VerifyIdentityScreen() {
       {preview ? (
         <View style={styles.previewWrap}>
           <Image source={{ uri: preview }} style={styles.preview} resizeMode="contain" />
-          <Pressable
-            onPress={() => onPick(slot)}
-            style={({ pressed }) => [styles.changeBtn, pressed && styles.pressed]}
-          >
-            <Text style={styles.changeText}>تغيير الصورة</Text>
-          </Pressable>
+          <View style={styles.sourceRow}>
+            <Pressable
+              onPress={() => onPick(slot, "camera")}
+              style={({ pressed }) => [styles.sourceBtn, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="photo-camera" size={16} color={CWAAX.green} />
+              <Text style={styles.sourceBtnText}>الكاميرا</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onPick(slot, "gallery")}
+              style={({ pressed }) => [styles.sourceBtn, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="photo-library" size={16} color={CWAAX.green} />
+              <Text style={styles.sourceBtnText}>المعرض</Text>
+            </Pressable>
+          </View>
         </View>
       ) : (
-        <Pressable
-          onPress={() => onPick(slot)}
-          style={({ pressed }) => [styles.uploadBox, pressed && styles.pressed]}
-        >
-          <MaterialIcons name={icon} size={26} color={CWAAX.muted} />
-          <Text style={styles.uploadText}>التقط صورة أو اخترها من المعرض</Text>
-        </Pressable>
+        <View style={styles.uploadBox}>
+          <MaterialIcons name={icon} size={24} color={CWAAX.muted} />
+          <Text style={styles.uploadText}>اختر مصدر الصورة</Text>
+          <View style={styles.sourceRow}>
+            <Pressable
+              onPress={() => onPick(slot, "camera")}
+              style={({ pressed }) => [styles.sourceBtnFilled, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="photo-camera" size={17} color={CWAAX.white} />
+              <Text style={styles.sourceBtnFilledText}>الكاميرا</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => onPick(slot, "gallery")}
+              style={({ pressed }) => [styles.sourceBtnOutline, pressed && styles.pressed]}
+            >
+              <MaterialIcons name="photo-library" size={17} color={CWAAX.green} />
+              <Text style={styles.sourceBtnOutlineText}>المعرض</Text>
+            </Pressable>
+          </View>
+        </View>
       )}
     </View>
   );
@@ -325,10 +354,11 @@ const styles = StyleSheet.create({
     borderColor: CWAAX.line,
     borderStyle: "dashed",
     borderRadius: 16,
-    height: 140,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: CWAAX.surface,
   },
   uploadText: { color: CWAAX.muted, fontSize: 12, fontWeight: "700" },
@@ -339,8 +369,42 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: CWAAX.surface,
   },
-  changeBtn: { alignSelf: "center", marginTop: 10, padding: 8 },
-  changeText: { color: CWAAX.green, fontSize: 12, fontWeight: "800" },
+  sourceRow: { flexDirection: "row-reverse", gap: 10, marginTop: 12, width: "100%" },
+  sourceBtn: {
+    flex: 1,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 11,
+    backgroundColor: CWAAX.greenSoft,
+  },
+  sourceBtnText: { color: CWAAX.green, fontSize: 12, fontWeight: "800" },
+  sourceBtnFilled: {
+    flex: 1,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: 12,
+    backgroundColor: CWAAX.green,
+  },
+  sourceBtnFilledText: { color: CWAAX.white, fontSize: 12, fontWeight: "800" },
+  sourceBtnOutline: {
+    flex: 1,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: CWAAX.green,
+    backgroundColor: CWAAX.white,
+  },
+  sourceBtnOutlineText: { color: CWAAX.green, fontSize: 12, fontWeight: "800" },
   confirmBtn: {
     height: 52,
     borderRadius: 14,
