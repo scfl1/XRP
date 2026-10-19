@@ -1,17 +1,21 @@
 export const TRADE_DAILY_RATE = 0.035;
 
 export const CWAAX = {
-  green: "#0B8754",
-  greenDark: "#076A42",
-  greenSoft: "#E8F7EF",
-  ink: "#101A16",
-  muted: "#77837D",
-  line: "#E7ECE9",
-  surface: "#F7F9F8",
+  green: "#00E5A0",
+  neon: "#00FFC2",
+  blue: "#176BFF",
+  card: "#0D1B22",
+  cardRaised: "#10252C",
+  greenDark: "#006B52",
+  greenSoft: "#103C36",
+  ink: "#F3FAF8",
+  muted: "#9EB4B6",
+  line: "#24434A",
+  surface: "#102027",
   white: "#FFFFFF",
   red: "#D95C55",
-  gold: "#D19A32",
-  purple: "#7567D9",
+  gold: "#FFD43B",
+  purple: "#9B5CFF",
 } as const;
 
 const PLAN_COIN_CYCLE = [
