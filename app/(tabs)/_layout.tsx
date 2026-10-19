@@ -13,11 +13,11 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.tint,
-        tabBarInactiveTintColor: "#9AA59F",
+        tabBarActiveTintColor: "#19D27C",
+        tabBarInactiveTintColor: "#9FB3AD",
         tabBarButton: HapticTab,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "700", marginBottom: 2 },
-        tabBarStyle: { height: 63 + bottomPadding, paddingTop: 8, paddingBottom: bottomPadding, backgroundColor: colors.background, borderTopColor: "#E7ECE9", borderTopWidth: 1 },
+        tabBarStyle: { height: 63 + bottomPadding, paddingTop: 8, paddingBottom: bottomPadding, backgroundColor: "#07120F", borderTopColor: "rgba(255,255,255,0.08)", borderTopWidth: 1 },
       }}
     >
       <Tabs.Screen name="messages" options={{ title: "المحادثات", tabBarIcon: ({ color }) => <IconSymbol size={22} name="message.fill" color={color} /> }} />
