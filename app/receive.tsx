@@ -14,6 +14,9 @@ import { confirmAsync, notify } from "@/lib/_core/native-alert";
 import { getSelectedNetwork, subscribeNetwork } from "@/lib/_core/network-store";
 import { trpc } from "@/lib/trpc";
 
+const BLACK = "#16191C";
+const BLACK_SOFT = "#2A2F34";
+
 export default function ReceiveScreen() {
   const router = useRouter();
   const [networkCode, setNetworkCode] = useState(getSelectedNetwork());
@@ -147,7 +150,7 @@ export default function ReceiveScreen() {
               style={({ pressed }) => [styles.sentBtn, pressed && styles.pressed]}
             >
               <View style={styles.sentBtnIcon}>
-                <MaterialIcons name="check" size={15} color={CWAAX.green} />
+                <MaterialIcons name="check" size={15} color={BLACK} />
               </View>
               <Text style={styles.sentBtnText}>اضغط هنا للتأكيد ايداع</Text>
             </Pressable>
@@ -279,8 +282,15 @@ const styles = StyleSheet.create({
   freeBadge: { backgroundColor: CWAAX.greenSoft, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   freeBadgeText: { color: CWAAX.green, fontSize: 11, fontWeight: "800" },
   tabs: { flexDirection: "row", backgroundColor: CWAAX.surface, borderRadius: 999, padding: 4, marginBottom: 22 },
-  tab: { flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: 999 },
-  tabActive: { backgroundColor: CWAAX.green },
+  tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 999 },
+  tabActive: {
+    backgroundColor: BLACK,
+    shadowColor: BLACK,
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
   tabText: { color: CWAAX.muted, fontSize: 12, fontWeight: "800" },
   tabTextActive: { color: CWAAX.white },
   comingSoon: { alignItems: "center", paddingVertical: 50, gap: 12 },
@@ -302,8 +312,22 @@ const styles = StyleSheet.create({
   addressLabel: { color: CWAAX.muted, fontSize: 10, marginBottom: 8 },
   addressChip: { backgroundColor: CWAAX.white, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: CWAAX.line },
   address: { color: CWAAX.green, fontSize: 13, fontWeight: "800", textAlign: "center", lineHeight: 20 },
-  copyBtn: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginTop: 14, backgroundColor: CWAAX.green, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 8 },
-  copyBtnIcon: { width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" },
+  copyBtn: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 14,
+    backgroundColor: BLACK,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    shadowColor: BLACK,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 3,
+  },
+  copyBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: BLACK_SOFT, alignItems: "center", justifyContent: "center" },
   copyBtnText: { color: CWAAX.white, fontSize: 12.5, fontWeight: "800", marginLeft: 6 },
   noAddress: { alignItems: "center", paddingVertical: 40, gap: 10 },
   noAddressText: { color: CWAAX.muted, fontSize: 12, textAlign: "center", paddingHorizontal: 20 },
@@ -315,15 +339,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: CWAAX.green,
+    backgroundColor: BLACK,
     borderRadius: 999,
-    height: 52,
+    height: 54,
     marginTop: 4,
     marginBottom: 18,
     alignSelf: "center",
     width: "100%",
+    shadowColor: BLACK,
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
+    elevation: 4,
   },
-  sentBtnIcon: { width: 24, height: 24, borderRadius: 12, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
+  sentBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
   sentBtnText: { color: CWAAX.white, fontSize: 13, fontWeight: "800" },
   confirmBox: {
     backgroundColor: CWAAX.surface,
@@ -338,8 +367,22 @@ const styles = StyleSheet.create({
   confirmInput: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1, borderColor: CWAAX.line, height: 46, fontSize: 15, fontWeight: "800", color: CWAAX.ink },
   confirmHint: { color: CWAAX.muted, fontSize: 10, textAlign: "center", marginTop: 10, lineHeight: 16 },
   confirmActions: { flexDirection: "row", gap: 8, marginTop: 14 },
-  confirmCancel: { flex: 1, height: 46, borderRadius: 999, borderWidth: 1, borderColor: CWAAX.line, alignItems: "center", justifyContent: "center" },
+  confirmCancel: { flex: 1, height: 48, borderRadius: 999, borderWidth: 1.5, borderColor: CWAAX.line, backgroundColor: CWAAX.white, alignItems: "center", justifyContent: "center" },
   confirmCancelText: { color: CWAAX.ink, fontSize: 12, fontWeight: "800" },
-  confirmSubmit: { flex: 2, height: 46, borderRadius: 999, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center", flexDirection: "row-reverse", gap: 6 },
+  confirmSubmit: {
+    flex: 2,
+    height: 48,
+    borderRadius: 999,
+    backgroundColor: BLACK,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row-reverse",
+    gap: 6,
+    shadowColor: BLACK,
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
   confirmSubmitText: { color: CWAAX.white, fontSize: 12, fontWeight: "800" },
 });
