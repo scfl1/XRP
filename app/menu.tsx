@@ -245,12 +245,12 @@ const styles = StyleSheet.create({
   title: { color: CWAAX.ink, fontSize: 28, fontWeight: "900", textAlign: "right", marginTop: 22, marginBottom: 14 },
 
   profileCard: {
-    backgroundColor: CWAAX.green,
+    backgroundColor: "#16191C",
     borderRadius: 26,
     padding: 17,
     marginBottom: 14,
     overflow: "hidden",
-    shadowColor: CWAAX.green,
+    shadowColor: "#000000",
     shadowOpacity: 0.28,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
