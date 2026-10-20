@@ -32,13 +32,13 @@ function UsdtLogo({ size = 28 }: { size?: number }) {
 
 // ألوان التصميم الداكن (مطابقة للصورة)
 const C = {
-  bg: "#04100D",
-  card: "#0B1A17",
+  bg: "#070B14",
+  card: "#0F1626",
   cardBorder: "rgba(255,255,255,0.08)",
   text: "#FFFFFF",
-  muted: "#9FB3AD",
-  green: "#19D27C",
-  greenDark: "#0B7A4B",
+  muted: "#9AA6C0",
+  accent: "#4F80FF",
+  accentDark: "#2446B8",
   blue: "#2F5BFF",
   blueDark: "#1A2E8A",
   gold: "#F5B82E",
@@ -52,10 +52,10 @@ type QuickAction = { label: string; icon: keyof typeof MaterialIcons.glyphMap; c
 // من اليمين إلى اليسار: المعاملات، استثمار، شراء/بيع، تبديل، أكثر
 const QUICK_ACTIONS: QuickAction[] = [
   { label: "المعاملات", icon: "receipt-long", colors: ["#3D63FF", "#1A2E8A"], route: "/transactions" },
-  { label: "استثمار", icon: "bar-chart", colors: ["#1FD982", "#0B6B43"], route: "/trade" },
+  { label: "استثمار", icon: "bar-chart", colors: ["#FF6B9A", "#B3194F"], route: "/trade" },
   { label: "شراء / بيع", icon: "swap-horiz", colors: ["#F7C844", "#9A6B0B"], route: "/trade" },
   { label: "تبديل", icon: "sync", colors: ["#8A5CFF", "#43209B"], route: "/trade" },
-  { label: "أكثر", icon: "apps", colors: ["#1F3A35", "#0E211D"], route: "/menu" },
+  { label: "أكثر", icon: "apps", colors: ["#26304D", "#121A30"], route: "/menu" },
 ];
 
 export default function HomeScreen() {
@@ -92,9 +92,9 @@ export default function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.logoRow}>
               <Text style={styles.logoText}>
-                Cwa<Text style={{ color: C.green }}>AX</Text>
+                Cwa<Text style={{ color: C.accent }}>AX</Text>
               </Text>
-              <LinearGradient colors={["#22E58E", "#0E9E5C"]} style={styles.logoBadge}>
+              <LinearGradient colors={["#6E96FF", "#3558E0"]} style={styles.logoBadge}>
                 <Text style={styles.logoBadgeText}>C</Text>
               </LinearGradient>
             </View>
@@ -120,7 +120,7 @@ export default function HomeScreen() {
 
           {/* بطاقة إجمالي الأصول */}
           <LinearGradient
-            colors={["#0F4D36", "#0A2A22", "#08201A"]}
+            colors={["#2B3FA8", "#152257", "#0C1233"]}
             start={{ x: 1, y: 0 }}
             end={{ x: 0, y: 1 }}
             style={styles.assetCard}
@@ -158,10 +158,10 @@ export default function HomeScreen() {
               title="سحب"
               subtitle="سحب الأموال إلى محفظتك"
               icon="north-east"
-              colors={["#1B2E9C", "#0D1A57"]}
-              iconColors={["#4A7BFF", "#2142D6"]}
-              border="rgba(74,123,255,0.6)"
-              chevron="#4A7BFF"
+              colors={["#5B2FD0", "#2A1470"]}
+              iconColors={["#9B6BFF", "#6A3DE8"]}
+              border="rgba(155,107,255,0.65)"
+              chevron="#9B6BFF"
               onPress={() => router.push("/send")}
             />
             <BigAction
@@ -216,10 +216,10 @@ export default function HomeScreen() {
           {/* ابدأ مع CwaAX */}
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>
-              ابدأ مع Cwa<Text style={{ color: C.green }}>AX</Text>
+              ابدأ مع Cwa<Text style={{ color: C.accent }}>AX</Text>
             </Text>
             <Pressable onPress={() => router.push("/menu")} style={styles.sectionAction}>
-              <MaterialIcons name="chevron-left" size={18} color={C.green} />
+              <MaterialIcons name="chevron-left" size={18} color={C.accent} />
               <Text style={styles.sectionActionText}>عرض الكل</Text>
             </Pressable>
           </View>
@@ -229,7 +229,7 @@ export default function HomeScreen() {
               title="استقبل عملة"
               subtitle="احصل على العملات الرقمية"
               icon="file-download"
-              colors={["#2FE39A", "#0E9E5C"]}
+              colors={["#FFB84D", "#E67E1A"]}
               onPress={() => router.push("/receive")}
             />
             <StartCard
@@ -245,7 +245,7 @@ export default function HomeScreen() {
           <View style={styles.sectionRow}>
             <Text style={styles.sectionTitle}>الأسواق</Text>
             <Pressable onPress={() => router.push("/trade")} style={styles.sectionAction}>
-              <MaterialIcons name="chevron-left" size={18} color={C.green} />
+              <MaterialIcons name="chevron-left" size={18} color={C.accent} />
               <Text style={styles.sectionActionText}>كل الأسواق</Text>
             </Pressable>
           </View>
@@ -374,25 +374,25 @@ const styles = StyleSheet.create({
   logoBadgeText: { color: C.text, fontSize: 28, fontWeight: "900" },
   profileRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   avatar: {
-    width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: "rgba(47,227,154,0.6)",
-    backgroundColor: "#0B2A22", alignItems: "center", justifyContent: "center",
+    width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: "rgba(110,150,255,0.6)",
+    backgroundColor: "#121B3A", alignItems: "center", justifyContent: "center",
   },
   onlineDot: {
     position: "absolute", bottom: 0, right: 0, width: 13, height: 13, borderRadius: 7,
-    backgroundColor: C.green, borderWidth: 2, borderColor: C.bg,
+    backgroundColor: C.accent, borderWidth: 2, borderColor: C.bg,
   },
   welcome: { color: C.text, fontSize: 17, fontWeight: "800", textAlign: "right" },
-  welcomeSub: { color: C.green, fontSize: 13, fontWeight: "700", textAlign: "right", marginTop: 2 },
+  welcomeSub: { color: C.accent, fontSize: 13, fontWeight: "700", textAlign: "right", marginTop: 2 },
 
   actionsRow: { flexDirection: "row", gap: 12, marginTop: 14, marginBottom: 14 },
   roundBtn: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: "#0B1E1A",
-    borderWidth: 1, borderColor: "rgba(47,227,154,0.25)", alignItems: "center", justifyContent: "center",
+    width: 46, height: 46, borderRadius: 23, backgroundColor: "#101A33",
+    borderWidth: 1, borderColor: "rgba(110,150,255,0.25)", alignItems: "center", justifyContent: "center",
   },
   redDot: { position: "absolute", top: 8, right: 10, width: 9, height: 9, borderRadius: 5, backgroundColor: C.red },
 
   assetCard: {
-    borderRadius: 26, borderWidth: 1, borderColor: "rgba(47,227,154,0.35)",
+    borderRadius: 26, borderWidth: 1, borderColor: "rgba(110,150,255,0.35)",
     padding: 18, minHeight: 170, flexDirection: "row-reverse", overflow: "hidden", marginBottom: 14,
   },
   assetTextCol: { flex: 1, justifyContent: "space-between", alignItems: "flex-end" },
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
   assetValue: { color: C.text, fontSize: 40, fontWeight: "900", letterSpacing: -1, textAlign: "left", marginVertical: 6 },
   usdtPill: {
     flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "rgba(10,30,26,0.8)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
+    backgroundColor: "rgba(8,12,30,0.75)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
     borderRadius: 22, paddingHorizontal: 10, paddingVertical: 6,
   },
   usdtText: { color: C.text, fontWeight: "800", fontSize: 14 },
@@ -410,20 +410,20 @@ const styles = StyleSheet.create({
   walletArt: { width: 150, alignItems: "center", justifyContent: "center" },
   walletRing: {
     position: "absolute", width: 150, height: 70, borderRadius: 75, borderWidth: 2,
-    borderColor: "rgba(47,227,154,0.55)", transform: [{ rotate: "-18deg" }],
+    borderColor: "rgba(110,150,255,0.55)", transform: [{ rotate: "-18deg" }],
   },
   walletBody: {
-    width: 100, height: 78, borderRadius: 14, backgroundColor: "#12352C", borderWidth: 1,
+    width: 100, height: 78, borderRadius: 14, backgroundColor: "#1B2658", borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)", transform: [{ rotate: "12deg" }], justifyContent: "center", alignItems: "flex-end",
   },
-  walletClasp: { width: 18, height: 26, borderRadius: 8, backgroundColor: "#1B5A45", marginRight: -6 },
+  walletClasp: { width: 18, height: 26, borderRadius: 8, backgroundColor: "#2E3F8F", marginRight: -6 },
   bigCoin: {
     position: "absolute", width: 66, height: 66, borderRadius: 33, alignItems: "center", justifyContent: "center",
-    borderWidth: 3, borderColor: "#7FF3C0", top: 28, overflow: "hidden",
+    borderWidth: 3, borderColor: "#A9C0FF", top: 28, overflow: "hidden",
   },
   smallCoin: {
     position: "absolute", width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: "#7FF3C0", bottom: 14, right: 6, overflow: "hidden",
+    borderWidth: 2, borderColor: "#A9C0FF", bottom: 14, right: 6, overflow: "hidden",
   },
 
   dwRow: { flexDirection: "row", gap: 12, marginBottom: 14 },
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   sectionTitle: { color: C.text, fontSize: 21, fontWeight: "900" },
   sectionAction: { flexDirection: "row", alignItems: "center" },
-  sectionActionText: { color: C.green, fontSize: 14, fontWeight: "700" },
+  sectionActionText: { color: C.accent, fontSize: 14, fontWeight: "700" },
 
   startRow: { flexDirection: "row", gap: 12, marginBottom: 22 },
   startCard: {
@@ -482,13 +482,13 @@ const styles = StyleSheet.create({
   marketMeta: { color: C.muted, fontSize: 10, marginTop: 2, textAlign: "right" },
   marketPrice: { alignItems: "flex-start" },
   priceText: { color: C.text, fontSize: 13, fontWeight: "800" },
-  positive: { color: C.green, fontSize: 11, fontWeight: "700", marginTop: 3 },
+  positive: { color: C.accent, fontSize: 11, fontWeight: "700", marginTop: 3 },
   negative: { color: "#FF6B63", fontSize: 11, fontWeight: "700", marginTop: 3 },
   marketLoading: { color: C.muted, fontSize: 12, textAlign: "center", paddingVertical: 24 },
 
   toast: {
-    position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: "#12352C",
-    borderWidth: 1, borderColor: "rgba(47,227,154,0.4)", padding: 13, flexDirection: "row",
+    position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: "#1A2A55",
+    borderWidth: 1, borderColor: "rgba(110,150,255,0.4)", padding: 13, flexDirection: "row",
     alignItems: "center", justifyContent: "center", gap: 8,
   },
   toastText: { color: C.text, fontSize: 12, fontWeight: "700" },
