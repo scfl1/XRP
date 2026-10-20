@@ -2,21 +2,66 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
+import type { ReactNode } from "react";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, CwaLogo, IconButton, StatusPill } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
 import { confirmAsync } from "@/lib/_core/native-alert";
 import { useAuth } from "@/hooks/use-auth";
 
+// ألوان هذه الصفحة (داكنة: أزرق ملكي على كحلي) — مستقلة عن باقي المشروع
+const CWAAX = {
+  green: "#4F80FF",
+  greenSoft: "rgba(79,128,255,0.16)",
+  ink: "#FFFFFF",
+  muted: "#9AA6C0",
+  line: "rgba(255,255,255,0.10)",
+  white: "#FFFFFF",
+  red: "#FF6B63",
+  gold: "#F5B82E",
+  purple: "#9B6BFF",
+  bg: "#070B14",
+  card: "#0F1626",
+  card2: "#18223D",
+} as const;
+
+function Card({ children, style }: { children: ReactNode; style?: object }) {
+  return <View style={[localStyles.card, style]}>{children}</View>;
+}
+
+function CwaLogo() {
+  return (
+    <View style={localStyles.logoWrap}>
+      <View style={localStyles.logoBadge}><Text style={localStyles.logoLetter}>C</Text></View>
+      <Text style={localStyles.logoText}>Cwa<Text style={{ color: CWAAX.green }}>AX</Text></Text>
+    </View>
+  );
+}
+
+function IconButton({ icon, onPress, label }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; onPress?: () => void; label?: string }) {
+  return (
+    <Pressable accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [localStyles.iconButton, pressed && { opacity: 0.6 }]}>
+      <MaterialIcons name={icon} size={21} color={CWAAX.ink} />
+    </Pressable>
+  );
+}
+
+const localStyles = StyleSheet.create({
+  card: { backgroundColor: CWAAX.card, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 22, padding: 16 },
+  logoWrap: { flexDirection: "row", alignItems: "center", gap: 9 },
+  logoBadge: { width: 36, height: 36, borderRadius: 12, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-8deg" }] },
+  logoLetter: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", transform: [{ rotate: "8deg" }] },
+  logoText: { color: CWAAX.ink, fontSize: 22, fontWeight: "800", letterSpacing: -0.8 },
+  iconButton: { width: 42, height: 42, borderRadius: 21, backgroundColor: CWAAX.card, borderWidth: 1, borderColor: "rgba(79,128,255,0.4)", alignItems: "center", justifyContent: "center" },
+});
+
 const ACCENTS = {
-  gold: { bg: "#FFF3DC", fg: "#C7912B" },
-  blue: { bg: "#E8F1FF", fg: "#3368D6" },
-  slate: { bg: "#EEF1F4", fg: "#5B6672" },
-  purple: { bg: "#F2F0FF", fg: CWAAX.purple },
-  orange: { bg: "#FFEEE2", fg: "#D97A33" },
-  teal: { bg: "#E4F8F3", fg: "#129C86" },
+  gold: { bg: "rgba(245,184,46,0.14)", fg: "#F5B82E" },
+  blue: { bg: "rgba(79,128,255,0.16)", fg: "#6C95FF" },
+  slate: { bg: "#18223D", fg: "#9AA6C0" },
+  purple: { bg: "rgba(155,107,255,0.16)", fg: "#9B6BFF" },
+  orange: { bg: "rgba(255,150,70,0.16)", fg: "#FF9646" },
+  teal: { bg: "rgba(255,107,154,0.16)", fg: "#FF6B9A" },
   green: { bg: CWAAX.greenSoft, fg: CWAAX.green },
-  red: { bg: "#FDEBEA", fg: CWAAX.red },
+  red: { bg: "rgba(255,107,99,0.16)", fg: CWAAX.red },
 };
 
 const common = [
@@ -65,7 +110,7 @@ export default function MenuScreen() {
             {item.sub ? <Text style={styles.menuSub}>{item.sub}</Text> : null}
           </View>
           <View style={styles.chevronWrap}>
-            <MaterialIcons name="chevron-left" size={18} color="#A0AAA4" />
+            <MaterialIcons name="chevron-left" size={18} color="#6F7C99" />
           </View>
         </Pressable>
       ))}
@@ -73,7 +118,8 @@ export default function MenuScreen() {
   );
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+    <View style={{ flex: 1, backgroundColor: CWAAX.bg, paddingHorizontal: 20 }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
@@ -155,8 +201,8 @@ export default function MenuScreen() {
             <Switch
               value={dark}
               onValueChange={setDark}
-              trackColor={{ false: "#DDE4E0", true: "#9BD5B4" }}
-              thumbColor={dark ? CWAAX.green : "#FFFFFF"}
+              trackColor={{ false: "#2A3558", true: "#3D63D8" }}
+              thumbColor={dark ? "#FFFFFF" : "#9AA6C0"}
             />
           </View>
 
@@ -171,7 +217,7 @@ export default function MenuScreen() {
               <Text style={styles.menuLabel}>اللغة</Text>
             </View>
             <Text style={styles.preference}>{language}</Text>
-            <MaterialIcons name="chevron-left" size={18} color="#A0AAA4" />
+            <MaterialIcons name="chevron-left" size={18} color="#6F7C99" />
           </Pressable>
         </Card>
 
@@ -235,6 +281,7 @@ export default function MenuScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+    </View>
     </ScreenContainer>
   );
 }
@@ -245,7 +292,9 @@ const styles = StyleSheet.create({
   title: { color: CWAAX.ink, fontSize: 28, fontWeight: "900", textAlign: "right", marginTop: 22, marginBottom: 14 },
 
   profileCard: {
-    backgroundColor: "#16191C",
+    backgroundColor: "#1B2A6B",
+    borderWidth: 1,
+    borderColor: "rgba(110,150,255,0.45)",
     borderRadius: 26,
     padding: 17,
     marginBottom: 14,
@@ -272,12 +321,12 @@ const styles = StyleSheet.create({
   viewProfile: { flexDirection: "row", alignItems: "center", gap: 3 },
   viewProfileText: { color: CWAAX.white, fontWeight: "800", fontSize: 11 },
 
-  vipCard: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "#FFF8E8", borderWidth: 1, borderColor: "#F3DFA3", padding: 14, borderRadius: 20, marginBottom: 22 },
-  vipIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: "#FFECBD", alignItems: "center", justifyContent: "center" },
+  vipCard: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "rgba(245,184,46,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", padding: 14, borderRadius: 20, marginBottom: 22 },
+  vipIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: "rgba(245,184,46,0.14)", alignItems: "center", justifyContent: "center" },
   vipCopy: { flex: 1 },
-  vipTitle: { color: "#5C4113", fontWeight: "900", fontSize: 13, textAlign: "right" },
+  vipTitle: { color: "#F5B82E", fontWeight: "900", fontSize: 13, textAlign: "right" },
   vipSub: { color: "#9A7B34", fontSize: 10, marginTop: 4, textAlign: "right" },
-  vipChevron: { width: 26, height: 26, borderRadius: 13, backgroundColor: "#FFECBD", alignItems: "center", justifyContent: "center" },
+  vipChevron: { width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(245,184,46,0.14)", alignItems: "center", justifyContent: "center" },
 
   sectionTitle: { color: CWAAX.muted, fontWeight: "800", fontSize: 12, textAlign: "right", marginBottom: 9, marginTop: 8 },
 
@@ -291,14 +340,14 @@ const styles = StyleSheet.create({
   preference: { color: CWAAX.muted, fontSize: 11, marginRight: 2 },
   chevronWrap: { alignItems: "center", justifyContent: "center" },
 
-  adminLink: { marginTop: 20, borderWidth: 1, borderColor: "#BDE4CB", backgroundColor: "#F4FBF6", borderRadius: 16, padding: 13, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
+  adminLink: { marginTop: 20, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", backgroundColor: "#18223D", borderRadius: 16, padding: 13, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
   adminText: { color: CWAAX.green, fontSize: 12, fontWeight: "900" },
-  logout: { marginTop: 12, borderWidth: 1, borderColor: "#F2D1CF", backgroundColor: "#FFF8F8", borderRadius: 16, padding: 13, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
+  logout: { marginTop: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.12)", backgroundColor: "#18223D", borderRadius: 16, padding: 13, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 7 },
   logoutText: { color: CWAAX.red, fontSize: 12, fontWeight: "900" },
   pressed: { opacity: 0.6 },
 
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,.4)", justifyContent: "center", padding: 22 },
-  modalCard: { backgroundColor: CWAAX.white, borderRadius: 24, padding: 18 },
+  modalCard: { backgroundColor: CWAAX.card2, borderRadius: 24, padding: 18 },
   modalTitle: { color: CWAAX.ink, fontSize: 18, fontWeight: "900", textAlign: "right", marginBottom: 12 },
   languageOption: { minHeight: 50, borderRadius: 14, paddingHorizontal: 13, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
   languageSelected: { backgroundColor: CWAAX.greenSoft },
