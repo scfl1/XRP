@@ -1,12 +1,42 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, IconButton } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
 import { notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
+
+// ألوان هذه الصفحة (داكنة: أزرق ملكي على كحلي) — مستقلة عن باقي المشروع
+const CWAAX = {
+  green: "#4F80FF",
+  greenSoft: "rgba(79,128,255,0.16)",
+  ink: "#FFFFFF",
+  muted: "#9AA6C0",
+  line: "rgba(255,255,255,0.10)",
+  white: "#FFFFFF",
+  bg: "#070B14",
+  card: "#0F1626",
+  card2: "#18223D",
+} as const;
+
+function Card({ children, style }: { children: ReactNode; style?: object }) {
+  return <View style={[{ backgroundColor: CWAAX.card, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 22, padding: 16 }, style]}>{children}</View>;
+}
+
+function IconButton({ icon, onPress, label }: { icon: React.ComponentProps<typeof MaterialIcons>["name"]; onPress?: () => void; label?: string }) {
+  return (
+    <Pressable
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [
+        { width: 42, height: 42, borderRadius: 21, backgroundColor: CWAAX.card, borderWidth: 1, borderColor: "rgba(79,128,255,0.4)", alignItems: "center", justifyContent: "center" },
+        pressed && { opacity: 0.6 },
+      ]}
+    >
+      <MaterialIcons name={icon} size={21} color={CWAAX.ink} />
+    </Pressable>
+  );
+}
 
 const TIERS = [
   {
@@ -22,9 +52,9 @@ const TIERS = [
   {
     level: 2,
     rate: "5%",
-    base: "#0E2A20",
-    accent: "#2BC989",
-    glow: "rgba(43,201,137,0.2)",
+    base: "#0E1F3F",
+    accent: "#5B8CFF",
+    glow: "rgba(79,128,255,0.25)",
     icon: "groups" as const,
     label: "المستوى الثاني",
     desc: "من دعاهم أصدقاؤك",
@@ -77,7 +107,8 @@ export default function ReferralScreen() {
   };
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+    <View style={{ flex: 1, backgroundColor: CWAAX.bg, paddingHorizontal: 20 }}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <IconButton icon="arrow-forward" label="رجوع" onPress={() => router.back()} />
@@ -170,7 +201,7 @@ export default function ReferralScreen() {
           ) : (
             stats.data.history.map((row: any, idx: number) => (
               <View key={row.id} style={[styles.rewardRow, idx > 0 && styles.rewardRowBorder]}>
-                <View style={[styles.rewardIcon, { backgroundColor: TIERS[row.level - 1]?.base ?? CWAAX.ink }]}>
+                <View style={[styles.rewardIcon, { backgroundColor: TIERS[row.level - 1]?.base ?? CWAAX.card2 }]}>
                   <Text style={[styles.rewardLevel, { color: TIERS[row.level - 1]?.accent ?? CWAAX.green }]}>L{row.level}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
@@ -183,6 +214,7 @@ export default function ReferralScreen() {
           )}
         </Card>
       </ScrollView>
+    </View>
     </ScreenContainer>
   );
 }
@@ -192,19 +224,19 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
   title: { color: CWAAX.ink, fontSize: 19, fontWeight: "900" },
 
-  hero: { alignItems: "center", backgroundColor: CWAAX.ink, borderRadius: 24, paddingVertical: 28, paddingHorizontal: 20, overflow: "hidden" },
-  heroGlow: { position: "absolute", top: -60, right: -40, width: 180, height: 180, borderRadius: 90, backgroundColor: "rgba(11,135,84,0.35)" },
+  hero: { alignItems: "center", backgroundColor: "#16205A", borderWidth: 1, borderColor: "rgba(110,150,255,0.4)", borderRadius: 24, paddingVertical: 28, paddingHorizontal: 20, overflow: "hidden" },
+  heroGlow: { position: "absolute", top: -60, right: -40, width: 180, height: 180, borderRadius: 90, backgroundColor: "rgba(79,128,255,0.35)" },
   gift: { width: 58, height: 58, borderRadius: 20, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center", marginBottom: 14 },
   heroTitle: { color: CWAAX.white, fontSize: 19, fontWeight: "900", textAlign: "center" },
-  heroSub: { color: "#AABBB1", fontSize: 12, marginTop: 8, textAlign: "center", lineHeight: 18, paddingHorizontal: 10 },
+  heroSub: { color: "#B7C3E0", fontSize: 12, marginTop: 8, textAlign: "center", lineHeight: 18, paddingHorizontal: 10 },
   heroStats: { flexDirection: "row", alignItems: "center", marginTop: 22, backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 16, paddingVertical: 14, width: "100%", justifyContent: "space-around" },
   heroStat: { alignItems: "center" },
   heroStatValue: { color: CWAAX.white, fontSize: 22, fontWeight: "900" },
-  heroStatLabel: { color: "#AABBB1", fontSize: 10, marginTop: 5 },
+  heroStatLabel: { color: "#B7C3E0", fontSize: 10, marginTop: 5 },
   heroDivider: { width: 1, height: 34, backgroundColor: "rgba(255,255,255,0.15)" },
 
   label: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "right", marginTop: 24, marginBottom: 8 },
-  code: { height: 52, borderWidth: 1.5, borderColor: CWAAX.green, borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, backgroundColor: CWAAX.greenSoft },
+  code: { height: 52, borderWidth: 1.5, borderColor: "rgba(79,128,255,0.6)", borderRadius: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, backgroundColor: CWAAX.greenSoft },
   codeText: { color: CWAAX.ink, fontSize: 15, fontWeight: "900", letterSpacing: 1 },
   button: { height: 50, borderRadius: 14, backgroundColor: CWAAX.green, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", marginTop: 11 },
   buttonText: { color: CWAAX.white, fontSize: 13, fontWeight: "900" },
@@ -245,7 +277,7 @@ const styles = StyleSheet.create({
   tierCount: { color: "rgba(255,255,255,0.6)", fontSize: 9 },
   tierEarned: { fontSize: 11, fontWeight: "900", marginTop: 3 },
 
-  infoCard: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 8, marginTop: 16, backgroundColor: CWAAX.surface },
+  infoCard: { flexDirection: "row-reverse", alignItems: "flex-start", gap: 8, marginTop: 16, backgroundColor: CWAAX.card2 },
   infoText: { flex: 1, color: CWAAX.muted, fontSize: 10.5, lineHeight: 16, textAlign: "right" },
 
   emptyWrap: { alignItems: "center", justifyContent: "center", paddingVertical: 28, gap: 8 },
