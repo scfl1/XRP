@@ -15,22 +15,22 @@ import { trpc } from "@/lib/trpc";
 
 // ألوان الثيم الداكن (نفس الصفحة الرئيسية)
 const D = {
-  bg: "#04100D",
-  card: "#0B1A17",
-  card2: "#12241F",
+  bg: "#070B14",
+  card: "#0F1626",
+  card2: "#18223D",
   border: "rgba(255,255,255,0.10)",
-  greenBorder: "rgba(47,227,154,0.45)",
+  accentBorder: "rgba(91,140,255,0.5)",
   text: "#FFFFFF",
-  muted: "#9FB3AD",
-  green: "#19D27C",
-  greenDeep: "#0F6B45",
-  greenSoft: "rgba(25,210,124,0.15)",
+  muted: "#9AA6C0",
+  accent: "#4F80FF",
+  accentDeep: "#2446B8",
+  accentSoft: "rgba(91,140,255,0.16)",
   red: "#FF5C5C",
   redSoft: "rgba(255,92,92,0.16)",
 };
 
-const BLACK = "#04100D";
-const BLACK_SOFT = "#1E8F5E";
+const BLACK = "#070B14";
+const BLACK_SOFT = "#3D63D8";
 
 export default function ReceiveScreen() {
   const router = useRouter();
@@ -168,7 +168,7 @@ export default function ReceiveScreen() {
               style={({ pressed }) => [styles.sentBtn, pressed && styles.pressed]}
             >
               <View style={styles.sentBtnIcon}>
-                <MaterialIcons name="check" size={15} color={BLACK} />
+                <MaterialIcons name="check" size={15} color="#FFFFFF" />
               </View>
               <Text style={styles.sentBtnText}>اضغط هنا للتأكيد ايداع</Text>
             </Pressable>
@@ -179,7 +179,7 @@ export default function ReceiveScreen() {
                 value={sentAmount}
                 onChangeText={setSentAmount}
                 placeholder="مثال: 50"
-                placeholderTextColor="#5F746D"
+                placeholderTextColor="#5B6785"
                 keyboardType="decimal-pad"
                 style={styles.confirmInput}
                 textAlign="center"
@@ -295,17 +295,17 @@ export default function ReceiveScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: D.bg, paddingHorizontal: 20 },
-  backBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: D.greenBorder, backgroundColor: D.card, alignItems: "center", justifyContent: "center" },
+  backBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: D.accentBorder, backgroundColor: D.card, alignItems: "center", justifyContent: "center" },
   content: { paddingTop: 12, paddingBottom: 30 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
   title: { color: D.text, fontSize: 19, fontWeight: "900" },
   badgeRow: { alignItems: "center", marginBottom: 16 },
-  freeBadge: { borderWidth: 1, borderColor: D.greenBorder, backgroundColor: D.greenSoft, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
-  freeBadgeText: { color: D.green, fontSize: 11, fontWeight: "800" },
+  freeBadge: { borderWidth: 1, borderColor: D.accentBorder, backgroundColor: D.accentSoft, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  freeBadgeText: { color: D.accent, fontSize: 11, fontWeight: "800" },
   tabs: { flexDirection: "row", backgroundColor: D.card, borderWidth: 1, borderColor: D.border, borderRadius: 999, padding: 4, marginBottom: 22 },
   tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderRadius: 999 },
   tabActive: {
-    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
+    backgroundColor: D.accentDeep, borderWidth: 1.5, borderColor: D.accentBorder,
     shadowColor: BLACK,
     shadowOpacity: 0.28,
     shadowRadius: 10,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   selectorPill: { flexDirection: "row-reverse", alignItems: "center", gap: 8, backgroundColor: D.card, borderWidth: 1.5, borderColor: D.border, borderRadius: 999, paddingHorizontal: 8, height: 46 },
   selectorAvatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
   selectorValue: { color: D.text, fontSize: 13, fontWeight: "800", flex: 1, textAlign: "right" },
-  qrCard: { backgroundColor: D.card, borderWidth: 1, borderColor: D.greenBorder, borderRadius: 26, padding: 18, alignItems: "center" },
+  qrCard: { backgroundColor: D.card, borderWidth: 1, borderColor: D.accentBorder, borderRadius: 26, padding: 18, alignItems: "center" },
   qrBrandRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 16 },
   shareBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
   brand: { color: D.text, fontSize: 20, fontWeight: "900" },
@@ -332,13 +332,13 @@ const styles = StyleSheet.create({
   qrBadge: { position: "absolute", width: 36, height: 36, borderRadius: 18, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#fff", shadowColor: "#15231c", shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   addressLabel: { color: D.muted, fontSize: 10, marginBottom: 8 },
   addressChip: { backgroundColor: D.card2, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: D.border },
-  address: { color: D.green, fontSize: 13, fontWeight: "800", textAlign: "center", lineHeight: 20 },
+  address: { color: D.accent, fontSize: 13, fontWeight: "800", textAlign: "center", lineHeight: 20 },
   copyBtn: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: 8,
     marginTop: 14,
-    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
+    backgroundColor: D.accentDeep, borderWidth: 1.5, borderColor: D.accentBorder,
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 9,
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
+    backgroundColor: D.accentDeep, borderWidth: 1.5, borderColor: D.accentBorder,
     borderRadius: 999,
     height: 54,
     marginTop: 4,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 7 },
     elevation: 4,
   },
-  sentBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: D.green, alignItems: "center", justifyContent: "center" },
+  sentBtnIcon: { width: 25, height: 25, borderRadius: 13, backgroundColor: D.accent, alignItems: "center", justifyContent: "center" },
   sentBtnText: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   confirmBox: {
     backgroundColor: D.card,
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     flex: 2,
     height: 48,
     borderRadius: 999,
-    backgroundColor: D.greenDeep, borderWidth: 1.5, borderColor: D.greenBorder,
+    backgroundColor: D.accentDeep, borderWidth: 1.5, borderColor: D.accentBorder,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row-reverse",
