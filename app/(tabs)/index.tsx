@@ -168,10 +168,10 @@ export default function HomeScreen() {
               title="إيداع"
               subtitle="إضافة رصيد إلى محفظتك"
               icon="file-download"
-              colors={["#0F6B45", "#0A3D2B"]}
-              iconColors={["#2FE39A", "#12A765"]}
-              border="rgba(47,227,154,0.55)"
-              chevron={C.green}
+              colors={["#8A4A0A", "#3F2105"]}
+              iconColors={["#FFB84D", "#E67E1A"]}
+              border="rgba(255,184,77,0.65)"
+              chevron="#FFB84D"
               onPress={() => router.push("/receive")}
             />
           </View>
