@@ -21,7 +21,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         {/* Standard PWA manifest — drives the Android "Add to Home
             Screen" name + icon (public/manifest.json). */}
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0B8754" />
+        <meta name="theme-color" content="#000000" />
 
         {/* Favicon (browser tab) */}
         <link rel="icon" href="/favicon.ico" />
