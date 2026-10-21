@@ -1,8 +1,8 @@
 import { useRouter, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Polyline } from "react-native-svg";
 import { ScreenContainer } from "@/components/screen-container";
 import { formatAmount } from "@/constants/currencies";
 import type { CurrencyCode } from "@/lib/_core/preferences";
@@ -11,52 +11,42 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { useLiveMarkets } from "@/hooks/use-live-markets";
 
-// بديل بسيط بدون مكتبات: لون مسطّح بدل التدرج
-function LinearGradient({ colors, style, children }: { colors: readonly string[]; style?: any; children?: React.ReactNode; start?: any; end?: any }) {
-  return <View style={[style, { backgroundColor: colors[0] }]}>{children}</View>;
-}
-
-// شعار USDT (Tether) الحقيقي
-function UsdtLogo({ size = 28 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 32 32">
-      <Circle cx="16" cy="16" r="16" fill="#26A17B" />
-      <Path
-        fill="#FFFFFF"
-        fillRule="evenodd"
-        d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.393-.202 7.694-1.073 7.694-2.116 0-1.043-3.301-1.914-7.694-2.117"
-      />
-    </Svg>
-  );
-}
-
-// ألوان التصميم الداكن (مطابقة للصورة)
+// ألوان التصميم: أسود + أصفر (حسب المرجع)
 const C = {
-  bg: "#070B14",
-  card: "#0F1626",
-  cardBorder: "rgba(255,255,255,0.08)",
+  bg: "#000000",
+  card: "#1A1A1C",
+  tile: "#1E1E20",
+  border: "rgba(255,255,255,0.10)",
   text: "#FFFFFF",
-  muted: "#9AA6C0",
-  accent: "#4F80FF",
-  accentDark: "#2446B8",
-  blue: "#2F5BFF",
-  blueDark: "#1A2E8A",
-  gold: "#F5B82E",
-  goldDark: "#5A4310",
-  purple: "#7B4DFF",
-  red: "#FF4D4D",
+  muted: "#8A8A8E",
+  yellow: "#FFE600",
+  yellowDark: "#14120A",
+  red: "#FF5C5C",
 };
 
-type QuickAction = { label: string; icon: keyof typeof MaterialIcons.glyphMap; colors: [string, string]; route: string };
+type IconName = keyof typeof MaterialIcons.glyphMap;
 
-// من اليمين إلى اليسار: المعاملات، استثمار، شراء/بيع، تبديل، أكثر
-const QUICK_ACTIONS: QuickAction[] = [
-  { label: "المعاملات", icon: "receipt-long", colors: ["#3D63FF", "#1A2E8A"], route: "/transactions" },
-  { label: "استثمار", icon: "bar-chart", colors: ["#FF6B9A", "#B3194F"], route: "/trade" },
-  { label: "شراء / بيع", icon: "swap-horiz", colors: ["#F7C844", "#9A6B0B"], route: "/trade" },
-  { label: "تبديل", icon: "sync", colors: ["#8A5CFF", "#43209B"], route: "/trade" },
-  { label: "أكثر", icon: "apps", colors: ["#26304D", "#121A30"], route: "/menu" },
+// شبكة الأيقونات (من اليمين إلى اليسار)
+const GRID: { label: string; icon: IconName; route: string }[] = [
+  { label: "سحب", icon: "north-east", route: "/send" },
+  { label: "تبديل", icon: "sync", route: "/trade" },
+  { label: "شراء / بيع", icon: "swap-horiz", route: "/trade" },
+  { label: "استثمار", icon: "show-chart", route: "/trade" },
+  { label: "المعاملات", icon: "receipt-long", route: "/transactions" },
+  { label: "إحالة", icon: "person-add-alt-1", route: "/referral" },
+  { label: "الأمان", icon: "security", route: "/settings" },
+  { label: "أكثر", icon: "apps", route: "/menu" },
 ];
+
+const TABS = [
+  { key: "hot", label: "رائجة" },
+  { key: "gainers", label: "الرابحون" },
+  { key: "losers", label: "الخاسرون" },
+] as const;
+type TabKey = (typeof TABS)[number]["key"];
+
+// رسم زخرفي (غير مرتبط ببيانات حقيقية)
+const SPARK = "0,46 8,40 14,44 20,30 26,36 32,24 38,32 44,18 50,26 56,14 62,22 70,10 78,16 86,4";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -68,6 +58,8 @@ export default function HomeScreen() {
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
   const total = formatAmount(usdt, currency);
+  const usdtText = usdt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   const [notice, setNotice] = useState("");
   const showNotice = (message: string) => { setNotice(message); setTimeout(() => setNotice(""), 2200); };
   const [refreshing, setRefreshing] = useState(false);
@@ -84,203 +76,149 @@ export default function HomeScreen() {
     }
   };
 
+  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<TabKey>("hot");
+
+  const rows = useMemo(() => {
+    let list = [...(markets.data ?? [])];
+    const q = query.trim().toLowerCase();
+    if (q) list = list.filter((c) => `${c.symbol} ${c.name}`.toLowerCase().includes(q));
+    if (tab === "gainers") list = list.filter((c) => c.change24h > 0).sort((a, b) => b.change24h - a.change24h);
+    if (tab === "losers") list = list.filter((c) => c.change24h < 0).sort((a, b) => a.change24h - b.change24h);
+    return list;
+  }, [markets.data, query, tab]);
+
   return (
     <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
       <View style={styles.root}>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-          {/* الهيدر: الشعار + الترحيب */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={C.yellow} colors={[C.yellow]} progressBackgroundColor={C.card} />}
+        >
+          {/* الهيدر: صورة + بحث + أيقونات */}
           <View style={styles.header}>
-            <View style={styles.logoRow}>
-              <Text style={styles.logoText}>
-                Cwa<Text style={{ color: C.accent }}>AX</Text>
-              </Text>
-              <LinearGradient colors={["#6E96FF", "#3558E0"]} style={styles.logoBadge}>
-                <Text style={styles.logoBadgeText}>C</Text>
-              </LinearGradient>
-            </View>
-
-            <Pressable onPress={() => router.push("/menu")} style={styles.profileRow}>
-              <View>
-                <Text style={styles.welcome}>مرحباً بك</Text>
-                <Text style={styles.welcomeSub}>في محفظة CwaAX</Text>
-              </View>
-              <View style={styles.avatar}>
-                <MaterialIcons name="person" size={30} color={C.text} />
-                <View style={styles.onlineDot} />
-              </View>
+            <Pressable onPress={() => router.push("/menu")} style={styles.avatar}>
+              <MaterialIcons name="person" size={22} color={C.yellowDark} />
             </Pressable>
+
+            <View style={styles.search}>
+              <MaterialIcons name="search" size={20} color={C.muted} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="ابحث عن عملة أو سوق"
+                placeholderTextColor={C.muted}
+                style={styles.searchInput}
+                textAlign="right"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <HeaderIcon icon="qr-code-scanner" onPress={() => router.push("/qr-scanner")} />
+            <HeaderIcon icon="headset-mic" onPress={() => router.push("/support")} />
+            <HeaderIcon icon="notifications-none" dot onPress={() => router.push("/notifications")} />
           </View>
 
-          {/* أزرار دائرية: بحث / إشعارات / تحديث */}
-          <View style={styles.actionsRow}>
-            <RoundButton icon={refreshing ? "hourglass-empty" : "sync"} onPress={handleRefresh} />
-            <RoundButton icon="notifications-none" dot onPress={() => router.push("/notifications")} />
-            <RoundButton icon="search" onPress={() => showNotice("ابحث عن أصل أو سوق")} />
-          </View>
+          {/* إجمالي الأصول */}
+          <View style={styles.totalBlock}>
+            <View style={styles.totalLabelRow}>
+              <Text style={styles.totalLabel}>إجمالي الأصول</Text>
+              <Pressable onPress={() => setHidden(!hidden)} hitSlop={10}>
+                <MaterialIcons name={hidden ? "visibility-off" : "visibility"} size={20} color={C.muted} />
+              </Pressable>
+            </View>
 
-          {/* بطاقة إجمالي الأصول */}
-          <LinearGradient
-            colors={["#2B3FA8", "#152257", "#0C1233"]}
-            start={{ x: 1, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.assetCard}
-          >
-            <View style={styles.assetTextCol}>
-              <View style={styles.assetTop}>
-                <Text style={styles.cardLabel}>إجمالي الأصول</Text>
-                <Pressable onPress={() => setHidden(!hidden)} hitSlop={10}>
-                  <MaterialIcons name={hidden ? "visibility-off" : "visibility"} size={22} color={C.text} />
-                </Pressable>
+            <View style={styles.totalRow}>
+              <View style={styles.amountWrap}>
+                <Text style={styles.totalValue} numberOfLines={1} adjustsFontSizeToFit>
+                  {hidden ? "••••••" : usdtText}
+                </Text>
+                <View style={styles.unit}>
+                  <Text style={styles.unitText}>USDT</Text>
+                  <MaterialIcons name="arrow-drop-down" size={18} color={C.text} />
+                </View>
               </View>
-              <Text style={styles.assetValue}>{hidden ? "••••••" : total}</Text>
-              <View style={styles.usdtPill}>
-                <MaterialIcons name="keyboard-arrow-down" size={18} color={C.text} />
-                <Text style={styles.usdtLabel}>رصيد</Text>
-                <Text style={styles.usdtText}>USDT</Text>
-                <UsdtLogo size={28} />
+
+              <View style={styles.spark}>
+                <Svg width={90} height={54} viewBox="0 0 90 54">
+                  <Polyline points={SPARK} fill="none" stroke={C.yellow} strokeOpacity={0.25} strokeWidth={7} strokeLinejoin="round" strokeLinecap="round" />
+                  <Polyline points={SPARK} fill="none" stroke={C.yellow} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+                </Svg>
               </View>
             </View>
 
-            {/* رسمة المحفظة */}
-            <View style={styles.walletArt}>
-              <View style={styles.walletRing} />
-              <View style={styles.walletBody}>
-                <View style={styles.walletClasp} />
-              </View>
-              <View style={styles.bigCoin}><UsdtLogo size={60} /></View>
-              <View style={styles.smallCoin}><UsdtLogo size={30} /></View>
-            </View>
-          </LinearGradient>
-
-          {/* إيداع / سحب */}
-          <View style={styles.dwRow}>
-            <BigAction
-              title="سحب"
-              subtitle="سحب الأموال إلى محفظتك"
-              icon="north-east"
-              colors={["#5B2FD0", "#2A1470"]}
-              iconColors={["#9B6BFF", "#6A3DE8"]}
-              border="rgba(155,107,255,0.65)"
-              chevron="#9B6BFF"
-              onPress={() => router.push("/send")}
-            />
-            <BigAction
-              title="إيداع"
-              subtitle="إضافة رصيد إلى محفظتك"
-              icon="file-download"
-              colors={["#8A4A0A", "#3F2105"]}
-              iconColors={["#FFB84D", "#E67E1A"]}
-              border="rgba(255,184,77,0.65)"
-              chevron="#FFB84D"
-              onPress={() => router.push("/receive")}
-            />
+            <Text style={styles.subTotal}>{hidden ? "≈ ••••" : `≈ ${total}`}  ·  الرصيد المتاح</Text>
           </View>
 
-          {/* الإجراءات السريعة */}
-          <View style={styles.quickCard}>
-            {QUICK_ACTIONS.map((a) => (
-              <Pressable
-                key={a.label}
-                onPress={() => router.push(a.route as never)}
-                style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}
-              >
-                <LinearGradient colors={a.colors} style={styles.quickIcon}>
-                  <MaterialIcons name={a.icon} size={26} color={C.text} />
-                </LinearGradient>
-                <Text style={styles.quickLabel}>{a.label}</Text>
+          {/* زر الإيداع */}
+          <Pressable onPress={() => router.push("/receive")} style={({ pressed }) => [styles.deposit, pressed && styles.pressed]}>
+            <Text style={styles.depositText}>إيداع</Text>
+          </Pressable>
+
+          {/* شبكة الإجراءات */}
+          <View style={styles.grid}>
+            {GRID.map((g) => (
+              <Pressable key={g.label} onPress={() => router.push(g.route as never)} style={({ pressed }) => [styles.gridItem, pressed && styles.pressed]}>
+                <View style={styles.tile}>
+                  <MaterialIcons name={g.icon} size={26} color={C.text} />
+                </View>
+                <Text style={styles.gridLabel} numberOfLines={1}>{g.label}</Text>
               </Pressable>
             ))}
           </View>
 
-          {/* بانر إكمال الإعداد */}
-          <Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [pressed && styles.pressed]}>
-            <LinearGradient
-              colors={["#3A2D0C", "#1A1407", "#2A210A"]}
-              start={{ x: 1, y: 0 }}
-              end={{ x: 0, y: 0 }}
-              style={styles.promo}
-            >
-              <View style={styles.promoChevron}>
-                <MaterialIcons name="chevron-right" size={26} color={C.gold} />
-              </View>
-              <View style={styles.promoCopy}>
-                <Text style={styles.promoTitle}>أكمل إعداد محفظتك</Text>
-                <Text style={styles.promoSubtitle}>فعّل المصادقة الثنائية لتحصل على حماية أعلى</Text>
-              </View>
-              <View style={styles.promoIcon}>
-                <MaterialIcons name="bolt" size={34} color="#3A2A00" />
-              </View>
-            </LinearGradient>
+          {/* بانر */}
+          <Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [styles.promo, pressed && styles.pressed]}>
+            <View style={styles.promoIcon}>
+              <MaterialIcons name="bolt" size={30} color={C.yellowDark} />
+            </View>
+            <View style={styles.promoCopy}>
+              <Text style={styles.promoSub}>حماية أعلى لمحفظتك</Text>
+              <Text style={styles.promoTitle}>أكمل إعداد محفظتك وفعّل المصادقة الثنائية</Text>
+            </View>
+            <MaterialIcons name="chevron-left" size={24} color={C.muted} />
           </Pressable>
 
-          {/* ابدأ مع CwaAX */}
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>
-              ابدأ مع Cwa<Text style={{ color: C.accent }}>AX</Text>
-            </Text>
-            <Pressable onPress={() => router.push("/menu")} style={styles.sectionAction}>
-              <MaterialIcons name="chevron-left" size={18} color={C.accent} />
-              <Text style={styles.sectionActionText}>عرض الكل</Text>
-            </Pressable>
-          </View>
-
-          <View style={styles.startRow}>
-            <StartCard
-              title="استقبل عملة"
-              subtitle="احصل على العملات الرقمية"
-              icon="file-download"
-              colors={["#FFB84D", "#E67E1A"]}
-              onPress={() => router.push("/receive")}
-            />
-            <StartCard
-              title="جرّب التبديل"
-              subtitle="تداول سريع وآمن"
-              icon="sync"
-              colors={["#4A5BFF", "#2A1B9C"]}
-              onPress={() => router.push("/trade")}
-            />
-          </View>
-
           {/* الأسواق */}
-          <View style={styles.sectionRow}>
-            <Text style={styles.sectionTitle}>الأسواق</Text>
-            <Pressable onPress={() => router.push("/trade")} style={styles.sectionAction}>
-              <MaterialIcons name="chevron-left" size={18} color={C.accent} />
-              <Text style={styles.sectionActionText}>كل الأسواق</Text>
-            </Pressable>
-          </View>
-
           <View style={styles.marketCard}>
+            <View style={styles.tabs}>
+              {TABS.map((t) => (
+                <Pressable key={t.key} onPress={() => setTab(t.key)} hitSlop={6}>
+                  <Text style={[styles.tabText, tab === t.key && styles.tabTextActive]}>{t.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+
             {markets.loading ? (
               <Text style={styles.marketLoading}>جاري تحميل الأسعار...</Text>
             ) : markets.error ? (
               <Text style={styles.marketLoading}>{markets.error}</Text>
             ) : !markets.data || markets.data.length === 0 ? (
               <Text style={styles.marketLoading}>تعذر تحميل الأسعار حالياً، حاول لاحقاً.</Text>
+            ) : rows.length === 0 ? (
+              <Text style={styles.marketLoading}>لا توجد نتائج مطابقة.</Text>
             ) : (
-              markets.data.map((coin, index) => (
-                <Pressable
-                  key={coin.id}
-                  onPress={() => router.push("/trade")}
-                  style={({ pressed }) => [
-                    styles.marketRow,
-                    index < markets.data!.length - 1 && styles.marketBorder,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <Image source={{ uri: coin.image }} style={styles.marketIcon} />
-                  <View style={styles.marketName}>
-                    <Text style={styles.marketSymbol}>{coin.symbol}/USDT</Text>
-                    <Text style={styles.marketMeta} numberOfLines={1}>{coin.name}</Text>
-                  </View>
-                  <View style={styles.marketPrice}>
+              rows.map((coin) => {
+                const up = coin.change24h >= 0;
+                return (
+                  <Pressable key={coin.id} onPress={() => router.push("/trade")} style={({ pressed }) => [styles.marketRow, pressed && styles.pressed]}>
+                    <Image source={{ uri: coin.image }} style={styles.marketIcon} />
+                    <View style={styles.marketName}>
+                      <Text style={styles.marketSymbol}>{String(coin.symbol).toUpperCase()}USDT</Text>
+                      <Text style={styles.marketMeta} numberOfLines={1}>{coin.name}</Text>
+                    </View>
                     <Text style={styles.priceText}>{formatAmount(coin.price, currency)}</Text>
-                    <Text style={coin.change24h >= 0 ? styles.positive : styles.negative}>
-                      {coin.change24h >= 0 ? "+" : ""}{coin.change24h.toFixed(2)}%
-                    </Text>
-                  </View>
-                </Pressable>
-              ))
+                    <View style={[styles.pill, up ? styles.pillUp : styles.pillDown]}>
+                      <Text style={[styles.pillText, up ? styles.pillTextUp : styles.pillTextDown]}>
+                        {up ? "+" : ""}{coin.change24h.toFixed(2)}%
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })
             )}
           </View>
           <View style={{ height: 24 }} />
@@ -297,198 +235,82 @@ export default function HomeScreen() {
   );
 }
 
-/* ---------- مكونات صغيرة ---------- */
-
-function RoundButton({ icon, onPress, dot }: { icon: keyof typeof MaterialIcons.glyphMap; onPress: () => void; dot?: boolean }) {
+function HeaderIcon({ icon, onPress, dot }: { icon: IconName; onPress: () => void; dot?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.roundBtn, pressed && styles.pressed]}>
+    <Pressable onPress={onPress} hitSlop={8} style={({ pressed }) => [styles.headerIcon, pressed && styles.pressed]}>
       <MaterialIcons name={icon} size={24} color={C.text} />
-      {dot ? <View style={styles.redDot} /> : null}
+      {dot ? <View style={styles.dot} /> : null}
     </Pressable>
   );
 }
-
-function BigAction(props: {
-  title: string;
-  subtitle: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  colors: [string, string];
-  iconColors: [string, string];
-  border: string;
-  chevron: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={props.onPress} style={({ pressed }) => [styles.dwWrap, pressed && styles.pressed]}>
-      <LinearGradient
-        colors={props.colors}
-        start={{ x: 1, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={[styles.dwCard, { borderColor: props.border }]}
-      >
-        <View style={styles.dwTop}>
-          <LinearGradient colors={props.iconColors} style={styles.dwIcon}>
-            <MaterialIcons name={props.icon} size={30} color={C.text} />
-          </LinearGradient>
-          <MaterialIcons name="chevron-left" size={30} color={props.chevron} />
-        </View>
-        <Text style={styles.dwTitle}>{props.title}</Text>
-        <Text style={styles.dwSub}>{props.subtitle}</Text>
-      </LinearGradient>
-    </Pressable>
-  );
-}
-
-function StartCard(props: {
-  title: string;
-  subtitle: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
-  colors: [string, string];
-  onPress: () => void;
-}) {
-  return (
-    <Pressable onPress={props.onPress} style={({ pressed }) => [styles.startCard, pressed && styles.pressed]}>
-      <LinearGradient colors={props.colors} style={styles.startIcon}>
-        <MaterialIcons name={props.icon} size={24} color={C.text} />
-      </LinearGradient>
-      <View style={styles.startCopy}>
-        <Text style={styles.startTitle}>{props.title}</Text>
-        <Text style={styles.startSub} numberOfLines={1}>{props.subtitle}</Text>
-      </View>
-      <MaterialIcons name="chevron-left" size={22} color={C.muted} />
-    </Pressable>
-  );
-}
-
-/* ---------- الأنماط ---------- */
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   content: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 24 },
-  pressed: { opacity: 0.7 },
+  pressed: { opacity: 0.65 },
 
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  logoText: { color: C.text, fontSize: 30, fontWeight: "900", letterSpacing: -0.5 },
-  logoBadge: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  logoBadgeText: { color: C.text, fontSize: 28, fontWeight: "900" },
-  profileRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  avatar: {
-    width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: "rgba(110,150,255,0.6)",
-    backgroundColor: "#121B3A", alignItems: "center", justifyContent: "center",
+  header: { flexDirection: "row", alignItems: "center", gap: 10 },
+  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.yellow, alignItems: "center", justifyContent: "center" },
+  search: {
+    flex: 1, height: 42, borderRadius: 21, backgroundColor: C.card, flexDirection: "row", alignItems: "center",
+    paddingHorizontal: 12, gap: 8,
   },
-  onlineDot: {
-    position: "absolute", bottom: 0, right: 0, width: 13, height: 13, borderRadius: 7,
-    backgroundColor: C.accent, borderWidth: 2, borderColor: C.bg,
-  },
-  welcome: { color: C.text, fontSize: 17, fontWeight: "800", textAlign: "right" },
-  welcomeSub: { color: C.accent, fontSize: 13, fontWeight: "700", textAlign: "right", marginTop: 2 },
+  searchInput: { flex: 1, color: C.text, fontSize: 13, paddingVertical: 0 },
+  headerIcon: { width: 30, height: 40, alignItems: "center", justifyContent: "center" },
+  dot: { position: "absolute", top: 8, right: 2, width: 9, height: 9, borderRadius: 5, backgroundColor: C.yellow },
 
-  actionsRow: { flexDirection: "row", gap: 12, marginTop: 14, marginBottom: 14 },
-  roundBtn: {
-    width: 46, height: 46, borderRadius: 23, backgroundColor: "#101A33",
-    borderWidth: 1, borderColor: "rgba(110,150,255,0.25)", alignItems: "center", justifyContent: "center",
-  },
-  redDot: { position: "absolute", top: 8, right: 10, width: 9, height: 9, borderRadius: 5, backgroundColor: C.red },
+  totalBlock: { marginTop: 22 },
+  totalLabelRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  totalLabel: { color: C.muted, fontSize: 14, fontWeight: "700" },
+  totalRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 },
+  amountWrap: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  totalValue: { color: C.text, fontSize: 40, fontWeight: "800", letterSpacing: -0.5, flexShrink: 1 },
+  unit: { flexDirection: "row", alignItems: "center" },
+  unitText: { color: C.text, fontSize: 15, fontWeight: "700" },
+  spark: { marginLeft: 4 },
+  subTotal: { color: C.muted, fontSize: 12, marginTop: 6, textAlign: "right" },
 
-  assetCard: {
-    borderRadius: 26, borderWidth: 1, borderColor: "rgba(110,150,255,0.35)",
-    padding: 18, minHeight: 170, flexDirection: "row-reverse", overflow: "hidden", marginBottom: 14,
-  },
-  assetTextCol: { flex: 1, justifyContent: "space-between", alignItems: "flex-end" },
-  assetTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  cardLabel: { color: C.text, fontSize: 15, fontWeight: "700" },
-  assetValue: { color: C.text, fontSize: 40, fontWeight: "900", letterSpacing: -1, textAlign: "left", marginVertical: 6 },
-  usdtPill: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: "rgba(8,12,30,0.75)", borderWidth: 1, borderColor: "rgba(255,255,255,0.12)",
-    borderRadius: 22, paddingHorizontal: 10, paddingVertical: 6,
-  },
-  usdtText: { color: C.text, fontWeight: "800", fontSize: 14 },
-  usdtLabel: { color: C.muted, fontSize: 12 },
+  deposit: { height: 54, borderRadius: 27, backgroundColor: C.yellow, alignItems: "center", justifyContent: "center", marginTop: 20 },
+  depositText: { color: C.yellowDark, fontSize: 18, fontWeight: "900" },
 
-  walletArt: { width: 150, alignItems: "center", justifyContent: "center" },
-  walletRing: {
-    position: "absolute", width: 150, height: 70, borderRadius: 75, borderWidth: 2,
-    borderColor: "rgba(110,150,255,0.55)", transform: [{ rotate: "-18deg" }],
+  grid: { flexDirection: "row", flexWrap: "wrap", marginTop: 22, rowGap: 16 },
+  gridItem: { width: "25%", alignItems: "center" },
+  tile: {
+    width: 62, height: 62, borderRadius: 18, backgroundColor: C.tile, borderWidth: 1, borderColor: C.border,
+    alignItems: "center", justifyContent: "center", marginBottom: 8,
   },
-  walletBody: {
-    width: 100, height: 78, borderRadius: 14, backgroundColor: "#1B2658", borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)", transform: [{ rotate: "12deg" }], justifyContent: "center", alignItems: "flex-end",
-  },
-  walletClasp: { width: 18, height: 26, borderRadius: 8, backgroundColor: "#2E3F8F", marginRight: -6 },
-  bigCoin: {
-    position: "absolute", width: 66, height: 66, borderRadius: 33, alignItems: "center", justifyContent: "center",
-    borderWidth: 3, borderColor: "#A9C0FF", top: 28, overflow: "hidden",
-  },
-  smallCoin: {
-    position: "absolute", width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: "#A9C0FF", bottom: 14, right: 6, overflow: "hidden",
-  },
-
-  dwRow: { flexDirection: "row", gap: 12, marginBottom: 14 },
-  dwWrap: { flex: 1 },
-  dwCard: {
-    borderRadius: 24, borderWidth: 1.5, padding: 14, minHeight: 150, justifyContent: "space-between",
-  },
-  dwTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  dwIcon: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center" },
-  dwCopy: { flex: 1 },
-  dwTitle: { color: C.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
-  dwSub: { color: "#D5E4DF", fontSize: 12, lineHeight: 18, textAlign: "right", marginTop: 4 },
-
-  quickCard: {
-    flexDirection: "row", justifyContent: "space-between", backgroundColor: C.card,
-    borderWidth: 1, borderColor: C.cardBorder, borderRadius: 22, paddingVertical: 16, paddingHorizontal: 8, marginBottom: 14,
-  },
-  quickItem: { alignItems: "center", width: "19%" },
-  quickIcon: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center", marginBottom: 8 },
-  quickLabel: { color: C.text, fontSize: 12, fontWeight: "600", textAlign: "center" },
+  gridLabel: { color: C.muted, fontSize: 11.5, fontWeight: "600", textAlign: "center" },
 
   promo: {
-    flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 20, borderWidth: 1.5,
-    borderColor: "rgba(245,184,46,0.6)", padding: 14, marginBottom: 20,
+    flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.card, borderRadius: 18,
+    padding: 14, marginTop: 22,
   },
-  promoIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: C.gold, alignItems: "center", justifyContent: "center" },
+  promoIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: C.yellow, alignItems: "center", justifyContent: "center" },
   promoCopy: { flex: 1 },
-  promoTitle: { color: C.gold, fontSize: 17, fontWeight: "900", textAlign: "right" },
-  promoSubtitle: { color: "#E8DDBE", fontSize: 12, marginTop: 4, textAlign: "right" },
-  promoChevron: {
-    width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: C.gold,
-    alignItems: "center", justifyContent: "center",
-  },
+  promoSub: { color: C.muted, fontSize: 11.5, textAlign: "right" },
+  promoTitle: { color: C.text, fontSize: 14, fontWeight: "800", textAlign: "right", marginTop: 4, lineHeight: 20 },
 
-  sectionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  sectionTitle: { color: C.text, fontSize: 21, fontWeight: "900" },
-  sectionAction: { flexDirection: "row", alignItems: "center" },
-  sectionActionText: { color: C.accent, fontSize: 14, fontWeight: "700" },
-
-  startRow: { flexDirection: "row", gap: 12, marginBottom: 22 },
-  startCard: {
-    flex: 1, flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.card,
-    borderWidth: 1, borderColor: C.cardBorder, borderRadius: 18, padding: 12, minHeight: 76,
-  },
-  startIcon: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  startCopy: { flex: 1 },
-  startTitle: { color: C.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
-  startSub: { color: C.muted, fontSize: 11, marginTop: 4, textAlign: "right" },
-
-  marketCard: { backgroundColor: C.card, borderWidth: 1, borderColor: C.cardBorder, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 3 },
-  marketRow: { minHeight: 65, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
-  marketBorder: { borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.07)" },
-  marketIcon: { width: 33, height: 33, borderRadius: 16 },
+  marketCard: { backgroundColor: C.card, borderRadius: 20, paddingHorizontal: 14, paddingTop: 16, paddingBottom: 6, marginTop: 16 },
+  tabs: { flexDirection: "row", gap: 22, marginBottom: 12 },
+  tabText: { color: C.muted, fontSize: 15, fontWeight: "600" },
+  tabTextActive: { color: C.text, fontWeight: "900" },
+  marketRow: { minHeight: 62, flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
+  marketIcon: { width: 34, height: 34, borderRadius: 17 },
   marketName: { flex: 1 },
-  marketSymbol: { color: C.text, fontWeight: "800", fontSize: 13, textAlign: "right" },
-  marketMeta: { color: C.muted, fontSize: 10, marginTop: 2, textAlign: "right" },
-  marketPrice: { alignItems: "flex-start" },
-  priceText: { color: C.text, fontSize: 13, fontWeight: "800" },
-  positive: { color: C.accent, fontSize: 11, fontWeight: "700", marginTop: 3 },
-  negative: { color: "#FF6B63", fontSize: 11, fontWeight: "700", marginTop: 3 },
+  marketSymbol: { color: C.text, fontWeight: "800", fontSize: 14, textAlign: "right" },
+  marketMeta: { color: C.muted, fontSize: 10.5, marginTop: 2, textAlign: "right" },
+  priceText: { color: C.text, fontSize: 14, fontWeight: "600" },
+  pill: { minWidth: 72, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center", paddingHorizontal: 8 },
+  pillUp: { backgroundColor: C.yellow },
+  pillDown: { backgroundColor: "rgba(255,92,92,0.2)" },
+  pillText: { fontSize: 13, fontWeight: "800" },
+  pillTextUp: { color: C.yellowDark },
+  pillTextDown: { color: C.red },
   marketLoading: { color: C.muted, fontSize: 12, textAlign: "center", paddingVertical: 24 },
 
   toast: {
-    position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: "#1A2A55",
-    borderWidth: 1, borderColor: "rgba(110,150,255,0.4)", padding: 13, flexDirection: "row",
+    position: "absolute", left: 22, right: 22, bottom: 14, borderRadius: 14, backgroundColor: C.card,
+    borderWidth: 1, borderColor: "rgba(255,230,0,0.4)", padding: 13, flexDirection: "row",
     alignItems: "center", justifyContent: "center", gap: 8,
   },
   toastText: { color: C.text, fontSize: 12, fontWeight: "700" },
