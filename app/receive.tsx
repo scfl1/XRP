@@ -56,6 +56,25 @@ const LIGHT = {
 };
 const P = DARK;
 const YELLOW_CTA = "#FFE600";
+const noOutline = Platform.OS === "web" ? ({ outlineStyle: "none", outlineWidth: 0 } as object) : null;
+
+/** يقسم العنوان إلى أسطر متساوية، ويلوّن أول 6 وآخر 6 أحرف */
+function addressLines(addr: string) {
+  const parts = addr.length > 36 ? 3 : 2;
+  const size = Math.ceil(addr.length / parts);
+  const lines: { text: string; hi: boolean }[][] = [];
+  for (let start = 0; start < addr.length; start += size) {
+    const runs: { text: string; hi: boolean }[] = [];
+    for (let i = start; i < Math.min(start + size, addr.length); i++) {
+      const hi = i < 6 || i >= addr.length - 6;
+      const last = runs[runs.length - 1];
+      if (last && last.hi === hi) last.text += addr[i];
+      else runs.push({ text: addr[i], hi });
+    }
+    lines.push(runs);
+  }
+  return lines;
+}
 
 export default function ReceiveScreen() {
   const router = useRouter();
@@ -157,10 +176,6 @@ export default function ReceiveScreen() {
     }
   };
 
-  const head = address ? address.slice(0, 6) : "";
-  const mid = address ? address.slice(6, -6) : "";
-  const tail = address ? address.slice(-6) : "";
-
   return (
     <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
       <View style={styles.root}>
@@ -202,34 +217,47 @@ export default function ReceiveScreen() {
               </View>
 
               {/* الشبكة */}
-              <Text style={styles.fieldLabel}>الشبكة</Text>
-              <Pressable onPress={() => router.push("/network-select")} style={({ pressed }) => [styles.networkRow, pressed && styles.pressed]}>
-                <View style={styles.networkNameWrap}>
-                  <NetworkIcon network={network} size={26} />
-                  <Text style={styles.networkName}>{network.chain} ({network.name})</Text>
-                </View>
-                <MaterialIcons name="swap-horiz" size={26} color={P.text} />
-              </Pressable>
-
-              {/* العنوان */}
-              <Text style={[styles.fieldLabel, { marginTop: 26 }]}>عنوان الإيداع</Text>
-              <View style={styles.addressRow}>
-                <Text style={styles.addressText} selectable>
-                  <Text style={styles.addressHi}>{head}</Text>
-                  {mid}
-                  <Text style={styles.addressHi}>{tail}</Text>
-                </Text>
-                <Pressable onPress={copyAddress} style={({ pressed }) => [styles.copyCircle, pressed && styles.pressed]}>
-                  <MaterialIcons name="content-copy" size={22} color={P.text} />
+              <View style={styles.card}>
+                <Text style={styles.fieldLabel}>الشبكة</Text>
+                <Pressable onPress={() => router.push("/network-select")} style={({ pressed }) => [styles.networkRow, pressed && styles.pressed]}>
+                  <View style={styles.networkNameWrap}>
+                    <NetworkIcon network={network} size={28} />
+                    <Text style={styles.networkName}>{network.chain} ({network.name})</Text>
+                  </View>
+                  <View style={styles.swapBtn}>
+                    <MaterialIcons name="swap-horiz" size={22} color={P.text} />
+                  </View>
                 </Pressable>
               </View>
 
-              <View style={styles.divider} />
+              {/* العنوان */}
+              <View style={styles.card}>
+                <View style={styles.cardHead}>
+                  <Text style={styles.fieldLabelInline}>عنوان الإيداع</Text>
+                  <Pressable onPress={copyAddress} style={({ pressed }) => [styles.copyChip, pressed && styles.pressed]}>
+                    <MaterialIcons name="content-copy" size={16} color={P.onAccent} />
+                    <Text style={styles.copyChipText}>نسخ</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.addressBox}>
+                  {addressLines(address).map((runs, li) => (
+                    <Text key={li} style={styles.addressLine} selectable>
+                      {runs.map((r, ri) => (
+                        <Text key={ri} style={r.hi ? styles.addressHi : undefined}>{r.text}</Text>
+                      ))}
+                    </Text>
+                  ))}
+                </View>
+              </View>
 
               {/* تفاصيل */}
-              <InfoRow label="إيداع إلى" value="محفظة CwaAX" />
-              <InfoRow label="العملة" value="USDT" />
-              <InfoRow label="الشبكة" value={network.name} />
+              <View style={styles.card}>
+                <InfoRow label="إيداع إلى" value="محفظة CwaAX" />
+                <View style={styles.rowDivider} />
+                <InfoRow label="العملة" value="USDT" />
+                <View style={styles.rowDivider} />
+                <InfoRow label="الشبكة" value={network.name} />
+              </View>
 
               {/* بطاقة تأكيد الإيداع */}
               <View style={styles.confirmCard}>
@@ -284,16 +312,20 @@ export default function ReceiveScreen() {
               <Text style={styles.sheetSub}>أدخل المبلغ الذي أرسلته بالضبط إلى عنوان الإيداع</Text>
 
               <View style={styles.amountBox}>
-                <TextInput
-                  value={sentAmount}
-                  onChangeText={setSentAmount}
-                  placeholder="0.00"
-                  placeholderTextColor={P.muted}
-                  keyboardType="decimal-pad"
-                  style={styles.amountInput}
-                  textAlign="center"
-                  autoFocus
-                />
+                <View style={styles.amountInputWrap}>
+                  <TextInput
+                    value={sentAmount}
+                    onChangeText={setSentAmount}
+                    placeholder="0.00"
+                    placeholderTextColor={P.muted}
+                    keyboardType="decimal-pad"
+                    underlineColorAndroid="transparent"
+                    selectionColor={YELLOW_CTA}
+                    style={[styles.amountInput, noOutline]}
+                    textAlign="center"
+                    autoFocus
+                  />
+                </View>
                 <Text style={styles.amountUnit}>USDT</Text>
               </View>
 
@@ -353,20 +385,25 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
 
-  fieldLabel: { color: P.muted, fontSize: 14, textAlign: "right", marginBottom: 12 },
+  card: { backgroundColor: P.card, borderRadius: 20, borderWidth: 1, borderColor: P.border, padding: 16, marginBottom: 14 },
+  cardHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 },
+  fieldLabel: { color: P.muted, fontSize: 13, textAlign: "right", marginBottom: 12 },
+  fieldLabelInline: { color: P.muted, fontSize: 13 },
+  swapBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: P.secondaryBg, alignItems: "center", justifyContent: "center" },
+  copyChip: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: YELLOW_CTA, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 7 },
+  copyChipText: { color: P.onAccent, fontSize: 12.5, fontWeight: "800" },
+  addressBox: { backgroundColor: P.bg === "#000000" ? "#0E0E10" : "#FFFFFF", borderRadius: 14, borderWidth: 1, borderColor: P.border, paddingVertical: 14, paddingHorizontal: 12, alignItems: "center", gap: 4 },
+  addressLine: { color: P.text, fontSize: 19, fontWeight: "700", letterSpacing: 0.5, textAlign: "center", writingDirection: "ltr" },
+  rowDivider: { height: 1, backgroundColor: P.border },
   networkRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   networkNameWrap: { flexDirection: "row", alignItems: "center", gap: 10 },
-  networkName: { color: P.text, fontSize: 22, fontWeight: "800" },
+  networkName: { color: P.text, fontSize: 19, fontWeight: "800" },
 
-  addressRow: { flexDirection: "row", alignItems: "center", gap: 14 },
-  addressText: { flex: 1, color: P.text, fontSize: 21, fontWeight: "700", lineHeight: 30, textAlign: "left", writingDirection: "ltr" },
   addressHi: { color: P.accent },
-  copyCircle: { width: 54, height: 54, borderRadius: 27, backgroundColor: P.card, alignItems: "center", justifyContent: "center" },
-  divider: { height: 1, backgroundColor: P.border, marginTop: 22, marginBottom: 8 },
 
-  infoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 13 },
-  infoLabel: { color: P.muted, fontSize: 15 },
-  infoValue: { color: P.text, fontSize: 16, fontWeight: "600" },
+  infoRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 14 },
+  infoLabel: { color: P.muted, fontSize: 14 },
+  infoValue: { color: P.text, fontSize: 15, fontWeight: "700" },
 
   confirmCard: {
     flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: P.card, borderRadius: 18,
@@ -410,9 +447,10 @@ const styles = StyleSheet.create({
   sheetSub: { color: P.muted, fontSize: 13, textAlign: "center", marginTop: 6, lineHeight: 20 },
   amountBox: {
     flexDirection: "row", alignItems: "center", alignSelf: "stretch", backgroundColor: P.inputBg, borderRadius: 18,
-    borderWidth: 1.5, borderColor: P.border, height: 66, paddingHorizontal: 16, marginTop: 20, gap: 8,
+    borderWidth: 1.5, borderColor: "rgba(255,230,0,0.45)", height: 66, paddingHorizontal: 16, marginTop: 20, gap: 8, overflow: "hidden",
   },
-  amountInput: { flex: 1, color: P.text, fontSize: 28, fontWeight: "900", paddingVertical: 0 },
+  amountInputWrap: { flex: 1, minWidth: 0 },
+  amountInput: { width: "100%", color: P.text, fontSize: 28, fontWeight: "900", paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0, backgroundColor: "transparent" },
   amountUnit: { color: P.muted, fontSize: 15, fontWeight: "800" },
   netChip: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
   netChipText: { color: P.muted, fontSize: 12.5 },
