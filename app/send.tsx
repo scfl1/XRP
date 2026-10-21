@@ -1,17 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { UsdtIcon } from "@/components/usdt-icon";
 import { NetworkIcon } from "@/components/network-icon";
 import { getNetwork } from "@/constants/networks";
 import { confirmAsync } from "@/lib/_core/native-alert";
@@ -20,40 +11,45 @@ import { consumePendingScan } from "@/lib/_core/qr-store";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 
-
-// ألوان الثيم الداكن (نفس الصفحة الرئيسية)
-const D = {
-  bg: "#04100D",
-  card: "#0B1A17",
-  card2: "#12241F",
-  border: "rgba(255,255,255,0.10)",
-  greenBorder: "rgba(47,227,154,0.45)",
+/* ---------- الألوان: غيّر P إلى LIGHT للحصول على النسخة الفاتحة ---------- */
+const DARK = {
+  bg: "#000000",
+  card: "#1A1A1C",
+  field: "#111113",
+  border: "rgba(255,255,255,0.14)",
   text: "#FFFFFF",
-  muted: "#9FB3AD",
-  green: "#19D27C",
-  greenDeep: "#0F6B45",
-  greenSoft: "rgba(25,210,124,0.15)",
-  red: "#FF5C5C",
-  redSoft: "rgba(255,92,92,0.16)",
+  muted: "#8A8A8E",
+  accent: "#FFE600",
+  onAccent: "#14120A",
+  segActive: "#2C2C2F",
+  disabledBg: "#232326",
+  disabledText: "#6B6B70",
+  danger: "#FF5C5C",
 };
-
-type PendingOp = { op: "+" | "-" | "×" | "÷"; base: number } | null;
-
-function applyOp(base: number, op: NonNullable<PendingOp>["op"], value: number): number {
-  if (op === "+") return base + value;
-  if (op === "-") return base - value;
-  if (op === "×") return base * value;
-  return value === 0 ? base : base / value;
-}
-
-const webCursor = Platform.OS === "web" ? ({ cursor: "pointer" } as object) : null;
+const LIGHT = {
+  bg: "#FFFFFF",
+  card: "#F6F6F9",
+  field: "#FFFFFF",
+  border: "#E3E4E9",
+  text: "#111214",
+  muted: "#8A8F98",
+  accent: "#F0B90B",
+  onAccent: "#14120A",
+  segActive: "#FFFFFF",
+  disabledBg: "#EEEFF3",
+  disabledText: "#B4B7C0",
+  danger: "#E5484D",
+};
+const P = DARK;
+const YELLOW = "#FFE600";
+const noOutline = Platform.OS === "web" ? ({ outlineStyle: "none", outlineWidth: 0 } as object) : null;
 
 export default function SendScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [networkCode, setNetworkCode] = useState(getSelectedNetwork());
-  const [display, setDisplay] = useState("0");
-  const [pending, setPending] = useState<PendingOp>(null);
+  const [tab, setTab] = useState<"normal" | "internal">("normal");
+  const [amountText, setAmountText] = useState("");
   const [address, setAddress] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
@@ -80,98 +76,73 @@ export default function SendScreen() {
   const showToast = (msg: string) => setToast(msg);
 
   const network = getNetwork(networkCode);
-  const amount = Number(display) || 0;
+  const hasNetwork = !network.internal;
+  const amount = Number(amountText.replace(",", ".")) || 0;
   const addressValid = address.trim().length >= 20;
-  const canSend =
-    amount > 0 &&
-    amount <= usdt &&
-    addressValid &&
-    !network.internal &&
-    !createWithdrawal.isPending;
+  const overBalance = amount > usdt;
+  const canSend = amount > 0 && !overBalance && addressValid && hasNetwork && !createWithdrawal.isPending;
 
-  const pressDigit = (d: string) => {
-    setDisplay((cur) => {
-      if (d === "." && cur.includes(".")) return cur;
-      if (cur === "0" && d !== ".") return d;
-      if (cur.length >= 12) return cur;
-      return cur + d;
-    });
+  const onAmountChange = (t: string) => {
+    const clean = t.replace(",", ".").replace(/[^0-9.]/g, "");
+    const parts = clean.split(".");
+    setAmountText(parts.length > 2 ? `${parts[0]}.${parts.slice(1).join("")}` : clean);
   };
 
-  const pressBackspace = () => {
-    setDisplay((cur) => (cur.length <= 1 ? "0" : cur.slice(0, -1)));
-  };
+  const setMax = () => setAmountText(String(Math.floor(usdt * 100) / 100));
 
-  const pressOp = (op: NonNullable<PendingOp>["op"]) => {
-    const current = Number(display) || 0;
-    if (pending) {
-      const result = applyOp(pending.base, pending.op, current);
-      setPending({ op, base: result });
-    } else {
-      setPending({ op, base: current });
+  const pasteAddress = async () => {
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+        const text = (await navigator.clipboard.readText()).trim();
+        if (text) {
+          setAddress(text);
+          showToast("تم لصق العنوان");
+          return;
+        }
+      }
+    } catch {
+      /* ignore */
     }
-    setDisplay("0");
+    showToast("الصق العنوان يدوياً في الحقل");
   };
 
-  const finalizeAmount = (): number => {
-    const current = Number(display) || 0;
-    if (pending) {
-      const result = applyOp(pending.base, pending.op, current);
-      setPending(null);
-      setDisplay(String(result));
-      return result;
-    }
-    return current;
-  };
-
-  const setPercent = (pct: number) => {
-    setPending(null);
-    setDisplay(String(Math.floor(usdt * pct * 100) / 100));
-  };
-
-  /** بدون بطاقة تأكيد — window.confirm فقط */
   const handleSendPress = async () => {
     if (createWithdrawal.isPending) return;
 
-    const finalAmount = finalizeAmount();
-
-    if (!finalAmount || finalAmount <= 0) {
+    if (!hasNetwork) {
+      showToast("اختر شبكة بلوكتشين (مثل TRC20)");
+      return;
+    }
+    if (!amount || amount <= 0) {
       showToast("أدخل مبلغاً صحيحاً أولاً");
       return;
     }
-
-    if (finalAmount > usdt) {
+    if (amount > usdt) {
       showToast("الرصيد غير كافٍ");
       return;
     }
-
-    if (network.internal) {
-      showToast("اختر شبكة بلوكتشين (مثل TRC20) وليس التحويل الداخلي");
-      return;
-    }
-
     if (address.trim().length < 20) {
       showToast("أدخل عنوان محفظة صالحاً (20 حرفاً على الأقل)");
       return;
     }
 
     const ok = await confirmAsync(
-      "تأكيد التحويل",
-      `المبلغ: ${finalAmount} USDT\nالشبكة: ${network.name}\nالعنوان: ${address.trim()}`,
+      "تأكيد السحب",
+      `المبلغ: ${amount} USDT\nالشبكة: ${network.name}\nالعنوان: ${address.trim()}`,
     );
     if (!ok) return;
 
     createWithdrawal.mutate(
       {
         currency: "USDT",
-        amount: finalAmount,
+        amount,
         network: network.code,
         address: address.trim(),
       },
       {
         onSuccess: () => {
-          showToast(`تم إرسال طلب ${finalAmount} USDT — قيد المراجعة`);
-          setDisplay("0");
+          showToast(`تم إرسال طلب ${amount} USDT — قيد المراجعة`);
+          setAmountText("");
           setAddress("");
           setTimeout(() => router.back(), 1500);
         },
@@ -182,323 +153,215 @@ export default function SendScreen() {
     );
   };
 
-  const OPS: NonNullable<PendingOp>["op"][] = ["+", "-", "×", "÷"];
-  const ROWS = [
-    ["7", "8", "9"],
-    ["4", "5", "6"],
-    ["1", "2", "3"],
-    [".", "0", "back"],
-  ];
-
   return (
     <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
-    <View style={styles.root}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.push("/network-select")}
-          style={[styles.networkPill, webCursor]}
-          activeOpacity={0.7}
-        >
-          <MaterialIcons name="unfold-more" size={15} color={D.muted} />
-          <View>
-            <Text style={styles.networkLabel}>الشبكة/السلسلة</Text>
-            <Text style={styles.networkValue}>{network.name}</Text>
+      <View style={styles.root}>
+        {/* الهيدر */}
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={12} style={styles.headerBtn}>
+            <MaterialIcons name="chevron-right" size={30} color={P.text} />
+          </Pressable>
+          <Text style={styles.title}>سحب USDT</Text>
+          <View style={styles.headerIcons}>
+            <Pressable onPress={() => router.push("/transactions")} hitSlop={10} style={styles.headerBtn}>
+              <MaterialIcons name="receipt-long" size={24} color={P.text} />
+            </Pressable>
+            <Pressable onPress={() => router.push("/support")} hitSlop={10} style={styles.headerBtn}>
+              <MaterialIcons name="help-outline" size={25} color={P.text} />
+            </Pressable>
           </View>
-          <View style={styles.networkAvatar}>
-            <NetworkIcon network={network} size={18} />
+        </View>
+
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* التبويبات */}
+          <View style={styles.segment}>
+            <Pressable onPress={() => setTab("normal")} style={[styles.segItem, tab === "normal" && styles.segItemActive]}>
+              <Text style={[styles.segText, tab === "normal" && styles.segTextActive]}>نقل عادي</Text>
+            </Pressable>
+            <Pressable onPress={() => setTab("internal")} style={[styles.segItem, tab === "internal" && styles.segItemActive]}>
+              <Text style={[styles.segText, tab === "internal" && styles.segTextActive]}>التحويل داخل المحفظة</Text>
+            </Pressable>
           </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={[styles.backBtn, webCursor]} activeOpacity={0.7}>
-          <MaterialIcons name="chevron-left" size={22} color={D.text} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        style={{ flexGrow: 0 }}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="always"
-        bounces={false}
-      >
-        <View style={styles.currencyRow}>
-          <UsdtIcon size={22} />
-          <Text style={styles.currencyText}>USDT</Text>
-          <Text style={styles.sendLabel}>إرسال</Text>
-        </View>
-
-        <Text style={[styles.amount, amount > 0 && styles.amountActive]} numberOfLines={1}>
-          {display}
-        </Text>
-
-        <View style={styles.usdRow}>
-          <Text style={styles.usdValue}>${amount.toFixed(2)}</Text>
-          <Text style={styles.usdLabel}>USD</Text>
-        </View>
-
-        <View style={[styles.addressRow, addressValid && styles.addressRowValid]}>
-          <TouchableOpacity
-            onPress={() => router.push("/qr-scanner")}
-            hitSlop={8}
-            style={[styles.addressIconBtn, webCursor]}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="qr-code-scanner" size={17} color={D.text} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
-                  const text = (await navigator.clipboard.readText()).trim();
-                  if (text) {
-                    setAddress(text);
-                    showToast("تم لصق العنوان");
-                    return;
-                  }
-                }
-              } catch {
-                /* ignore */
-              }
-              showToast("الصق العنوان يدوياً في الحقل");
-            }}
-            hitSlop={8}
-            style={[styles.addressIconBtn, webCursor]}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons name="content-paste" size={17} color={D.text} />
-          </TouchableOpacity>
-          <TextInput
-            style={styles.addressInput}
-            value={address}
-            onChangeText={setAddress}
-            placeholder="عنوان المحفظة"
-            placeholderTextColor="#5F746D"
-            textAlign="right"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.addressLabel}>إرسال إلى</Text>
-        </View>
-
-        <View style={styles.quickRow}>
-          <View style={{ flex: 1 }} />
-          <TouchableOpacity onPress={() => setPercent(0.25)} style={[styles.pctChip, webCursor]} activeOpacity={0.7}>
-            <Text style={styles.pct}>25%</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPercent(0.5)} style={[styles.pctChip, webCursor]} activeOpacity={0.7}>
-            <Text style={styles.pct}>50%</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setPercent(1)} style={[styles.pctChip, styles.pctChipMax, webCursor]} activeOpacity={0.7}>
-            <Text style={[styles.pct, { color: D.green }]}>MAX</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.balanceRow}>
-          <View style={styles.balancePill}>
-            <UsdtIcon size={16} />
-            <Text style={styles.balanceText}>{usdt.toFixed(2)} USDT</Text>
-          </View>
-          <Text style={styles.balanceLabel}>رصيد المحفظة</Text>
-        </View>
-      </ScrollView>
-
-      <View style={styles.keypad}>
-        <View style={styles.opsCol}>
-          {OPS.map((op) => (
-            <TouchableOpacity
-              key={op}
-              onPress={() => pressOp(op)}
-              style={[styles.opKey, pending?.op === op && styles.opKeyActive, webCursor]}
-              activeOpacity={0.65}
-            >
-              <Text style={[styles.opText, pending?.op === op && styles.opTextActive]}>{op}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.digitsGrid}>
-          {ROWS.map((row, i) => (
-            <View key={i} style={styles.digitRow}>
-              {row.map((d) =>
-                d === "back" ? (
-                  <TouchableOpacity
-                    key={d}
-                    onPress={pressBackspace}
-                    style={[styles.digitKey, styles.backKey, webCursor]}
-                    activeOpacity={0.65}
-                  >
-                    <MaterialIcons name="backspace" size={17} color={D.red} />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    key={d}
-                    onPress={() => pressDigit(d)}
-                    style={[styles.digitKey, webCursor]}
-                    activeOpacity={0.65}
-                  >
-                    <Text style={styles.digitText}>{d}</Text>
-                  </TouchableOpacity>
-                ),
-              )}
+          {tab === "internal" ? (
+            <View style={styles.comingSoon}>
+              <MaterialIcons name="hourglass-empty" size={34} color={P.muted} />
+              <Text style={styles.comingSoonText}>التحويل الداخلي بين حسابات CwaAX قيد التطوير ولم يُفعَّل بعد.</Text>
             </View>
-          ))}
-        </View>
+          ) : (
+            <>
+              {/* الشبكة */}
+              <Text style={styles.label}>الشبكة</Text>
+              <Pressable onPress={() => router.push("/network-select")} style={({ pressed }) => [styles.field, pressed && styles.pressed]}>
+                {hasNetwork ? (
+                  <View style={styles.netValue}>
+                    <NetworkIcon network={network} size={26} />
+                    <Text style={styles.netText}>{network.chain} ({network.name})</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.placeholder}>اختر الشبكة</Text>
+                )}
+                <MaterialIcons name="arrow-drop-down" size={28} color={P.muted} />
+              </Pressable>
+
+              {/* العنوان */}
+              <Text style={styles.label}>العنوان</Text>
+              <View style={[styles.field, addressValid && styles.fieldValid]}>
+                <TextInput
+                  value={address}
+                  onChangeText={setAddress}
+                  placeholder="الصق عنوان المحفظة"
+                  placeholderTextColor={P.muted}
+                  style={[styles.input, noOutline]}
+                  textAlign="right"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  underlineColorAndroid="transparent"
+                  selectionColor={YELLOW}
+                />
+                <View style={styles.fieldIcons}>
+                  <Pressable onPress={pasteAddress} hitSlop={8} style={styles.iconBtn}>
+                    <MaterialIcons name="content-paste" size={20} color={P.text} />
+                  </Pressable>
+                  <View style={styles.vDivider} />
+                  <Pressable onPress={() => router.push("/qr-scanner")} hitSlop={8} style={styles.iconBtn}>
+                    <MaterialIcons name="qr-code-scanner" size={22} color={P.text} />
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* المبلغ */}
+              <Text style={styles.label}>المبلغ</Text>
+              <View style={[styles.field, overBalance && styles.fieldError]}>
+                <TextInput
+                  value={amountText}
+                  onChangeText={onAmountChange}
+                  placeholder={`متاح ${usdt.toFixed(2)}`}
+                  placeholderTextColor={P.muted}
+                  keyboardType="decimal-pad"
+                  style={[styles.input, styles.amountInput, noOutline]}
+                  textAlign="right"
+                  underlineColorAndroid="transparent"
+                  selectionColor={YELLOW}
+                />
+                <Text style={styles.unit}>USDT</Text>
+                <View style={styles.vDivider} />
+                <Pressable onPress={setMax} hitSlop={8}>
+                  <Text style={styles.maxText}>الكل</Text>
+                </Pressable>
+              </View>
+              {overBalance ? <Text style={styles.errorText}>الرصيد غير كافٍ</Text> : null}
+
+              {/* ملخص */}
+              <View style={styles.summary}>
+                <View style={styles.sumRow}>
+                  <Text style={styles.sumLabel}>الرصيد المتاح</Text>
+                  <Text style={styles.sumValue}>{usdt.toFixed(2)} USDT</Text>
+                </View>
+                <View style={styles.sumDivider} />
+                <View style={styles.sumRow}>
+                  <Text style={styles.sumLabel}>المبلغ المطلوب سحبه</Text>
+                  <Text style={styles.sumValue}>{amount > 0 ? amount : "--"} USDT</Text>
+                </View>
+              </View>
+
+              {/* ملاحظة */}
+              <View style={styles.notice}>
+                <MaterialIcons name="info-outline" size={20} color={P.muted} />
+                <Text style={styles.noticeText}>
+                  يتم تنفيذ التحويلات العادية عبر شبكة البلوكتشين، ويتوقف وقت الوصول على عدد التأكيدات التي تتطلبها الشبكة. يخضع الطلب للمراجعة قبل التنفيذ.
+                </Text>
+              </View>
+            </>
+          )}
+        </ScrollView>
+
+        {/* زر السحب */}
+        {tab === "normal" ? (
+          <View style={styles.bottomBar}>
+            <Pressable
+              onPress={handleSendPress}
+              disabled={createWithdrawal.isPending}
+              style={({ pressed }) => [styles.submit, canSend ? styles.submitActive : styles.submitOff, pressed && styles.pressed]}
+            >
+              <Text style={[styles.submitText, canSend ? styles.submitTextActive : styles.submitTextOff]}>
+                {createWithdrawal.isPending ? "جاري الإرسال..." : "اسحب الآن"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {toast ? (
+          <View style={styles.toast} pointerEvents="none">
+            <MaterialIcons name="info-outline" size={18} color="#FFFFFF" />
+            <Text style={styles.toastText}>{toast}</Text>
+          </View>
+        ) : null}
       </View>
-
-      <TouchableOpacity
-        onPress={handleSendPress}
-        activeOpacity={0.75}
-        style={[
-          styles.submit,
-          canSend && styles.submitActive,
-          createWithdrawal.isPending && styles.pressed,
-          webCursor,
-        ]}
-      >
-        <Text style={[styles.submitText, canSend && styles.submitTextActive]}>
-          {createWithdrawal.isPending ? "جاري الإرسال..." : "إرسال"}
-        </Text>
-        <View style={styles.submitIcon}>
-          <MaterialIcons name="arrow-back" size={16} color={canSend ? D.greenDeep : "#7F938C"} />
-        </View>
-      </TouchableOpacity>
-
-      {toast ? (
-        <View style={styles.toast} pointerEvents="none">
-          <MaterialIcons name="info-outline" size={18} color={"#FFFFFF"} />
-          <Text style={styles.toastText}>{toast}</Text>
-        </View>
-      ) : null}
-    </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: D.bg, paddingHorizontal: 20 },
-  header: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 12,
-    marginBottom: 10,
+  root: { flex: 1, backgroundColor: P.bg },
+  pressed: { opacity: 0.65 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingTop: 10, paddingBottom: 6 },
+  headerBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerIcons: { flexDirection: "row", alignItems: "center" },
+  title: { color: P.text, fontSize: 19, fontWeight: "800" },
+  content: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 120 },
+
+  segment: { flexDirection: "row", backgroundColor: P.card, borderRadius: 14, padding: 4, marginBottom: 22 },
+  segItem: { flex: 1, height: 44, borderRadius: 11, alignItems: "center", justifyContent: "center" },
+  segItemActive: { backgroundColor: P.segActive },
+  segText: { color: P.muted, fontSize: 14, fontWeight: "700" },
+  segTextActive: { color: P.text, fontWeight: "800" },
+
+  label: { color: P.muted, fontSize: 14, textAlign: "right", marginBottom: 10, marginTop: 6 },
+  field: {
+    flexDirection: "row", alignItems: "center", gap: 10, minHeight: 58, borderRadius: 16, borderWidth: 1.5,
+    borderColor: P.border, backgroundColor: P.field, paddingHorizontal: 14, marginBottom: 14, overflow: "hidden",
   },
-  networkPill: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: D.card,
-    borderWidth: 1,
-    borderColor: D.greenBorder,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+  fieldValid: { borderColor: "rgba(255,230,0,0.6)" },
+  fieldError: { borderColor: P.danger },
+  netValue: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
+  netText: { color: P.text, fontSize: 16, fontWeight: "700" },
+  placeholder: { flex: 1, color: P.muted, fontSize: 16, textAlign: "right" },
+  input: { flex: 1, minWidth: 0, color: P.text, fontSize: 15, paddingVertical: 12, paddingHorizontal: 0, borderWidth: 0, backgroundColor: "transparent" },
+  amountInput: { fontSize: 18, fontWeight: "700" },
+  fieldIcons: { flexDirection: "row", alignItems: "center", gap: 10 },
+  iconBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  vDivider: { width: 1, height: 22, backgroundColor: P.border },
+  unit: { color: P.muted, fontSize: 14, fontWeight: "700" },
+  maxText: { color: P.accent, fontSize: 15, fontWeight: "800" },
+  errorText: { color: P.danger, fontSize: 12, textAlign: "right", marginTop: -6, marginBottom: 10 },
+
+  summary: { backgroundColor: P.card, borderRadius: 18, paddingHorizontal: 16, marginTop: 6, marginBottom: 14 },
+  sumRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 15 },
+  sumDivider: { height: 1, backgroundColor: P.border },
+  sumLabel: { color: P.muted, fontSize: 14 },
+  sumValue: { color: P.text, fontSize: 15, fontWeight: "700" },
+
+  notice: { flexDirection: "row", gap: 10, backgroundColor: P.card, borderRadius: 16, padding: 14, alignItems: "flex-start" },
+  noticeText: { flex: 1, color: P.muted, fontSize: 12.5, lineHeight: 20, textAlign: "right" },
+
+  comingSoon: { alignItems: "center", paddingVertical: 70, gap: 14 },
+  comingSoonText: { color: P.muted, fontSize: 13, textAlign: "center", lineHeight: 21, paddingHorizontal: 24 },
+
+  bottomBar: {
+    position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 18,
+    backgroundColor: P.bg,
   },
-  networkAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
-  networkLabel: { color: D.muted, fontSize: 9, textAlign: "right" },
-  networkValue: { color: D.text, fontSize: 13, fontWeight: "900", textAlign: "right" },
-  backBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: D.greenBorder, backgroundColor: D.card, alignItems: "center", justifyContent: "center" },
-  content: { paddingBottom: 8 },
-  currencyRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-    justifyContent: "center",
-    marginTop: 8,
-  },
-  currencyText: { color: D.text, fontSize: 17, fontWeight: "900" },
-  sendLabel: { color: D.muted, fontSize: 15 },
-  amount: { color: "#3F544D", fontSize: 48, fontWeight: "800", textAlign: "center", marginTop: 10 },
-  amountActive: { color: D.text },
-  usdRow: { flexDirection: "row-reverse", justifyContent: "center", gap: 6, marginTop: 4 },
-  usdValue: { color: D.muted, fontSize: 13, fontWeight: "700" },
-  usdLabel: { color: D.muted, fontSize: 13 },
-  addressRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: D.border,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    height: 54,
-    marginTop: 18,
-    backgroundColor: D.card,
-  },
-  addressRowValid: { borderColor: D.green, backgroundColor: D.greenSoft },
-  addressIconBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: D.card2, alignItems: "center", justifyContent: "center" },
-  addressInput: { flex: 1, color: D.text, fontSize: 13, paddingVertical: 8 },
-  addressLabel: { color: D.muted, fontSize: 12, marginRight: 4 },
-  quickRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginTop: 14 },
-  pctChip: { backgroundColor: D.card, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  pctChipMax: { backgroundColor: D.greenSoft },
-  pct: { color: D.text, fontSize: 12, fontWeight: "900" },
-  balanceRow: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  balancePill: { flexDirection: "row-reverse", alignItems: "center", gap: 6 },
-  balanceText: { color: D.text, fontSize: 13, fontWeight: "900" },
-  balanceLabel: { color: D.muted, fontSize: 11 },
-  keypad: { flexDirection: "row", marginTop: 14, gap: 10, flexShrink: 0 },
-  opsCol: { width: 58, gap: 10, alignItems: "center" },
-  opKey: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: D.card,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  opKeyActive: { backgroundColor: D.green },
-  opText: { color: D.text, fontSize: 19, fontWeight: "800" },
-  opTextActive: { color: "#FFFFFF" },
-  digitsGrid: { flex: 1, gap: 10 },
-  digitRow: { flexDirection: "row", justifyContent: "space-between" },
-  digitKey: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: D.card,
-  },
-  backKey: { backgroundColor: D.redSoft },
-  digitText: { color: D.text, fontSize: 21, fontWeight: "700" },
-  submit: {
-    flexDirection: "row-reverse",
-    backgroundColor: "#1B2D28",
-    height: 56,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    marginTop: 14,
-    marginBottom: 8,
-    paddingHorizontal: 6,
-  },
-  submitActive: { backgroundColor: D.green },
-  submitIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
-  submitText: { color: "#7F938C", fontSize: 16, fontWeight: "900" },
-  submitTextActive: { color: "#04100D" },
-  pressed: { opacity: 0.6 },
+  submit: { height: 56, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  submitActive: { backgroundColor: YELLOW },
+  submitOff: { backgroundColor: P.disabledBg },
+  submitText: { fontSize: 17, fontWeight: "900" },
+  submitTextActive: { color: "#14120A" },
+  submitTextOff: { color: P.disabledText },
+
   toast: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: 90,
-    backgroundColor: "#12352C",
-    borderWidth: 1,
-    borderColor: D.greenBorder,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 8,
-    zIndex: 1000,
+    position: "absolute", left: 20, right: 20, bottom: 96, backgroundColor: "#2A2A2D", borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 8, zIndex: 1000,
   },
   toastText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", flex: 1, textAlign: "right" },
 });
