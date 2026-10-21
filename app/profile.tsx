@@ -1,10 +1,192 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, IconButton, StatusPill } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
-import { confirmAsync } from "@/lib/_core/native-alert";
 import { useAuth } from "@/hooks/use-auth";
-export default function ProfileScreen() { const router = useRouter(); const { user, logout } = useAuth(); const rows = [{ icon: "verified-user" as const, label: "المصادقة الثنائية", value: "غير مفعّلة", route: "/settings" }, { icon: "lock-outline" as const, label: "تغيير كلمة المرور", value: "آخر تغيير منذ 30 يوماً", route: "/change-password" }, { icon: "history" as const, label: "سجل العمليات", value: "عرض كل العمليات", route: "/transactions" }]; return <ScreenContainer className="px-5" edges={["top", "left", "right"]}><ScrollView contentContainerStyle={styles.content}><View style={styles.header}><IconButton icon="arrow-forward" label="رجوع" onPress={() => router.back()}/><Text style={styles.title}>الملف الشخصي</Text><View style={{ width: 42 }}/></View><View style={styles.hero}><View style={styles.avatar}><Text style={styles.avatarText}>أ</Text></View><Text style={styles.name}>{user?.name || user?.username || "المستخدم"}</Text><Text style={styles.email}>{user?.email || ""}</Text><Text style={styles.uid}>UID {user?.id ?? "—"}</Text><StatusPill>حساب موثّق</StatusPill></View><Text style={styles.section}>بيانات الحساب</Text><Card style={styles.accountCard}>{rows.map((row, index) => <Pressable key={row.label} onPress={() => router.push(row.route as never)} style={({ pressed }) => [styles.row, index === rows.length - 1 && styles.rowLast, pressed && styles.pressed]}><Text style={styles.rowLabel}>{row.label}</Text><View style={styles.rowLeft}><Text style={styles.rowValue}>{row.value}</Text><MaterialIcons name="chevron-left" size={18} color={CWAAX.gold}/></View></Pressable>)}</Card><Text style={styles.section}>صلاحيات الحساب</Text><View style={styles.permission}><MaterialIcons name="shield" size={20} color={CWAAX.green}/><View style={{ flex: 1 }}><Text style={styles.permissionTitle}>مستخدم CwaAX</Text><Text style={styles.permissionSub}>تتم حماية الصلاحيات الحساسة من الخادم</Text></View><StatusPill tone="success">user</StatusPill></View><Pressable onPress={async () => { const confirmed = await confirmAsync("تسجيل الخروج", "هل تريد تسجيل الخروج من CwaAX؟", "تسجيل الخروج"); if (confirmed) { await logout(); router.replace("/login"); } }} style={({ pressed }) => [styles.logout, pressed && styles.pressed]}><MaterialIcons name="logout" size={18} color={CWAAX.red}/><Text style={styles.logoutText}>تسجيل الخروج</Text></Pressable></ScrollView></ScreenContainer> }
-const styles = StyleSheet.create({ content: { paddingTop: 12, paddingBottom: 30 }, header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }, title: { color: CWAAX.ink, fontSize: 20, fontWeight: "900" }, hero: { alignItems: "center", paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: CWAAX.line }, avatar: { width: 76, height: 76, borderRadius: 28, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center", marginBottom: 11 }, avatarText: { color: CWAAX.white, fontSize: 32, fontWeight: "900" }, name: { color: CWAAX.ink, fontSize: 19, fontWeight: "900" }, email: { color: CWAAX.muted, fontSize: 11, marginTop: 5 }, uid: { color: CWAAX.muted, fontSize: 10, marginTop: 5, marginBottom: 10 }, section: { color: CWAAX.muted, fontSize: 12, fontWeight: "800", textAlign: "right", marginTop: 23, marginBottom: 9 }, accountCard: { backgroundColor: "#0A0A0A", borderColor: "#0A0A0A" }, row: { minHeight: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.1)" }, rowLast: { borderBottomWidth: 0 }, rowLabel: { color: CWAAX.gold, fontSize: 13, fontWeight: "800", textAlign: "right" }, rowLeft: { flexDirection: "row", alignItems: "center", gap: 2 }, rowValue: { color: CWAAX.gold, fontSize: 12, fontWeight: "700" }, permission: { borderWidth: 1, borderColor: CWAAX.line, borderRadius: 16, padding: 14, flexDirection: "row", alignItems: "center", gap: 10 }, permissionTitle: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "right" }, permissionSub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" }, logout: { marginTop: 23, borderWidth: 1, borderColor: "#F2D1CF", backgroundColor: "#FFF8F8", borderRadius: 14, height: 48, justifyContent: "center", alignItems: "center", flexDirection: "row", gap: 7 }, logoutText: { color: CWAAX.red, fontSize: 12, fontWeight: "800" }, pressed: { opacity: .62 } });
+import { confirmAsync } from "@/lib/_core/native-alert";
+
+type SecurityRowProps = {
+  label: string;
+  value?: string;
+  onPress?: () => void;
+  accent?: boolean;
+  showChevron?: boolean;
+};
+
+function SecurityRow({
+  label,
+  value,
+  onPress,
+  accent = false,
+  showChevron = true,
+}: SecurityRowProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+    >
+      <View style={styles.rowLeading}>
+        {value ? (
+          <Text style={[styles.value, accent && styles.valueAccent]}>{value}</Text>
+        ) : null}
+        {showChevron ? (
+          <MaterialIcons name="chevron-left" size={24} color="#555555" />
+        ) : null}
+      </View>
+      <Text style={styles.label}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export default function ProfileScreen() {
+  const router = useRouter();
+  const { logout } = useAuth();
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+
+  const openSettings = () => router.push("/settings" as never);
+  const openPassword = () => router.push("/change-password" as never);
+  const openTransactions = () => router.push("/transactions" as never);
+
+  return (
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View style={styles.headerSpacer} />
+          <Text style={styles.title}>الأمان</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="رجوع"
+            onPress={() => router.back()}
+            hitSlop={12}
+            style={styles.backButton}
+          >
+            <MaterialIcons name="chevron-right" size={34} color="#111111" />
+          </Pressable>
+        </View>
+
+        <View style={styles.rows}>
+          <SecurityRow label="كلمة مرور تسجيل الدخول" value="تعديل" onPress={openPassword} />
+          <SecurityRow label="مفتاح المرور" value="الإعداد" onPress={openSettings} />
+          <SecurityRow label="الهاتف" value="ربط" onPress={openSettings} />
+          <SecurityRow label="البريد الإلكتروني" value="تعديل" accent onPress={openSettings} />
+          <SecurityRow label="Google Authenticator" value="ربط" onPress={openSettings} />
+          <SecurityRow label="رمز التمويل" value="تعيين" onPress={openSettings} />
+
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: twoFactorEnabled }}
+            onPress={() => setTwoFactorEnabled((enabled) => !enabled)}
+            style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+          >
+            <Switch
+              value={twoFactorEnabled}
+              onValueChange={setTwoFactorEnabled}
+              trackColor={{ false: "#D8D8D8", true: "#D5B315" }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor="#D8D8D8"
+            />
+            <Text style={styles.label}>المصادقة الثنائية</Text>
+          </Pressable>
+
+          <SecurityRow label="رمز مكافحة التصيد الاحتيالي" onPress={openSettings} />
+          <SecurityRow label="سجل تسجيل الدخول" onPress={openTransactions} />
+          <SecurityRow label="حسابات الطرف الثالث" onPress={openSettings} />
+          <SecurityRow
+            label="حذف الحساب"
+            onPress={async () => {
+              const confirmed = await confirmAsync(
+                "حذف الحساب",
+                "هذا الخيار يحتاج إلى إجراء حذف آمن من إعدادات الحساب. هل تريد فتح الإعدادات؟",
+                "فتح الإعدادات",
+              );
+              if (confirmed) openSettings();
+            }}
+          />
+        </View>
+
+        <View style={styles.bottomSpace} />
+      </ScrollView>
+    </ScreenContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  content: {
+    paddingBottom: 28,
+  },
+  header: {
+    height: 76,
+    paddingHorizontal: 22,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerSpacer: {
+    width: 34,
+  },
+  title: {
+    color: "#111111",
+    fontSize: 25,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  backButton: {
+    width: 34,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rows: {
+    marginTop: 45,
+    paddingHorizontal: 26,
+  },
+  row: {
+    minHeight: 98,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  rowLeading: {
+    minWidth: 100,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  label: {
+    flexShrink: 1,
+    color: "#171717",
+    fontSize: 21,
+    fontWeight: "400",
+    textAlign: "right",
+  },
+  value: {
+    color: "#999999",
+    fontSize: 19,
+    fontWeight: "400",
+  },
+  valueAccent: {
+    color: "#56B99D",
+  },
+  pressed: {
+    opacity: 0.65,
+  },
+  bottomSpace: {
+    height: 40,
+  },
+});
