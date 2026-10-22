@@ -1,16 +1,30 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter, useFocusEffect } from "expo-router";
-import { useCallback } from "react";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, IconButton } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
 import { CURRENCIES } from "@/constants/currencies";
 import { notify } from "@/lib/_core/native-alert";
 import { useTranslation } from "@/lib/_core/i18n";
 import * as Preferences from "@/lib/_core/preferences";
 import type { CurrencyCode } from "@/lib/_core/preferences";
+
+const P = {
+  bg: "#000000", card: "#1A1A1C", border: "rgba(255,255,255,0.10)", text: "#FFFFFF",
+  muted: "#8A8A8E", accent: "#FFE600", onAccent: "#14120A",
+};
+
+function Row({ label, value, onPress, accent }: { label: string; value?: string; onPress: () => void; accent?: boolean }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.row, pressed && { opacity: 0.6 }]}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.end}>
+        {value ? <Text style={[styles.value, accent && { color: P.accent }]} numberOfLines={1}>{value}</Text> : null}
+        <MaterialIcons name="chevron-left" size={22} color={P.text} />
+      </View>
+    </Pressable>
+  );
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -26,122 +40,64 @@ export default function SettingsScreen() {
 
   const currencyInfo = CURRENCIES.find((c) => c.code === currency) || CURRENCIES[0];
 
-  const items = [
-    { key: "twoFactor", label: t("twoFactor"), icon: "verified-user" as const, sub: t("twoFactorSub") },
-    { key: "notifications", label: t("notifications"), icon: "notifications-none" as const, sub: t("notificationsSub") },
-    { key: "currency", label: t("currency"), icon: "paid" as const, sub: `${currencyInfo.code} · ${currencyInfo.name}` },
-    { key: "language", label: t("language"), icon: "language" as const, sub: locale === "ar" ? t("arabic") : t("english") },
-  ];
-
-  const onRowPress = (key: string) => {
-    if (key === "notifications") { router.push("/notifications"); return; }
-    if (key === "currency") { router.push("/currency"); return; }
-    if (key === "language") { router.push("/language"); return; }
-  };
-
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+      <View style={{ flex: 1, backgroundColor: P.bg }}>
         <View style={styles.header}>
-          <IconButton icon="arrow-forward" label={t("back")} onPress={() => router.back()} />
+          <Pressable onPress={() => router.back()} style={styles.back} hitSlop={8}>
+            <MaterialIcons name="arrow-forward" size={22} color={P.text} />
+          </Pressable>
           <Text style={styles.title}>{t("settingsTitle")}</Text>
-          <View style={{ width: 42 }} />
+          <View style={styles.back} />
         </View>
 
-        <Card style={styles.banner}>
-          <MaterialIcons name="security" size={23} color={CWAAX.green} />
-          <View style={styles.bannerCopy}>
-            <Text style={styles.bannerTitle}>{t("settingsBannerTitle")}</Text>
-            <Text style={styles.bannerSub}>{t("settingsBannerSub")}</Text>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          <Text style={styles.section}>{t("settingsSecuritySection")}</Text>
+
+          <View style={styles.row}>
+            <Text style={styles.label}>{t("twoFactor")}</Text>
+            <Switch
+              value={twoFactor}
+              onValueChange={setTwoFactor}
+              trackColor={{ false: "#3A3A3D", true: "rgba(255,230,0,0.45)" }}
+              thumbColor={twoFactor ? P.accent : "#FFFFFF"}
+            />
           </View>
-          <Pressable onPress={() => setTwoFactor(!twoFactor)} style={({ pressed }) => [styles.enable, pressed && styles.pressed]}>
-            <Text style={styles.enableText}>{twoFactor ? t("settingsEnabled") : t("settingsEnable")}</Text>
-          </Pressable>
-        </Card>
+          <Row label={t("notifications")} value={t("notificationsSub")} onPress={() => router.push("/notifications")} />
+          <Row label={t("currency")} value={`${currencyInfo.code} · ${currencyInfo.name}`} onPress={() => router.push("/currency")} />
+          <Row label={t("language")} value={locale === "ar" ? t("arabic") : t("english")} onPress={() => router.push("/language")} accent />
 
-        <Text style={styles.section}>{t("settingsSecuritySection")}</Text>
-        <Card>
-          {items.map((item, i) => (
-            <Pressable
-              key={item.key}
-              disabled={item.key === "twoFactor"}
-              onPress={() => onRowPress(item.key)}
-              style={({ pressed }) => [
-                styles.row,
-                i === items.length - 1 && { borderBottomWidth: 0 },
-                pressed && item.key !== "twoFactor" && styles.pressed,
-              ]}
-            >
-              <View style={styles.icon}>
-                <MaterialIcons name={item.icon} size={18} color={CWAAX.green} />
-              </View>
-              <View style={styles.copy}>
-                <Text style={styles.label}>{item.label}</Text>
-                <Text style={styles.sub}>{item.sub}</Text>
-              </View>
-              {item.key === "twoFactor" ? (
-                <Switch
-                  value={twoFactor}
-                  onValueChange={setTwoFactor}
-                  trackColor={{ false: "#DDE4E0", true: "#9BD5B4" }}
-                  thumbColor={twoFactor ? CWAAX.green : "#fff"}
-                />
-              ) : (
-                <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
-              )}
-            </Pressable>
-          ))}
-        </Card>
+          <Text style={[styles.section, { marginTop: 22 }]}>{t("settingsSupportSection")}</Text>
+          <Row label={t("supportCenter")} value={t("supportCenterSub")} onPress={() => router.push("/support")} />
+          <Row
+            label={t("terms")}
+            value={t("termsSub")}
+            onPress={() =>
+              notify(
+                t("terms"),
+                locale === "ar"
+                  ? "سيتم عرض شروط الاستخدام وسياسة الخصوصية هنا."
+                  : "Terms of service and privacy policy will be shown here.",
+              )
+            }
+          />
 
-        <Text style={styles.section}>{t("settingsSupportSection")}</Text>
-        <Card>
-          <Pressable onPress={() => router.push("/support")} style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-            <View style={[styles.icon, { backgroundColor: "#FFF5DE" }]}>
-              <MaterialIcons name="support-agent" size={18} color={CWAAX.gold} />
-            </View>
-            <View style={styles.copy}>
-              <Text style={styles.label}>{t("supportCenter")}</Text>
-              <Text style={styles.sub}>{t("supportCenterSub")}</Text>
-            </View>
-            <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
-          </Pressable>
-          <Pressable
-            onPress={() => notify(t("terms"), locale === "ar" ? "سيتم عرض شروط الاستخدام وسياسة الخصوصية هنا." : "Terms of service and privacy policy will be shown here.")}
-            style={({ pressed }) => [styles.row, { borderBottomWidth: 0 }, pressed && styles.pressed]}
-          >
-            <View style={[styles.icon, { backgroundColor: "#F2F3F2" }]}>
-              <MaterialIcons name="description" size={18} color={CWAAX.ink} />
-            </View>
-            <View style={styles.copy}>
-              <Text style={styles.label}>{t("terms")}</Text>
-              <Text style={styles.sub}>{t("termsSub")}</Text>
-            </View>
-            <MaterialIcons name="chevron-left" size={19} color="#A0AAA4" />
-          </Pressable>
-        </Card>
-
-        <Text style={styles.version}>{t("version")}</Text>
-      </ScrollView>
+          <Text style={styles.version}>{t("version")}</Text>
+        </ScrollView>
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 12, paddingBottom: 30 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 23 },
-  title: { color: CWAAX.ink, fontSize: 20, fontWeight: "900" },
-  banner: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#F0F9F4", borderColor: "#D8F0E1", marginBottom: 22 },
-  bannerCopy: { flex: 1 },
-  bannerTitle: { color: CWAAX.ink, fontSize: 12, fontWeight: "900", textAlign: "right" },
-  bannerSub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
-  enable: { backgroundColor: CWAAX.green, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 },
-  enableText: { color: CWAAX.white, fontSize: 10, fontWeight: "800" },
-  section: { color: CWAAX.muted, fontWeight: "800", fontSize: 12, textAlign: "right", marginBottom: 9, marginTop: 5 },
-  row: { minHeight: 65, flexDirection: "row", alignItems: "center", gap: 10, borderBottomWidth: 1, borderBottomColor: CWAAX.line },
-  icon: { width: 35, height: 35, borderRadius: 12, backgroundColor: CWAAX.greenSoft, alignItems: "center", justifyContent: "center" },
-  copy: { flex: 1 },
-  label: { color: CWAAX.ink, fontSize: 12, fontWeight: "800", textAlign: "right" },
-  sub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
-  version: { color: "#A3AEA7", textAlign: "center", fontSize: 10, marginTop: 23 },
-  pressed: { opacity: 0.62 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
+  back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  title: { color: P.text, fontSize: 20, fontWeight: "900" },
+  content: { paddingHorizontal: 22, paddingTop: 12, paddingBottom: 32 },
+  section: { color: P.muted, fontSize: 13, fontWeight: "700", textAlign: "right", marginBottom: 6 },
+  row: { minHeight: 58, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  label: { color: P.text, fontSize: 16, fontWeight: "600", textAlign: "right" },
+  end: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  value: { color: P.muted, fontSize: 13, flexShrink: 1 },
+  version: { color: P.muted, fontSize: 12, textAlign: "center", marginTop: 36 },
 });
