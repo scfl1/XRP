@@ -145,26 +145,30 @@ export default function TradeScreen() {
               <View key={plan.amount} style={styles.planCard}>
                 <View style={styles.row}>
                   <View style={styles.coinRing}>
-                    <CoinMark mark={plan.coin || "USDT"} color={plan.color || "#26A17B"} size={38} />
+                    <CoinMark mark={plan.coin || "USDT"} color={plan.color || "#26A17B"} size={40} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.planAmount}>{plan.amount} USDT</Text>
                     <Text style={styles.sub}>عقد تداول USDT</Text>
                   </View>
                   <View style={styles.rate}>
-                    <Text style={styles.rateValue}>{(TRADE_DAILY_RATE * 100).toFixed(1)}%</Text>
-                    <Text style={styles.rateLabel}>يومياً</Text>
+                    <MaterialIcons name="trending-up" size={15} color={P.accent} />
+                    <Text style={styles.rateValue}>{(TRADE_DAILY_RATE * 100).toFixed(1)}% يومياً</Text>
                   </View>
                 </View>
 
-                <View style={styles.metaRow}>
-                  <View>
-                    <Text style={styles.sub}>العائد اليومي المحسوب</Text>
+                <View style={styles.stats}>
+                  <View style={styles.statCell}>
+                    <Text style={styles.sub}>العائد اليومي</Text>
                     <Text style={styles.profit}>+{daily.toFixed(2)} USDT</Text>
                   </View>
-                  <View style={styles.lockRow}>
-                    <MaterialIcons name="lock-outline" size={14} color={P.muted} />
-                    <Text style={styles.sub}>مدة العقد 365 يوم</Text>
+                  <View style={styles.statDivider} />
+                  <View style={styles.statCell}>
+                    <Text style={styles.sub}>مدة التجارة</Text>
+                    <View style={styles.lockRow}>
+                      <MaterialIcons name="lock-outline" size={14} color={P.text} />
+                      <Text style={styles.days}>365 يوم</Text>
+                    </View>
                   </View>
                 </View>
 
@@ -187,8 +191,10 @@ export default function TradeScreen() {
                     onPress={() => start(plan.amount)}
                     style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }, disabled && { opacity: 0.5 }]}
                   >
-                    <MaterialIcons name={busy ? "hourglass-top" : "arrow-back"} size={18} color={P.onAccent} />
-                    <Text style={styles.ctaText}>{busy ? "جاري بدء العقد..." : "ابدأ العقد"}</Text>
+                    <Text style={styles.ctaText}>{busy ? "جاري بدء التجارة..." : "ابدأ التجارة"}</Text>
+                    <View style={styles.ctaArrow}>
+                      <MaterialIcons name={busy ? "hourglass-top" : "arrow-back"} size={18} color={P.accent} />
+                    </View>
                   </Pressable>
                 )}
               </View>
@@ -250,16 +256,20 @@ const styles = StyleSheet.create({
   sectionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 6 },
   section: { color: P.text, fontSize: 19, fontWeight: "800" },
   count: { color: P.accent, fontSize: 13, fontWeight: "700" },
-  planCard: { backgroundColor: P.card, borderWidth: 1, borderColor: P.border, borderRadius: 22, padding: 16 },
-  coinRing: { width: 52, height: 52, borderRadius: 26, backgroundColor: P.soft, alignItems: "center", justifyContent: "center" },
+  planCard: { backgroundColor: P.card, borderWidth: 1, borderColor: P.border, borderRadius: 26, padding: 16, gap: 14 },
+  coinRing: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#0F0F10", borderWidth: 1, borderColor: "rgba(255,230,0,0.35)", alignItems: "center", justifyContent: "center" },
   planAmount: { color: P.text, fontSize: 22, fontWeight: "900", textAlign: "right" },
-  rate: { backgroundColor: P.accent, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 7, alignItems: "center" },
-  rateValue: { color: P.onAccent, fontSize: 16, fontWeight: "900" },
-  rateLabel: { color: P.onAccent, fontSize: 11, fontWeight: "700" },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, marginBottom: 16 },
-  profit: { color: P.accent, fontSize: 16, fontWeight: "900", marginTop: 3, textAlign: "right" },
-  lockRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  cta: { height: 52, borderRadius: 26, backgroundColor: P.accent, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  rate: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: P.soft, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 7 },
+  rateValue: { color: P.accent, fontSize: 12, fontWeight: "900" },
+  stats: { flexDirection: "row", alignItems: "center", backgroundColor: "#0F0F10", borderRadius: 18, paddingVertical: 14 },
+  statCell: { flex: 1, paddingHorizontal: 14 },
+  statDivider: { width: 1, height: 34, backgroundColor: P.border },
+  days: { color: P.text, fontSize: 16, fontWeight: "900" },
+  
+  profit: { color: P.accent, fontSize: 16, fontWeight: "900", marginTop: 4, textAlign: "right" },
+  lockRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  cta: { height: 56, borderRadius: 28, backgroundColor: P.accent, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 12 },
+  ctaArrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: P.onAccent, alignItems: "center", justifyContent: "center" },
   ctaText: { color: P.onAccent, fontSize: 16, fontWeight: "900" },
   activeBox: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: P.soft, borderRadius: 16, padding: 14 },
   check: { width: 24, height: 24, borderRadius: 12, backgroundColor: P.accent, alignItems: "center", justifyContent: "center" },
