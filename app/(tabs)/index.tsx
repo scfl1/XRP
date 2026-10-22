@@ -108,9 +108,10 @@ export default function HomeScreen() {
               <TextInput
                 value={query}
                 onChangeText={setQuery}
-                placeholder="ابحث عن عملة أو سوق"
+                placeholder="ابحث"
                 placeholderTextColor={C.muted}
-                style={styles.searchInput}
+                style={[styles.searchInput, noOutline]}
+                underlineColorAndroid="transparent"
                 textAlign="right"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -244,6 +245,8 @@ function HeaderIcon({ icon, onPress, dot }: { icon: IconName; onPress: () => voi
   );
 }
 
+const noOutline: any = { outlineStyle: "none", outlineWidth: 0 };
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: C.bg },
   content: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 24 },
@@ -253,9 +256,9 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: C.yellow, alignItems: "center", justifyContent: "center" },
   search: {
     flex: 1, height: 42, borderRadius: 21, backgroundColor: C.card, flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 12, gap: 8,
+    paddingHorizontal: 14, gap: 8, overflow: "hidden", minWidth: 0,
   },
-  searchInput: { flex: 1, color: C.text, fontSize: 13, paddingVertical: 0 },
+  searchInput: { flex: 1, minWidth: 0, width: "100%", color: C.text, fontSize: 14, paddingVertical: 0, paddingHorizontal: 0, backgroundColor: "transparent", borderWidth: 0 },
   headerIcon: { width: 30, height: 40, alignItems: "center", justifyContent: "center" },
   dot: { position: "absolute", top: 8, right: 2, width: 9, height: 9, borderRadius: 5, backgroundColor: C.yellow },
 
