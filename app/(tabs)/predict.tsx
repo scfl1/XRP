@@ -3,9 +3,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, CoinMark, CwaLogo, IconButton, StatusPill } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
+import { CoinMark } from "@/components/cwaax-ui";
 import { useLiveMarkets } from "@/hooks/use-live-markets";
+
+const P = {
+  bg: "#000000", card: "#1A1A1C", border: "rgba(255,255,255,0.10)", text: "#FFFFFF",
+  muted: "#8A8A8E", accent: "#FFE600", onAccent: "#14120A", danger: "#FF5C5C",
+  soft: "rgba(255,230,0,0.12)", track: "#2A2A2D",
+};
 
 type Asset = {
   symbol: string;
@@ -86,30 +91,29 @@ function Meter({ label, value, color }: { label: string; value: number; color: s
   return (
     <View style={styles.meter}>
       <View style={styles.meterTop}>
-        <Text style={styles.meterValue}>{value}%</Text>
         <Text style={styles.meterLabel}>{label}</Text>
+        <Text style={styles.meterValue}>{value}%</Text>
       </View>
-      <View style={styles.meterTrack}>
-        <View style={[styles.meterFill, { width: `${value}%`, backgroundColor: color }]} />
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${value}%`, backgroundColor: color }]} />
       </View>
     </View>
   );
 }
 
-function MiniChart({ bars, color }: { bars: number[]; color: string }) {
+function MiniChart({ bars }: { bars: number[] }) {
   const max = Math.max(...bars);
   return (
     <View style={styles.chartRow}>
       {bars.map((v, i) => (
         <View key={i} style={styles.chartBarWrap}>
           <View
-            style={[
-              styles.chartBar,
-              {
-                height: Math.max(8, (v / max) * 72),
-                backgroundColor: i === bars.length - 1 ? color : `${color}55`,
-              },
-            ]}
+            style={{
+              width: "100%",
+              borderRadius: 4,
+              height: Math.max(8, (v / max) * 72),
+              backgroundColor: i === bars.length - 1 ? P.accent : "rgba(255,230,0,0.28)",
+            }}
           />
         </View>
       ))}
@@ -118,30 +122,28 @@ function MiniChart({ bars, color }: { bars: number[]; color: string }) {
 }
 
 function FearGauge({ score }: { score: number }) {
-  const label =
-    score >= 75 ? "طمع مرتفع" : score >= 55 ? "إيجابي" : score >= 40 ? "محايد" : "خوف";
-  const color =
-    score >= 75 ? "#E07A2F" : score >= 55 ? CWAAX.green : score >= 40 ? CWAAX.gold : CWAAX.red;
+  const label = score >= 75 ? "طمع مرتفع" : score >= 55 ? "إيجابي" : score >= 40 ? "محايد" : "خوف";
+  const color = score >= 55 ? P.accent : score >= 40 ? P.text : P.danger;
   return (
-    <Card style={styles.gaugeCard}>
-      <View style={styles.gaugeHeader}>
-        <Text style={[styles.gaugeScore, { color }]}>{score}</Text>
+    <View style={styles.card}>
+      <View style={styles.row}>
+        <View style={styles.iconBox}>
+          <MaterialIcons name="speed" size={22} color={P.accent} />
+        </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.gaugeTitle}>مؤشر الخوف والطمع</Text>
-          <Text style={styles.gaugeSub}>{label} · تقدير محلي مبسّط</Text>
+          <Text style={styles.cardTitle}>مؤشر الخوف والطمع</Text>
+          <Text style={styles.cardSub}>{label} · تقدير محلي مبسّط</Text>
         </View>
-        <View style={[styles.gaugeIcon, { backgroundColor: `${color}22` }]}>
-          <MaterialIcons name="speed" size={20} color={color} />
-        </View>
+        <Text style={[styles.gaugeScore, { color }]}>{score}</Text>
       </View>
-      <View style={styles.gaugeTrack}>
-        <View style={[styles.gaugeFill, { width: `${score}%`, backgroundColor: color }]} />
+      <View style={[styles.track, { marginTop: 16 }]}>
+        <View style={[styles.fill, { width: `${score}%`, backgroundColor: color }]} />
       </View>
-      <View style={styles.gaugeLegend}>
-        <Text style={styles.gaugeLegendText}>طمع</Text>
-        <Text style={styles.gaugeLegendText}>خوف</Text>
+      <View style={styles.legend}>
+        <Text style={styles.legendText}>طمع</Text>
+        <Text style={styles.legendText}>خوف</Text>
       </View>
-    </Card>
+    </View>
   );
 }
 
@@ -158,255 +160,140 @@ export default function PredictScreen() {
       const coin = bySymbol.get(a.symbol);
       if (!coin) return a;
       const sign = coin.change24h >= 0 ? "+" : "";
-      return {
-        ...a,
-        price: formatLivePrice(coin.price),
-        change: `${sign}${coin.change24h.toFixed(1)}%`,
-      };
+      return { ...a, price: formatLivePrice(coin.price), change: `${sign}${coin.change24h.toFixed(1)}%` };
     });
   }, [live]);
 
-  const asset = useMemo(
-    () => ASSETS.find((a) => a.symbol === selected) || ASSETS[0],
-    [selected, ASSETS],
-  );
-
-  const marketScore = 64;
+  const asset = useMemo(() => ASSETS.find((a) => a.symbol === selected) || ASSETS[0], [selected, ASSETS]);
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <CwaLogo />
-          <IconButton
-            icon="notifications-none"
-            label="الإشعارات"
-            onPress={() => router.push("/notifications")}
-          />
-        </View>
-
-        <Text style={styles.kicker}>تحليلات مبسطة</Text>
-        <Text style={styles.title}>توقع السوق</Text>
-
-        <Card style={styles.hero}>
-          <View style={styles.heroIcon}>
-            <MaterialIcons name="auto-awesome" size={22} color={CWAAX.green} />
-          </View>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroTitle}>مؤشر السوق العام</Text>
-            <Text style={styles.heroSub}>الاتجاه الحالي يميل للصعود</Text>
-          </View>
-          <Text style={styles.heroScore}>+6.4%</Text>
-        </Card>
-
-        <View style={styles.tfRow}>
-          {TIMEFRAMES.map((item) => (
-            <Pressable
-              key={item}
-              onPress={() => setTf(item)}
-              style={[styles.tfChip, tf === item && styles.tfChipActive]}
-            >
-              <Text style={[styles.tfText, tf === item && styles.tfTextActive]}>{item}</Text>
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+      <View style={{ flex: 1, backgroundColor: P.bg }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.kicker}>تحليلات مبسطة</Text>
+              <Text style={styles.title}>توقع السوق</Text>
+            </View>
+            <Pressable onPress={() => router.push("/notifications")} style={styles.circleBtn}>
+              <MaterialIcons name="notifications-none" size={22} color={P.text} />
             </Pressable>
-          ))}
-        </View>
+          </View>
 
-        <FearGauge score={marketScore} />
-
-        <Text style={styles.sectionLabel}>الأصول المتابعة</Text>
-        {ASSETS.map((item) => (
-          <Pressable
-            key={item.symbol}
-            onPress={() => setSelected(item.symbol)}
-            style={({ pressed }) => [
-              styles.assetRow,
-              selected === item.symbol && styles.assetSelected,
-              pressed && styles.pressed,
-            ]}
-          >
-            <CoinMark mark={item.symbol} color={item.color} size={38} />
-            <View style={styles.assetName}>
-              <Text style={styles.assetSymbol}>{item.symbol}/USDT</Text>
-              <Text style={styles.assetPrice}>
-                {item.price} · <Text style={{ color: item.change.startsWith("-") ? CWAAX.red : CWAAX.green }}>{item.change}</Text>
-              </Text>
+          <View style={[styles.card, styles.row, { borderColor: "rgba(255,230,0,0.35)" }]}>
+            <View style={[styles.iconBox, { backgroundColor: P.accent }]}>
+              <MaterialIcons name="auto-awesome" size={22} color={P.onAccent} />
             </View>
-            <View style={styles.signal}>
-              <StatusPill>{item.outlook}</StatusPill>
-              <Text style={styles.signalScore}>ثقة {item.score}%</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>مؤشر السوق العام</Text>
+              <Text style={styles.cardSub}>الاتجاه الحالي يميل للصعود</Text>
             </View>
-          </Pressable>
-        ))}
+            <Text style={[styles.gaugeScore, { color: P.accent }]}>+6.4%</Text>
+          </View>
 
-        <Card style={styles.detailCard}>
-          <View style={styles.detailHeader}>
-            <View style={styles.detailTitleRow}>
-              <View>
-                <Text style={styles.detailTitle}>{asset.name}</Text>
-                <Text style={styles.detailSub}>
-                  {asset.symbol}/USDT · إطار {tf}
-                </Text>
+          <View style={styles.tfRow}>
+            {TIMEFRAMES.map((item) => (
+              <Pressable key={item} onPress={() => setTf(item)} style={[styles.chip, tf === item && styles.chipActive]}>
+                <Text style={[styles.chipText, tf === item && styles.chipTextActive]}>{item}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <FearGauge score={64} />
+
+          <Text style={styles.section}>الأصول المتابعة</Text>
+          {ASSETS.map((item) => {
+            const neg = item.change.startsWith("-");
+            return (
+              <Pressable
+                key={item.symbol}
+                onPress={() => setSelected(item.symbol)}
+                style={({ pressed }) => [
+                  styles.card, styles.row,
+                  selected === item.symbol && { borderColor: P.accent },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <CoinMark mark={item.symbol} color={item.color} size={42} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardTitle}>{item.symbol}/USDT</Text>
+                  <Text style={styles.cardSub}>
+                    {item.price} · <Text style={{ color: neg ? P.danger : P.accent, fontWeight: "800" }}>{item.change}</Text>
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-start", gap: 6 }}>
+                  <View style={styles.pill}><Text style={styles.pillText}>{item.outlook}</Text></View>
+                  <Text style={styles.cardSub}>ثقة {item.score}%</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+
+          <View style={[styles.card, { marginTop: 6 }]}>
+            <View style={styles.row}>
+              <CoinMark mark={asset.symbol} color={asset.color} size={44} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{asset.name}</Text>
+                <Text style={styles.cardSub}>{asset.symbol}/USDT · إطار {tf}</Text>
               </View>
-              <CoinMark mark={asset.symbol} color={asset.color} size={40} />
+              <View style={styles.pill}><Text style={styles.pillText}>{asset.outlook}</Text></View>
             </View>
-            <View style={[styles.detailBadge, { backgroundColor: `${asset.color}18` }]}>
-              <Text style={[styles.detailBadgeText, { color: asset.color }]}>{asset.outlook}</Text>
+            <MiniChart bars={asset.bars} />
+            <View style={styles.levels}>
+              {[["دعم", asset.support], ["مقاومة", asset.resistance], ["ثقة", `${asset.score}%`]].map(([l, v], i) => (
+                <View key={l} style={styles.levelBox}>
+                  <Text style={styles.cardSub}>{l}</Text>
+                  <Text style={[styles.levelValue, i === 2 && { color: P.accent }]}>{v}</Text>
+                </View>
+              ))}
             </View>
-          </View>
-
-          <MiniChart bars={asset.bars} color={asset.color} />
-
-          <View style={styles.levels}>
-            <View style={styles.levelBox}>
-              <Text style={styles.levelLabel}>دعم</Text>
-              <Text style={styles.levelValue}>{asset.support}</Text>
-            </View>
-            <View style={styles.levelBox}>
-              <Text style={styles.levelLabel}>مقاومة</Text>
-              <Text style={styles.levelValue}>{asset.resistance}</Text>
-            </View>
-            <View style={styles.levelBox}>
-              <Text style={styles.levelLabel}>ثقة</Text>
-              <Text style={[styles.levelValue, { color: CWAAX.green }]}>{asset.score}%</Text>
+            <Meter label="زخم الشراء" value={asset.momentum} color={P.accent} />
+            <Meter label="نشاط الحجم" value={asset.volume} color="#FFFFFF" />
+            <Meter label="التذبذب" value={asset.volatility} color="#8A8A8E" />
+            <View style={styles.tip}>
+              <MaterialIcons name="tips-and-updates" size={18} color={P.accent} />
+              <Text style={styles.tipText}>{asset.tip}</Text>
             </View>
           </View>
-
-          <Meter label="زخم الشراء" value={asset.momentum} color={CWAAX.green} />
-          <Meter label="نشاط الحجم" value={asset.volume} color={CWAAX.purple} />
-          <Meter label="التذبذب" value={asset.volatility} color={CWAAX.gold} />
-
-          <View style={styles.assetTip}>
-            <MaterialIcons name="tips-and-updates" size={18} color={CWAAX.gold} />
-            <Text style={styles.assetTipText}>{asset.tip}</Text>
-          </View>
-        </Card>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 12, paddingBottom: 36 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  kicker: { color: CWAAX.muted, textAlign: "right", fontSize: 12 },
-  title: { color: CWAAX.ink, textAlign: "right", fontSize: 28, fontWeight: "900", marginTop: 4 },
-  subtitle: { color: CWAAX.muted, textAlign: "right", fontSize: 12, marginTop: 6, marginBottom: 16, lineHeight: 18 },
-  hero: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F0F9F4",
-    borderColor: "#D8F0E1",
-    marginBottom: 14,
-  },
-  heroIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: CWAAX.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroCopy: { flex: 1, marginHorizontal: 11 },
-  heroTitle: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", textAlign: "right" },
-  heroSub: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" },
-  heroScore: { color: CWAAX.green, fontWeight: "900", fontSize: 16 },
-  tfRow: { flexDirection: "row-reverse", gap: 8, marginBottom: 14 },
-  tfChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: CWAAX.surface,
-    borderWidth: 1,
-    borderColor: CWAAX.line,
-  },
-  tfChipActive: { backgroundColor: CWAAX.green, borderColor: CWAAX.green },
-  tfText: { color: CWAAX.muted, fontSize: 12, fontWeight: "800" },
-  tfTextActive: { color: CWAAX.white },
-  gaugeCard: { marginBottom: 18, paddingVertical: 14 },
-  gaugeHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 10, marginBottom: 12 },
-  gaugeIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  gaugeTitle: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", textAlign: "right" },
-  gaugeSub: { color: CWAAX.muted, fontSize: 10, marginTop: 3, textAlign: "right" },
-  gaugeScore: { fontSize: 22, fontWeight: "900", minWidth: 40, textAlign: "left" },
-  gaugeTrack: { height: 10, borderRadius: 8, backgroundColor: CWAAX.surface, overflow: "hidden" },
-  gaugeFill: { height: "100%", borderRadius: 8 },
-  gaugeLegend: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
-  gaugeLegendText: { color: CWAAX.muted, fontSize: 10 },
-  sectionLabel: { color: CWAAX.ink, fontWeight: "800", fontSize: 16, textAlign: "right", marginBottom: 10 },
-  assetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: CWAAX.line,
-    marginBottom: 9,
-  },
-  assetSelected: { backgroundColor: "#FAFDFC", borderColor: "#BDE4CB" },
-  assetName: { flex: 1 },
-  assetSymbol: { color: CWAAX.ink, fontSize: 13, fontWeight: "800", textAlign: "right" },
-  assetPrice: { color: CWAAX.muted, fontSize: 10, marginTop: 3, textAlign: "right" },
-  signal: { alignItems: "flex-end", gap: 5 },
-  signalScore: { color: CWAAX.muted, fontSize: 9 },
-  detailCard: { marginTop: 12, marginBottom: 18 },
-  detailHeader: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-    gap: 10,
-  },
-  detailTitleRow: { flexDirection: "row-reverse", alignItems: "center", gap: 10, flex: 1 },
-  detailTitle: { color: CWAAX.ink, fontSize: 16, fontWeight: "900", textAlign: "right" },
-  detailSub: { color: CWAAX.muted, fontSize: 11, marginTop: 3, textAlign: "right" },
-  detailBadge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 },
-  detailBadgeText: { fontSize: 12, fontWeight: "800" },
-  chartRow: { flexDirection: "row", alignItems: "flex-end", height: 80, gap: 4, marginBottom: 14 },
-  chartBarWrap: { flex: 1, alignItems: "center", justifyContent: "flex-end", height: "100%" },
-  chartBar: { width: "80%", borderRadius: 6 },
-  levels: { flexDirection: "row-reverse", gap: 8, marginBottom: 14 },
-  levelBox: {
-    flex: 1,
-    backgroundColor: CWAAX.surface,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    alignItems: "center",
-  },
-  levelLabel: { color: CWAAX.muted, fontSize: 10, marginBottom: 4 },
-  levelValue: { color: CWAAX.ink, fontSize: 12, fontWeight: "900" },
-  meter: { marginBottom: 10 },
-  meterTop: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 4 },
-  meterLabel: { color: CWAAX.muted, fontSize: 11 },
-  meterValue: { color: CWAAX.ink, fontSize: 11, fontWeight: "800" },
-  meterTrack: { height: 8, borderRadius: 6, backgroundColor: CWAAX.surface, overflow: "hidden" },
-  meterFill: { height: "100%", borderRadius: 6 },
-  assetTip: {
-    flexDirection: "row-reverse",
-    gap: 8,
-    marginTop: 8,
-    backgroundColor: "#FFF9EC",
-    borderRadius: 12,
-    padding: 10,
-  },
-  assetTipText: { flex: 1, color: CWAAX.ink, fontSize: 11, lineHeight: 17, textAlign: "right" },
-  tipCard: { marginBottom: 14 },
-  tipHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginBottom: 8 },
-  tipTitle: { color: CWAAX.ink, fontSize: 13, fontWeight: "900", flex: 1, textAlign: "right" },
-  tipText: { color: CWAAX.muted, fontSize: 12, lineHeight: 18, textAlign: "right" },
-  tipDots: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 12 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: CWAAX.line },
-  dotActive: { backgroundColor: CWAAX.green, width: 16 },
-  note: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    backgroundColor: "#FFF9EC",
-    borderColor: "#F6E5B8",
-  },
-  noteCopy: { flex: 1 },
-  noteTitle: { color: CWAAX.ink, fontWeight: "800", textAlign: "right", fontSize: 12 },
-  noteText: { color: CWAAX.muted, fontSize: 11, lineHeight: 17, textAlign: "right", marginTop: 4 },
-  pressed: { opacity: 0.6 },
+  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28, gap: 12 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  kicker: { color: P.muted, fontSize: 13, textAlign: "right" },
+  title: { color: P.text, fontSize: 30, fontWeight: "900", textAlign: "right", marginTop: 2 },
+  circleBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, alignItems: "center", justifyContent: "center" },
+  card: { backgroundColor: P.card, borderWidth: 1, borderColor: P.border, borderRadius: 20, padding: 16 },
+  row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  iconBox: { width: 46, height: 46, borderRadius: 14, backgroundColor: P.soft, alignItems: "center", justifyContent: "center" },
+  cardTitle: { color: P.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
+  cardSub: { color: P.muted, fontSize: 12, marginTop: 3, textAlign: "right" },
+  gaugeScore: { fontSize: 24, fontWeight: "900" },
+  tfRow: { flexDirection: "row", gap: 8 },
+  chip: { paddingHorizontal: 18, height: 38, borderRadius: 19, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, alignItems: "center", justifyContent: "center" },
+  chipActive: { backgroundColor: P.accent, borderColor: P.accent },
+  chipText: { color: P.muted, fontSize: 13, fontWeight: "700" },
+  chipTextActive: { color: P.onAccent },
+  track: { height: 8, borderRadius: 4, backgroundColor: P.track, overflow: "hidden" },
+  fill: { height: "100%", borderRadius: 4 },
+  legend: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
+  legendText: { color: P.muted, fontSize: 11 },
+  section: { color: P.text, fontSize: 18, fontWeight: "800", textAlign: "right", marginTop: 8 },
+  pill: { backgroundColor: P.soft, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
+  pillText: { color: P.accent, fontSize: 12, fontWeight: "800" },
+  chartRow: { flexDirection: "row", alignItems: "flex-end", gap: 5, height: 80, marginTop: 18 },
+  chartBarWrap: { flex: 1, justifyContent: "flex-end" },
+  levels: { flexDirection: "row", gap: 8, marginTop: 16, marginBottom: 6 },
+  levelBox: { flex: 1, backgroundColor: "#0F0F10", borderRadius: 14, paddingVertical: 10, alignItems: "center" },
+  levelValue: { color: P.text, fontSize: 14, fontWeight: "800", marginTop: 4 },
+  meter: { marginTop: 12 },
+  meterTop: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  meterLabel: { color: P.muted, fontSize: 12 },
+  meterValue: { color: P.text, fontSize: 12, fontWeight: "800" },
+  tip: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: P.soft, borderRadius: 14, padding: 12, marginTop: 16 },
+  tipText: { color: P.text, fontSize: 12, flex: 1, textAlign: "right", lineHeight: 19 },
 });
