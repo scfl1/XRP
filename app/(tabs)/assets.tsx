@@ -2,29 +2,155 @@ import { useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
-import { Card, CoinMark, IconButton, SectionTitle } from "@/components/cwaax-ui";
-import { COINS, CWAAX } from "@/constants/cwaax";
+import { CoinMark } from "@/components/cwaax-ui";
+import { COINS } from "@/constants/cwaax";
 import { notify } from "@/lib/_core/native-alert";
 import { trpc } from "@/lib/trpc";
 import { formatAmount } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
-const tabs = ["نظرة عامة", "محفظة", "بطاقات", "قروض", "مدخرات"];
+const P = {
+  bg: "#000000", card: "#1A1A1C", border: "rgba(255,255,255,0.10)", text: "#FFFFFF",
+  muted: "#8A8A8E", accent: "#FFE600", onAccent: "#14120A", danger: "#FF5C5C",
+  soft: "rgba(255,230,0,0.12)",
+};
+const noOutline: any = { outlineStyle: "none", outlineWidth: 0 };
+const TABS = ["نظرة عامة", "محفظة", "بطاقات", "قروض", "مدخرات"];
+
 export default function AssetsScreen() {
   const [activeTab, setActiveTab] = useState("نظرة عامة");
   const [query, setQuery] = useState("");
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user });
-  const balanceMap = useMemo(() => new Map((balances.data || []).map((b:any) => [b.currency, Number(b.amount)])), [balances.data]);
+  const balanceMap = useMemo(
+    () => new Map((balances.data || []).map((b: any) => [b.currency, Number(b.amount)])),
+    [balances.data],
+  );
   const totalUsdt = balanceMap.get("USDT") || 0;
-  const filtered = useMemo(() => COINS.filter((coin) => `${coin.symbol} ${coin.name}`.toLowerCase().includes(query.toLowerCase())), [query]);
-  return <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-    <View style={styles.header}><View><Text style={styles.kicker}>محفظتي</Text><Text style={styles.title}>الأصول</Text></View><View style={styles.actions}><IconButton icon="search" label="بحث" onPress={() => setQuery(query ? "" : "xrp")} /><IconButton icon="more-horiz" label="المزيد" onPress={() => notify("خيارات الأصول", "استخدم البحث أو اختر إحدى العملات لعرض رصيدها.")} /></View></View>
-    <View style={styles.tabs}>{tabs.map((tab) => <Pressable key={tab} onPress={() => setActiveTab(tab)} style={({ pressed }) => [styles.tab, activeTab === tab && styles.activeTab, pressed && styles.pressed]}><Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text></Pressable>)}</View>
-    <Card style={styles.totalCard}><Text style={styles.label}>إجمالي قيمة الأصول</Text><Text style={styles.total}>${totalUsdt.toFixed(2)}</Text><View style={styles.totalFoot}><Text style={styles.subtle}>USDT</Text><View style={styles.positivePill}><Text style={styles.positive}>+4.68%</Text></View></View></Card>
-    <SectionTitle title="الأصول" action={`${filtered.length} عملات`} />
-    <View style={styles.searchBox}><MaterialIcons name="search" size={20} color={CWAAX.muted}/><TextInput value={query} onChangeText={setQuery} placeholder="ابحث عن عملة" placeholderTextColor="#9CA8A1" style={styles.searchInput} textAlign="right"/><Pressable onPress={() => setQuery("")}><MaterialIcons name="tune" size={19} color={CWAAX.green}/></Pressable></View>
-    <FlatList data={filtered} keyExtractor={(item) => item.symbol} showsVerticalScrollIndicator={false} contentContainerStyle={styles.list} renderItem={({ item }) => <Pressable onPress={() => setQuery(item.symbol)} style={({ pressed }) => [styles.coinRow, pressed && styles.pressed]}><CoinMark mark={item.mark} color={item.color} size={43}/><View style={styles.coinName}><Text style={styles.symbol}>{item.symbol}</Text><Text style={styles.name}>{item.name}</Text></View><View style={styles.coinValue}><Text style={styles.amount}>{formatAmount(balanceMap.get(item.symbol) || 0)}</Text><Text style={styles.value}>{item.symbol === "USDT" ? `$${(balanceMap.get(item.symbol) || 0).toFixed(2)}` : "$0.00"}</Text></View><View style={styles.change}><Text style={[styles.changeText, item.change.startsWith("-") && styles.loss]}>{item.change}</Text></View></Pressable>} ListEmptyComponent={<Text style={styles.empty}>لا توجد عملات مطابقة</Text>} />
-  </ScreenContainer>;
+  const filtered = useMemo(
+    () => COINS.filter((c) => `${c.symbol} ${c.name}`.toLowerCase().includes(query.toLowerCase())),
+    [query],
+  );
+
+  const header = (
+    <View>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.kicker}>محفظتي</Text>
+          <Text style={styles.title}>الأصول</Text>
+        </View>
+        <Pressable
+          onPress={() => notify("خيارات الأصول", "استخدم البحث أو اختر إحدى العملات لعرض رصيدها.")}
+          style={styles.circleBtn}
+        >
+          <MaterialIcons name="more-horiz" size={22} color={P.text} />
+        </Pressable>
+      </View>
+
+      <View style={styles.tabs}>
+        {TABS.map((tab) => (
+          <Pressable key={tab} onPress={() => setActiveTab(tab)} style={[styles.chip, activeTab === tab && styles.chipActive]}>
+            <Text style={[styles.chipText, activeTab === tab && styles.chipTextActive]}>{tab}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.total}>
+        <Text style={styles.totalLabel}>إجمالي قيمة الأصول</Text>
+        <Text style={styles.totalValue}>${totalUsdt.toFixed(2)}</Text>
+        <View style={styles.totalFoot}>
+          <Text style={styles.totalUnit}>USDT</Text>
+          <View style={styles.pill}><Text style={styles.pillText}>+4.68%</Text></View>
+        </View>
+      </View>
+
+      <View style={styles.sectionRow}>
+        <Text style={styles.section}>الأصول</Text>
+        <Text style={styles.count}>{filtered.length} عملات</Text>
+      </View>
+
+      <View style={styles.searchBox}>
+        <MaterialIcons name="search" size={20} color={P.muted} />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="ابحث عن عملة"
+          placeholderTextColor={P.muted}
+          style={[styles.searchInput, noOutline]}
+          underlineColorAndroid="transparent"
+          textAlign="right"
+        />
+        {query ? (
+          <Pressable onPress={() => setQuery("")}>
+            <MaterialIcons name="close" size={18} color={P.muted} />
+          </Pressable>
+        ) : null}
+      </View>
+    </View>
+  );
+
+  return (
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+      <View style={{ flex: 1, backgroundColor: P.bg }}>
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.symbol}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={header}
+          ListEmptyComponent={<Text style={styles.empty}>لا توجد عملات مطابقة</Text>}
+          renderItem={({ item }) => {
+            const amount = balanceMap.get(item.symbol) || 0;
+            const hasChange = item.change !== "—";
+            return (
+              <Pressable onPress={() => setQuery(item.symbol)} style={({ pressed }) => [styles.coinRow, pressed && { opacity: 0.7 }]}>
+                <CoinMark mark={item.mark} color={item.color} size={46} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.symbol}>{item.symbol}</Text>
+                  <Text style={styles.name}>{item.name}</Text>
+                </View>
+                <View style={{ alignItems: "flex-start" }}>
+                  <Text style={styles.amount}>{formatAmount(amount)}</Text>
+                  <Text style={styles.value}>{item.symbol === "USDT" ? `$${amount.toFixed(2)}` : "$0.00"}</Text>
+                </View>
+                <Text style={[styles.change, hasChange && item.change.startsWith("-") && { color: P.danger }]}>{item.change}</Text>
+              </Pressable>
+            );
+          }}
+        />
+      </View>
+    </ScreenContainer>
+  );
 }
-const styles = StyleSheet.create({ header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12, marginBottom: 18 }, kicker: { fontSize: 12, color: CWAAX.muted, textAlign: "right", marginBottom: 3 }, title: { fontSize: 26, fontWeight: "900", color: CWAAX.ink, textAlign: "right" }, actions: { flexDirection: "row", gap: 8 }, tabs: { flexDirection: "row-reverse", gap: 7, marginBottom: 16 }, tab: { paddingHorizontal: 11, paddingVertical: 8, borderRadius: 10, backgroundColor: CWAAX.surface }, activeTab: { backgroundColor: CWAAX.green }, tabText: { color: CWAAX.muted, fontSize: 10, fontWeight: "700" }, activeTabText: { color: CWAAX.white }, totalCard: { backgroundColor: "#F0F9F4", borderColor: "#D9F0E1", marginBottom: 21 }, label: { color: CWAAX.muted, fontSize: 12, textAlign: "right" }, total: { color: CWAAX.ink, fontSize: 30, fontWeight: "900", textAlign: "right", marginTop: 11 }, totalFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 }, subtle: { color: CWAAX.muted, fontSize: 11 }, positivePill: { backgroundColor: CWAAX.green, paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8 }, positive: { color: CWAAX.white, fontSize: 11, fontWeight: "800" }, searchBox: { flexDirection: "row", alignItems: "center", gap: 8, height: 46, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 14, paddingHorizontal: 12, marginBottom: 10 }, searchInput: { flex: 1, color: CWAAX.ink, fontSize: 13 }, list: { paddingBottom: 25 }, coinRow: { flexDirection: "row", alignItems: "center", paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: CWAAX.line, gap: 11 }, coinName: { flex: 1 }, symbol: { color: CWAAX.ink, fontSize: 14, fontWeight: "800", textAlign: "right" }, name: { color: CWAAX.muted, fontSize: 10, marginTop: 4, textAlign: "right" }, coinValue: { alignItems: "flex-end" }, amount: { color: CWAAX.ink, fontSize: 12, fontWeight: "700" }, value: { color: CWAAX.muted, fontSize: 10, marginTop: 4 }, change: { width: 54, alignItems: "flex-end" }, changeText: { color: CWAAX.green, fontSize: 11, fontWeight: "800" }, loss: { color: CWAAX.red }, empty: { color: CWAAX.muted, textAlign: "center", padding: 30 }, pressed: { opacity: 0.6 } });
+
+const styles = StyleSheet.create({
+  list: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 28 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  kicker: { color: P.muted, fontSize: 13, textAlign: "right" },
+  title: { color: P.text, fontSize: 30, fontWeight: "900", textAlign: "right", marginTop: 2 },
+  circleBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, alignItems: "center", justifyContent: "center" },
+  tabs: { flexDirection: "row", gap: 8, marginTop: 18, flexWrap: "wrap" },
+  chip: { paddingHorizontal: 16, height: 38, borderRadius: 19, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, alignItems: "center", justifyContent: "center" },
+  chipActive: { backgroundColor: P.accent, borderColor: P.accent },
+  chipText: { color: P.muted, fontSize: 13, fontWeight: "700" },
+  chipTextActive: { color: P.onAccent },
+  total: { marginTop: 18, backgroundColor: P.card, borderWidth: 1, borderColor: "rgba(255,230,0,0.35)", borderRadius: 24, padding: 20 },
+  totalLabel: { color: P.muted, fontSize: 13, textAlign: "right" },
+  totalValue: { color: P.text, fontSize: 38, fontWeight: "900", textAlign: "right", marginTop: 8 },
+  totalFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+  totalUnit: { color: P.muted, fontSize: 13, fontWeight: "700" },
+  pill: { backgroundColor: P.accent, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12 },
+  pillText: { color: P.onAccent, fontSize: 12, fontWeight: "900" },
+  sectionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 24 },
+  section: { color: P.text, fontSize: 19, fontWeight: "800" },
+  count: { color: P.accent, fontSize: 13, fontWeight: "700" },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 8, height: 50, borderRadius: 16, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, paddingHorizontal: 14, marginTop: 14, marginBottom: 6 },
+  searchInput: { flex: 1, minWidth: 0, color: P.text, fontSize: 14 },
+  coinRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: P.border },
+  symbol: { color: P.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
+  name: { color: P.muted, fontSize: 12, marginTop: 3, textAlign: "right" },
+  amount: { color: P.text, fontSize: 15, fontWeight: "800" },
+  value: { color: P.muted, fontSize: 12, marginTop: 3 },
+  change: { color: P.accent, fontSize: 13, fontWeight: "800", minWidth: 20, textAlign: "center" },
+  empty: { color: P.muted, textAlign: "center", marginTop: 40 },
+});
