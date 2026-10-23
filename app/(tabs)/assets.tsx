@@ -26,7 +26,12 @@ export default function AssetsScreen() {
     () => new Map((balances.data || []).map((b: any) => [b.currency, Number(b.amount)])),
     [balances.data],
   );
-  const totalUsdt = balanceMap.get("USDT") || 0;
+  const contracts = trpc.trade.contracts.useQuery(undefined, { enabled: !!user });
+  const lockedAmt: number = (contracts.data || [])
+    .filter((c: any) => c.status === "active")
+    .reduce((sum: number, c: any) => sum + Number(c.principal || 0), 0);
+  const availableUsdt = balanceMap.get("USDT") || 0;
+  const totalUsdt = availableUsdt + lockedAmt; // المتاح + المحجوز في العقود
   const filtered = useMemo(
     () => COINS.filter((c) => `${c.symbol} ${c.name}`.toLowerCase().includes(query.toLowerCase())),
     [query],
@@ -58,6 +63,9 @@ export default function AssetsScreen() {
       <View style={styles.total}>
         <Text style={styles.totalLabel}>إجمالي قيمة الأصول</Text>
         <Text style={styles.totalValue}>${totalUsdt.toFixed(2)}</Text>
+        <Text style={styles.lockedLine}>
+          المتاح ${availableUsdt.toFixed(2)} · محجوز في العقود ${lockedAmt.toFixed(2)}
+        </Text>
         <View style={styles.totalFoot}>
           <Text style={styles.totalUnit}>USDT</Text>
           <View style={styles.pill}><Text style={styles.pillText}>+4.68%</Text></View>
@@ -110,8 +118,8 @@ export default function AssetsScreen() {
                   <Text style={styles.name}>{item.name}</Text>
                 </View>
                 <View style={{ alignItems: "flex-start" }}>
-                  <Text style={styles.amount}>{formatAmount(amount)}</Text>
-                  <Text style={styles.value}>{item.symbol === "USDT" ? `$${amount.toFixed(2)}` : "$0.00"}</Text>
+                  <Text style={styles.amount}>{formatAmount(item.symbol === "USDT" ? amount + lockedAmt : amount)}</Text>
+                  <Text style={styles.value}>{item.symbol === "USDT" ? `$${(amount + lockedAmt).toFixed(2)}` : "$0.00"}</Text>
                 </View>
                 <Text style={[styles.change, hasChange && item.change.startsWith("-") && { color: P.danger }]}>{item.change}</Text>
               </Pressable>
@@ -137,6 +145,7 @@ const styles = StyleSheet.create({
   total: { marginTop: 18, backgroundColor: P.card, borderWidth: 1, borderColor: "rgba(255,230,0,0.35)", borderRadius: 24, padding: 20 },
   totalLabel: { color: P.muted, fontSize: 13, textAlign: "right" },
   totalValue: { color: P.text, fontSize: 38, fontWeight: "900", textAlign: "right", marginTop: 8 },
+  lockedLine: { color: P.muted, fontSize: 12, textAlign: "right", marginTop: 8 },
   totalFoot: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
   totalUnit: { color: P.muted, fontSize: 13, fontWeight: "700" },
   pill: { backgroundColor: P.accent, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 12 },
