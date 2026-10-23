@@ -29,7 +29,7 @@ type IconName = keyof typeof MaterialIcons.glyphMap;
 // شبكة الأيقونات (من اليمين إلى اليسار)
 const GRID: { label: string; icon: IconName; route: string }[] = [
   { label: "سحب", icon: "north-east", route: "/send" },
-  { label: "تبديل", icon: "sync", route: "/trade" },
+  { label: "تحديث", icon: "sync", route: "refresh" },
   { label: "شراء / بيع", icon: "swap-horiz", route: "/trade" },
   { label: "استثمار", icon: "show-chart", route: "/trade" },
   { label: "المعاملات", icon: "receipt-long", route: "/transactions" },
@@ -190,7 +190,7 @@ export default function HomeScreen() {
           {/* شبكة الإجراءات */}
           <View style={styles.grid}>
             {GRID.map((g) => (
-              <Pressable key={g.label} onPress={() => router.push(g.route as never)} style={({ pressed }) => [styles.gridItem, pressed && styles.pressed]}>
+              <Pressable key={g.label} onPress={() => { if (g.route === "refresh") { setRunKey((k) => k + 1); handleRefresh(); } else router.push(g.route as never); }} style={({ pressed }) => [styles.gridItem, pressed && styles.pressed]}>
                 <View style={styles.tile}>
                   <MaterialIcons name={g.icon} size={26} color={C.text} />
                 </View>
