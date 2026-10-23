@@ -42,20 +42,6 @@ export default function TradeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  // عندما ينتهي العدّاد: صرف الأرباح المستحقة وإعادة ضبط الوقت تلقائياً
-  useEffect(() => {
-    if (!contracts.data?.length) return;
-    if (claimDue.isPending) return;
-    const hasDue = contracts.data.some(
-      (contract: any) =>
-        contract.status === "active" &&
-        new Date(contract.nextPayoutAt).getTime() <= now,
-    );
-    if (hasDue) {
-      claimDue.mutate();
-    }
-  }, [now, contracts.data, claimDue.isPending]);
-
   const activeAmounts = useMemo(() => new Set(
     (contracts.data || [])
       .filter((contract: any) => contract.status === "active")
@@ -65,6 +51,19 @@ export default function TradeScreen() {
     .filter((c: any) => c.status === "active")
     .reduce((sum: number, c: any) => sum + Number(c.principal || 0), 0);
   const usdtBalance = useMemo(() => Number((balances.data || []).find((b: any) => b.currency === "USDT")?.amount || 0), [balances.data]);
+
+  const claim = async (daily: number) => {
+    try {
+      const result = await claimDue.mutateAsync();
+      if (result?.paid && result.paid > 0) {
+        notify("تم استلام الربح", `أُضيف ${daily.toFixed(2)} USDT إلى رصيدك وتم تجديد الوقت.`);
+      } else {
+        notify("لا يوجد ربح الآن", "لم يحن موعد الربح بعد.");
+      }
+    } catch (error: any) {
+      notify("تعذر استلام الربح", error?.message || "حدث خطأ، حاول مرة أخرى.");
+    }
+  };
 
   const start = async (amount: number) => {
     if (!user) {
@@ -179,18 +178,39 @@ export default function TradeScreen() {
                 </View>
 
                 {existing ? (
-                  <View style={styles.activeBox}>
-                    <View style={styles.row}>
-                      <View style={styles.check}>
-                        <MaterialIcons name="check" size={14} color={P.onAccent} />
+                  remainingMs <= 0 ? (
+                    <View style={styles.readyBox}>
+                      <View style={styles.row}>
+                        <View style={styles.check}>
+                          <MaterialIcons name="bolt" size={15} color={P.onAccent} />
+                        </View>
+                        <Text style={styles.activeText}>الربح جاهز للاستلام</Text>
                       </View>
-                      <Text style={styles.activeText}>العقد مفعل</Text>
+                      <Pressable
+                        disabled={claimDue.isPending}
+                        onPress={() => claim(Number(existing.principal) * TRADE_DAILY_RATE)}
+                        style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }, claimDue.isPending && { opacity: 0.5 }]}
+                      >
+                        <Text style={styles.ctaText}>{claimDue.isPending ? "جاري الاستلام..." : "أكمل المهام"}</Text>
+                        <View style={styles.ctaArrow}>
+                          <MaterialIcons name={claimDue.isPending ? "hourglass-top" : "check"} size={18} color={P.accent} />
+                        </View>
+                      </Pressable>
                     </View>
-                    <View style={{ alignItems: "flex-start" }}>
-                      <Text style={styles.sub}>الربح القادم بعد</Text>
-                      <Text style={styles.timer}>{countdown}</Text>
+                  ) : (
+                    <View style={styles.activeBox}>
+                      <View style={styles.row}>
+                        <View style={styles.check}>
+                          <MaterialIcons name="check" size={14} color={P.onAccent} />
+                        </View>
+                        <Text style={styles.activeText}>العقد مفعل</Text>
+                      </View>
+                      <View style={{ alignItems: "flex-start" }}>
+                        <Text style={styles.sub}>الربح القادم بعد</Text>
+                        <Text style={styles.timer}>{countdown}</Text>
+                      </View>
                     </View>
-                  </View>
+                  )
                 ) : (
                   <Pressable
                     disabled={disabled}
@@ -278,6 +298,7 @@ const styles = StyleSheet.create({
   ctaArrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: P.onAccent, alignItems: "center", justifyContent: "center" },
   ctaText: { color: P.onAccent, fontSize: 16, fontWeight: "900" },
   activeBox: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: P.soft, borderRadius: 16, padding: 14 },
+  readyBox: { backgroundColor: P.soft, borderRadius: 16, padding: 14, gap: 12 },
   check: { width: 24, height: 24, borderRadius: 12, backgroundColor: P.accent, alignItems: "center", justifyContent: "center" },
   activeText: { color: P.accent, fontSize: 15, fontWeight: "800" },
   timer: { color: P.text, fontSize: 18, fontWeight: "900", marginTop: 2 },
