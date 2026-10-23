@@ -61,6 +61,9 @@ export default function TradeScreen() {
       .filter((contract: any) => contract.status === "active")
       .map((contract: any) => Number(contract.principal))
   ), [contracts.data]);
+  const lockedAmt: number = (contracts.data || [])
+    .filter((c: any) => c.status === "active")
+    .reduce((sum: number, c: any) => sum + Number(c.principal || 0), 0);
   const usdtBalance = useMemo(() => Number((balances.data || []).find((b: any) => b.currency === "USDT")?.amount || 0), [balances.data]);
 
   const start = async (amount: number) => {
@@ -121,6 +124,9 @@ export default function TradeScreen() {
             <Text style={styles.balanceValue}>
               {usdtBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 })}{" "}
               <Text style={styles.balanceUnit}>USDT</Text>
+            </Text>
+            <Text style={styles.sub}>
+              متاح للسحب والتداول · محجوز في العقود {lockedAmt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT
             </Text>
           </View>
 
