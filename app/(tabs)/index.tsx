@@ -1,5 +1,5 @@
 import { useRouter, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Svg, { Polyline } from "react-native-svg";
@@ -63,8 +63,27 @@ export default function HomeScreen() {
   const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
-  const total = formatAmount(usdt, currency);
-  const usdtText = usdt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // عدّاد: كل مرة تفتح الرئيسية يبدأ الرصيد من الصفر ويصعد بسرعة إلى قيمته
+  const [runKey, setRunKey] = useState(0);
+  const [shown, setShown] = useState(0);
+  useFocusEffect(useCallback(() => { setRunKey((k) => k + 1); }, []));
+  useEffect(() => {
+    if (!(usdt > 0)) { setShown(0); return; }
+    const start = Date.now();
+    const DURATION = 1600;
+    let raf: any;
+    setShown(0);
+    const tick = () => {
+      const p = Math.min(1, (Date.now() - start) / DURATION);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setShown(p >= 1 ? usdt : usdt * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [runKey, usdt]);
+  const total = formatAmount(shown, currency);
+  const usdtText = shown.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const [notice, setNotice] = useState("");
   const showNotice = (message: string) => { setNotice(message); setTimeout(() => setNotice(""), 2200); };
