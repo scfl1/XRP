@@ -203,7 +203,7 @@ export default function TradeScreen() {
                         <View style={styles.check}>
                           <MaterialIcons name="check" size={14} color={P.onAccent} />
                         </View>
-                        <Text style={styles.activeText}>العقد مفعل</Text>
+                        <Text style={styles.activeText}>يتم التداول</Text>
                       </View>
                       <View style={{ alignItems: "flex-start" }}>
                         <Text style={styles.sub}>الربح القادم بعد</Text>
@@ -217,7 +217,7 @@ export default function TradeScreen() {
                     onPress={() => start(plan.amount)}
                     style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }, disabled && { opacity: 0.5 }]}
                   >
-                    <Text style={styles.ctaText}>{busy ? "جاري بدء التجارة..." : "ابدأ التجارة"}</Text>
+                    <Text style={styles.ctaText}>{busy ? "جاري الشراء..." : "شراء الآن"}</Text>
                     <View style={styles.ctaArrow}>
                       <MaterialIcons name={busy ? "hourglass-top" : "arrow-back"} size={18} color={P.accent} />
                     </View>
