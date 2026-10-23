@@ -988,7 +988,10 @@ export async function startTradeContract(params: {
 
 /** Process due daily payouts. The conditional UPDATE acts as the atomic claim,
  * so two cron invocations cannot pay the same contract/day concurrently. */
-export async function processDueTradePayouts(now = new Date()) {
+export async function processDueTradePayouts(now = new Date(), scope?: { userId: number }) {
+  // الصرف يدوي: لا يتم صرف أي ربح إلا عندما يضغط المستخدم زر "أكمل المهام"
+  // (استدعاء مع scope). الاستدعاءات التلقائية (cron / فتح الصفحة) لا تصرف شيئاً.
+  if (!scope) return { paid: 0 };
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -1005,8 +1008,10 @@ export async function processDueTradePayouts(now = new Date()) {
     ));
 
   // عدة دورات لصرف الأيام المتأخرة (حتى 30 يوماً كحد أقصى لكل تشغيل)
-  for (let round = 0; round < 30; round++) {
+  // دورة واحدة فقط: ربح يوم واحد لكل عقد مستحق ثم يُجدَّد العدّاد
+  for (let round = 0; round < 1; round++) {
     const due = await db.select().from(tradeContracts).where(and(
+      eq(tradeContracts.userId, scope.userId),
       eq(tradeContracts.status, "active"),
       sql`${tradeContracts.nextPayoutAt} <= ${nowIso}`,
     )).limit(200);
@@ -1021,11 +1026,8 @@ export async function processDueTradePayouts(now = new Date()) {
           if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) return;
 
           // تقدّم يوم واحد من موعد الاستحقاق
-          let next = new Date(new Date(candidate.nextPayoutAt).getTime() + 24 * 60 * 60 * 1000);
-          // إذا بقي في الماضي → انتقل لأقرب منتصف ليل UTC قادم حتى لا يبقى العداد 00:00:00
-          if (next.getTime() <= now.getTime()) {
-            next = nextGlobalPayoutAnchor(now);
-          }
+          // تجديد الوقت: الموعد التالي = أقرب منتصف ليل UTC قادم (نفس العدّاد لكل المستخدمين)
+          const next = nextGlobalPayoutAnchor(now);
 
           const nextCount = candidate.payoutCount + 1;
           const endsAt = new Date(candidate.endsAt);
