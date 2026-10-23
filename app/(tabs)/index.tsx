@@ -54,7 +54,13 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const balances = trpc.wallet.balances.useQuery(undefined, { enabled: !!user });
   const markets = useLiveMarkets();
-  const usdt = Number(balances.data?.find((b: any) => b.currency === "USDT")?.amount ?? 0);
+  const contracts = trpc.trade.contracts.useQuery(undefined, { enabled: !!user });
+  const available = Number(balances.data?.find((b: any) => b.currency === "USDT")?.amount ?? 0);
+  const lockedAmt: number = (contracts.data || [])
+    .filter((c: any) => c.status === "active")
+    .reduce((sum: number, c: any) => sum + Number(c.principal || 0), 0);
+  const usdt = available + lockedAmt; // الإجمالي = المتاح + المحجوز في العقود
+  const fmt2 = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const [currency, setCurrency] = useState<CurrencyCode>("USD");
   useFocusEffect(useCallback(() => { Preferences.getCurrency().then(setCurrency); }, []));
   const total = formatAmount(usdt, currency);
@@ -67,7 +73,7 @@ export default function HomeScreen() {
     if (refreshing) return;
     setRefreshing(true);
     try {
-      await Promise.all([balances.refetch(), markets.refetch()]);
+      await Promise.all([balances.refetch(), contracts.refetch(), markets.refetch()]);
       showNotice("تم تحديث البيانات");
     } catch {
       showNotice("تعذر التحديث، حاول مرة أخرى");
@@ -151,7 +157,10 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <Text style={styles.subTotal}>{hidden ? "≈ ••••" : `≈ ${total}`}  ·  الرصيد المتاح</Text>
+            <Text style={styles.subTotal}>{hidden ? "≈ ••••" : `≈ ${total}`}</Text>
+            <Text style={styles.subTotal}>
+              {hidden ? "المتاح ••••  ·  محجوز ••••" : `المتاح ${fmt2(available)}  ·  محجوز في العقود ${fmt2(lockedAmt)}`}
+            </Text>
           </View>
 
           {/* زر الإيداع */}
