@@ -3,9 +3,13 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fro
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { IconButton } from "@/components/cwaax-ui";
-import { CWAAX } from "@/constants/cwaax";
 import { notify } from "@/lib/_core/native-alert";
+
+const P = {
+  bg: "#000000", card: "#1A1A1C", border: "rgba(255,255,255,0.10)", text: "#FFFFFF",
+  muted: "#8A8A8E", accent: "#FFE600", onAccent: "#14120A", soft: "rgba(255,230,0,0.12)",
+};
+const noOutline: any = { outlineStyle: "none", outlineWidth: 0 };
 
 /*
  * ⚠️ REPLACE THESE with the real support contact details before
@@ -62,31 +66,22 @@ export default function SupportScreen() {
     );
   };
 
-
   const handleSend = () => {
     const text = message.trim();
     if (!text) {
       notify("اكتب رسالة", "أدخل سؤالك أولاً.");
       return;
     }
-
     const userMsg: ChatMsg = { id: `u-${Date.now()}`, from: "user", text };
     setMessage("");
-
     const answer = findAnswer(text);
-
     if (answer) {
       setChat((c) => [...c, userMsg, { id: `b-${Date.now()}`, from: "bot", text: answer }]);
     } else {
       setChat((c) => [
         ...c,
         userMsg,
-        {
-          id: `b-${Date.now()}`,
-          from: "bot",
-          text: "لم أجد إجابة جاهزة لسؤالك. تواصل معنا مباشرة عبر تليجرام:",
-          contact: true,
-        },
+        { id: `b-${Date.now()}`, from: "bot", text: "لم أجد إجابة جاهزة لسؤالك. تواصل معنا مباشرة عبر تليجرام:", contact: true },
       ]);
     }
   };
@@ -99,103 +94,100 @@ export default function SupportScreen() {
     ]);
   };
 
-  return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <View style={styles.header}>
-        <IconButton icon="arrow-forward" label="رجوع" onPress={() => router.back()} />
-        <Text style={styles.title}>مركز الدعم</Text>
-        <View style={{ width: 42 }} />
+  const TelegramButton = ({ label }: { label: string }) => (
+    <Pressable onPress={openTelegram} style={({ pressed }) => [styles.tgBtn, pressed && { opacity: 0.75 }]}>
+      <View style={styles.tgIcon}>
+        <MaterialIcons name="send" size={16} color={P.onAccent} />
       </View>
+      <Text style={styles.tgText}>{label}</Text>
+      <MaterialIcons name="chevron-left" size={22} color={P.text} />
+    </Pressable>
+  );
 
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {chat.map((m) => (
-          <View key={m.id}>
-            <View style={[styles.bubble, m.from === "user" ? styles.bubbleUser : styles.bubbleBot]}>
-              {m.from === "bot" && (
-                <View style={styles.botTag}>
-                  <MaterialIcons name="smart-toy" size={12} color={CWAAX.green} />
-                  <Text style={styles.botTagText}>رد آلي</Text>
+  return (
+    <ScreenContainer className="px-0" edges={["top", "left", "right"]}>
+      <View style={{ flex: 1, backgroundColor: P.bg }}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.circleBtn} hitSlop={8}>
+            <MaterialIcons name="arrow-forward" size={22} color={P.text} />
+          </Pressable>
+          <Text style={styles.title}>مركز الدعم</Text>
+          <View style={styles.circleBtn} />
+        </View>
+
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {chat.map((m) => (
+            <View key={m.id} style={{ marginBottom: 12 }}>
+              <View style={[styles.bubble, m.from === "user" ? styles.bubbleUser : styles.bubbleBot]}>
+                {m.from === "bot" && (
+                  <View style={styles.botTag}>
+                    <MaterialIcons name="smart-toy" size={14} color={P.accent} />
+                    <Text style={styles.botTagText}>رد آلي</Text>
+                  </View>
+                )}
+                <Text style={[styles.bubbleText, m.from === "user" && { color: P.onAccent, fontWeight: "700" }]}>{m.text}</Text>
+              </View>
+              {m.contact && (
+                <View style={{ marginTop: 8 }}>
+                  <TelegramButton label="تليجرام" />
                 </View>
               )}
-              <Text style={[styles.bubbleText, m.from === "user" && styles.bubbleTextUser]}>{m.text}</Text>
             </View>
-
-            {m.contact && (
-              <View style={styles.contactRow}>
-                <Pressable onPress={openTelegram} style={({ pressed }) => [styles.contactBtn, styles.telegramBtn, pressed && styles.pressed]}>
-                  <MaterialIcons name="send" size={16} color={CWAAX.white} />
-                  <Text style={styles.contactBtnText}>تليجرام</Text>
-                </Pressable>
-              </View>
-            )}
-          </View>
-        ))}
-
-        <Text style={styles.sectionTitle}>أو اختر من الأسئلة الشائعة</Text>
-        <View style={styles.faqWrap}>
-          {FAQS.map((item) => (
-            <Pressable
-              key={item.q}
-              onPress={() => askFaq(item)}
-              style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-            >
-              <Text style={styles.chipText}>{item.q}</Text>
-            </Pressable>
           ))}
-        </View>
 
-        <View style={styles.directContact}>
-          <Text style={styles.sectionTitle}>تواصل مباشر</Text>
-          <View style={styles.contactRow}>
-            <Pressable onPress={openTelegram} style={({ pressed }) => [styles.contactBtn, styles.telegramBtn, pressed && styles.pressed]}>
-              <MaterialIcons name="send" size={16} color={CWAAX.white} />
-              <Text style={styles.contactBtnText}>@{TELEGRAM_USERNAME}</Text>
-            </Pressable>
+          <Text style={styles.section}>أسئلة شائعة</Text>
+          <View style={styles.faqWrap}>
+            {FAQS.map((item) => (
+              <Pressable key={item.q} onPress={() => askFaq(item)} style={({ pressed }) => [styles.chip, pressed && { opacity: 0.7 }]}>
+                <Text style={styles.chipText}>{item.q}</Text>
+              </Pressable>
+            ))}
           </View>
-        </View>
-      </ScrollView>
 
-      <View style={styles.composer}>
-        <TextInput
-          value={message}
-          onChangeText={setMessage}
-          placeholder="اكتب سؤالك..."
-          placeholderTextColor="#9CA8A1"
-          style={styles.input}
-          textAlign="right"
-          onSubmitEditing={handleSend}
-        />
-        <Pressable onPress={handleSend} style={({ pressed }) => [styles.send, pressed && styles.pressed]}>
-          <MaterialIcons name="send" size={18} color={CWAAX.white} />
-        </Pressable>
+          <Text style={[styles.section, { marginTop: 24 }]}>تواصل مباشر</Text>
+          <TelegramButton label={`@${TELEGRAM_USERNAME}`} />
+        </ScrollView>
+
+        <View style={styles.composer}>
+          <TextInput
+            value={message}
+            onChangeText={setMessage}
+            placeholder="اكتب سؤالك..."
+            placeholderTextColor={P.muted}
+            style={[styles.input, noOutline]}
+            underlineColorAndroid="transparent"
+            textAlign="right"
+            onSubmitEditing={handleSend}
+            returnKeyType="send"
+          />
+          <Pressable onPress={handleSend} style={({ pressed }) => [styles.send, pressed && { opacity: 0.8 }]}>
+            <MaterialIcons name="send" size={20} color={P.onAccent} style={{ transform: [{ scaleX: -1 }] }} />
+          </Pressable>
+        </View>
       </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 16, paddingBottom: 20 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12 },
-  title: { color: CWAAX.ink, fontSize: 19, fontWeight: "900" },
-  bubble: { maxWidth: "86%", borderRadius: 17, padding: 12, marginBottom: 8 },
-  bubbleUser: { alignSelf: "flex-end", backgroundColor: CWAAX.green, borderTopRightRadius: 4 },
-  bubbleBot: { alignSelf: "flex-start", backgroundColor: CWAAX.surface, borderTopLeftRadius: 4 },
-  botTag: { flexDirection: "row-reverse", alignItems: "center", gap: 4, marginBottom: 5 },
-  botTagText: { color: CWAAX.green, fontSize: 9, fontWeight: "800" },
-  bubbleText: { color: CWAAX.ink, fontSize: 12, lineHeight: 20, textAlign: "right" },
-  bubbleTextUser: { color: CWAAX.white },
-  sectionTitle: { color: CWAAX.muted, fontSize: 11, fontWeight: "800", textAlign: "right", marginTop: 6, marginBottom: 10 },
-  faqWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" },
-  chip: { borderWidth: 1, borderColor: CWAAX.line, borderRadius: 20, paddingHorizontal: 13, paddingVertical: 9 },
-  chipText: { color: CWAAX.ink, fontSize: 11, fontWeight: "700" },
-  directContact: { marginTop: 26, borderTopWidth: 1, borderTopColor: CWAAX.line, paddingTop: 16 },
-  contactRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  contactBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 42, borderRadius: 12 },
-  telegramBtn: { backgroundColor: "#229ED9" },
-  whatsappBtn: { backgroundColor: "#25D366" },
-  contactBtnText: { color: CWAAX.white, fontSize: 12, fontWeight: "800" },
-  composer: { borderTopWidth: 1, borderTopColor: CWAAX.line, paddingTop: 10, paddingBottom: 10, flexDirection: "row", gap: 8 },
-  input: { flex: 1, height: 44, borderWidth: 1, borderColor: CWAAX.line, borderRadius: 14, paddingHorizontal: 13, color: CWAAX.ink, fontSize: 12 },
-  send: { width: 44, height: 44, borderRadius: 14, backgroundColor: CWAAX.green, alignItems: "center", justifyContent: "center" },
-  pressed: { opacity: 0.62 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
+  circleBtn: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", backgroundColor: P.card, borderWidth: 1, borderColor: P.border },
+  title: { color: P.text, fontSize: 20, fontWeight: "900" },
+  content: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 24 },
+  bubble: { maxWidth: "88%", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 14 },
+  bubbleBot: { alignSelf: "flex-start", backgroundColor: P.card, borderWidth: 1, borderColor: P.border, borderTopRightRadius: 6 },
+  bubbleUser: { alignSelf: "flex-end", backgroundColor: P.accent, borderTopLeftRadius: 6 },
+  botTag: { flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", backgroundColor: P.soft, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, marginBottom: 10 },
+  botTagText: { color: P.accent, fontSize: 11, fontWeight: "800" },
+  bubbleText: { color: P.text, fontSize: 15, lineHeight: 25, textAlign: "right" },
+  section: { color: P.muted, fontSize: 13, fontWeight: "700", textAlign: "right", marginTop: 8, marginBottom: 12 },
+  faqWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, backgroundColor: P.card, borderWidth: 1, borderColor: P.border },
+  chipText: { color: P.text, fontSize: 13, fontWeight: "600" },
+  tgBtn: { flexDirection: "row", alignItems: "center", gap: 12, height: 58, borderRadius: 18, backgroundColor: P.card, borderWidth: 1, borderColor: "rgba(255,230,0,0.35)", paddingHorizontal: 14 },
+  tgIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: P.accent, alignItems: "center", justifyContent: "center" },
+  tgText: { flex: 1, color: P.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
+  composer: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14, borderTopWidth: 1, borderTopColor: P.border, backgroundColor: P.bg },
+  input: { flex: 1, minWidth: 0, height: 50, borderRadius: 25, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, color: P.text, fontSize: 14, paddingHorizontal: 18 },
+  send: { width: 50, height: 50, borderRadius: 25, backgroundColor: P.accent, alignItems: "center", justifyContent: "center" },
 });
