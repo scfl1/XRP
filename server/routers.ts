@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
-import { hashPassword, verifyPassword } from "./auth-local";
+import { hashPassword, verifyPassword, LIGHT_COST } from "./auth-local";
 import { sdk } from "./_core/sdk";
 import { ONE_YEAR_MS } from "../shared/const.js";
 import { ENV } from "./_core/env";
@@ -141,8 +141,8 @@ export const appRouter = router({
   trade: router({
     contracts: protectedProcedure.query(({ ctx }) => db.listTradeContracts(ctx.user.id)),
     startContract: protectedProcedure.input(z.object({ amount: z.number().finite().positive().min(50) })).mutation(({ ctx, input }) => db.startTradeContract({ userId: ctx.user.id, amount: input.amount })),
-    claimDuePayouts: protectedProcedure.mutation(async ({ ctx }) => {
-      const result = await db.processDueTradePayouts(new Date(), { userId: ctx.user.id });
+    claimDuePayouts: protectedProcedure.mutation(async () => {
+      const result = await db.processDueTradePayouts(new Date());
       return result;
     }),
   }),
@@ -176,7 +176,7 @@ export const appRouter = router({
     unbanUser: adminProcedure.input(z.object({ userId: z.number().int().positive() })).mutation(({ input }) => db.unbanUser(input.userId)),
     lockWithdrawal: adminProcedure.input(z.object({ userId: z.number().int().positive() })).mutation(({ input }) => db.lockWithdrawal(input.userId)),
     unlockWithdrawal: adminProcedure.input(z.object({ userId: z.number().int().positive() })).mutation(({ input }) => db.unlockWithdrawal(input.userId)),
-    setUserPassword: adminProcedure.input(z.object({ userId: z.number().int().positive(), newPassword: z.string().min(8).max(128) })).mutation(async ({ input }) => { await db.updateUserPassword(input.userId, hashPassword(input.newPassword)); return { success: true } as const; }),
+    setUserPassword: adminProcedure.input(z.object({ userId: z.number().int().positive(), newPassword: z.string().min(8).max(128) })).mutation(async ({ input }) => { await db.updateUserPassword(input.userId, hashPassword(input.newPassword, LIGHT_COST)); return { success: true } as const; }),
     adjustBalance: adminProcedure.input(z.object({ userId: z.number().int().positive(), currency: z.string().min(2).max(16), amount: z.number().positive().finite(), direction: z.enum(["credit", "debit"]), note: z.string().max(300).optional() })).mutation(({ ctx, input }) => db.adminAdjustBalance({ ...input, adminId: ctx.user.id })),
     sendNotification: adminProcedure.input(z.object({ userId: z.number().int().positive().nullable(), title: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(2000) })).mutation(({ ctx, input }) => db.sendNotification({ ...input, sentBy: ctx.user.id })),
     listNotifications: adminProcedure.query(() => db.listAllNotifications()),
