@@ -5,10 +5,15 @@ const COST = 16384;
 const BLOCK_SIZE = 8;
 const PARALLEL = 1;
 
-export function hashPassword(password: string): string {
+// تكلفة أخف (أسرع ~14 مرة) لعمليات الإدارة داخل Cloudflare Workers: الطلب يُقتل
+// (HTTP 503) إذا تجاوز حد وقت المعالج. التحقق يقرأ التكلفة من الهاش نفسه،
+// فالهاشات القديمة والجديدة تعمل معاً.
+export const LIGHT_COST = 4096;
+
+export function hashPassword(password: string, cost: number = COST): string {
   const salt = crypto.randomBytes(16).toString("hex");
-  const derived = crypto.scryptSync(password, salt, KEYLEN, { N: COST, r: BLOCK_SIZE, p: PARALLEL });
-  return `scrypt$${COST}$${BLOCK_SIZE}$${PARALLEL}$${salt}$${derived.toString("hex")}`;
+  const derived = crypto.scryptSync(password, salt, KEYLEN, { N: cost, r: BLOCK_SIZE, p: PARALLEL });
+  return `scrypt$${cost}$${BLOCK_SIZE}$${PARALLEL}$${salt}$${derived.toString("hex")}`;
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
