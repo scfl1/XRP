@@ -141,8 +141,8 @@ export const appRouter = router({
   trade: router({
     contracts: protectedProcedure.query(({ ctx }) => db.listTradeContracts(ctx.user.id)),
     startContract: protectedProcedure.input(z.object({ amount: z.number().finite().positive().min(50) })).mutation(({ ctx, input }) => db.startTradeContract({ userId: ctx.user.id, amount: input.amount })),
-    claimDuePayouts: protectedProcedure.mutation(async () => {
-      const result = await db.processDueTradePayouts(new Date());
+    claimDuePayouts: protectedProcedure.mutation(async ({ ctx }) => {
+      const result = await db.processDueTradePayouts(new Date(), { userId: ctx.user.id });
       return result;
     }),
   }),
