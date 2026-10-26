@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -64,18 +64,27 @@ export default function ReferralScreen() {
   };
 
   const shareLink = async () => {
-    const text = `انضم إلى CwaAX عبر كود الإحالة الخاص بي واحصل على مكافآت: ${referralCode}\n${referralLink}`;
-    if (typeof navigator !== "undefined" && "share" in navigator) {
-      try {
-        await navigator.share({ title: "CwaAX", text, url: referralLink });
+    // رسالة واحدة فيها الرابط مرة واحدة فقط (لا نمرّر url منفصل حتى لا يتكرر)
+    const text =
+      `🎁 انضم إلي في CwaAX واستفد من مكافآت التسجيل!\n\n` +
+      `✅ سجّل عبر رابط الدعوة الخاص بي وابدأ خلال دقائق\n` +
+      `🔑 كود الدعوة: ${referralCode}\n\n` +
+      `👇 اضغط للتسجيل الآن\n${referralLink}`;
+    try {
+      if (Platform.OS !== "web") {
+        await Share.share({ message: text });
         return;
-      } catch {
-        // نسخ الرابط كبديل
       }
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        await navigator.share({ text });
+        return;
+      }
+    } catch (e: any) {
+      if (e?.name === "AbortError") return; // المستخدم أغلق نافذة المشاركة
     }
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(text);
-      notify("تم النسخ", "تم نسخ رابط الإحالة، شاركه مع أصدقائك.");
+      notify("تم النسخ", "تم نسخ رسالة الدعوة، شاركها مع أصدقائك.");
     }
   };
 
