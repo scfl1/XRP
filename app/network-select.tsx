@@ -39,7 +39,7 @@ export default function NetworkSelectScreen() {
       </View>
 
       <FlatList
-        data={NETWORKS}
+        data={NETWORKS.filter((n) => !n.internal)}
         keyExtractor={(n) => n.code}
         contentContainerStyle={{ paddingBottom: 30 }}
         renderItem={({ item }) => (
