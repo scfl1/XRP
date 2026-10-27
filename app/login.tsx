@@ -40,6 +40,13 @@ const COUNTRY_CODES = [
   { code: "+90", flag: "🇹🇷", name: "تركيا" },
 ];
 
+const P = {
+  bg: "#000000", card: "#1A1A1C", field: "#0F0F10", border: "rgba(255,255,255,0.12)",
+  text: "#FFFFFF", muted: "#8A8A8E", accent: "#FFE600", onAccent: "#14120A",
+  soft: "rgba(255,230,0,0.12)",
+};
+const noOutline: any = { outlineStyle: "none", outlineWidth: 0 };
+
 export default function LoginScreen() {
   const [loginMethod, setLoginMethod] = useState<"email" | "phone">("email");
   const [identifier, setIdentifier] = useState("");
@@ -141,11 +148,12 @@ export default function LoginScreen() {
               <>
                 <Text style={styles.label}>البريد الإلكتروني</Text>
                 <TextInput
-                  style={styles.input}
+              underlineColorAndroid="transparent"
+                  style={[styles.input, noOutline]}
                   value={identifier}
                   onChangeText={setIdentifier}
                   placeholder="أدخل البريد الإلكتروني"
-                  placeholderTextColor="#8A8F98"
+                  placeholderTextColor={P.muted}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   textAlign="right"
@@ -160,17 +168,18 @@ export default function LoginScreen() {
                       onPress={() => setShowCountryPicker((v) => !v)}
                       style={({ pressed }) => [styles.countryBtn, pressed && styles.pressed]}
                     >
-                      <MaterialIcons name={showCountryPicker ? "expand-less" : "expand-more"} size={18} color="#8A8F98" />
+                      <MaterialIcons name={showCountryPicker ? "expand-less" : "expand-more"} size={18} color={P.muted} />
                       <Text style={styles.countryBtnText}>{countryCode}</Text>
                       <Text style={styles.countryFlag}>{COUNTRY_CODES.find((c) => c.code === countryCode)?.flag}</Text>
                     </Pressable>
 
                     <TextInput
-                      style={[styles.input, styles.phoneInput]}
+              underlineColorAndroid="transparent"
+                      style={[styles.input, styles.phoneInput, noOutline]}
                       value={phone}
                       onChangeText={setPhone}
                       placeholder="5XXXXXXXX"
-                      placeholderTextColor="#8A8F98"
+                      placeholderTextColor={P.muted}
                       keyboardType="phone-pad"
                       textAlign="right"
                     />
@@ -221,11 +230,12 @@ export default function LoginScreen() {
             </View>
 
             <TextInput
-              style={styles.input}
+              underlineColorAndroid="transparent"
+              style={[styles.input, noOutline]}
               value={password}
               onChangeText={setPassword}
               placeholder="أدخل كلمة المرور"
-              placeholderTextColor="#8A8F98"
+              placeholderTextColor={P.muted}
               secureTextEntry={!showPassword}
               textAlign="right"
             />
@@ -272,280 +282,67 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
+  flex: { flex: 1 },
+  container: { flex: 1, backgroundColor: P.bg },
+  scroll: { flexGrow: 1, paddingHorizontal: 20, paddingVertical: 30, justifyContent: "center" },
 
-  container: {
-    flex: 1,
-    backgroundColor: "#F7F8FA",
-  },
+  header: { alignItems: "center", justifyContent: "center", marginBottom: 24, position: "relative" },
+  backButton: { position: "absolute", right: 0, top: 4, width: 44, height: 44, borderRadius: 22, backgroundColor: P.card, borderWidth: 1, borderColor: P.border, alignItems: "center", justifyContent: "center" },
+  backText: { fontSize: 30, color: P.text, marginTop: -3 },
 
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 35,
-    justifyContent: "center",
-  },
+  logoContainer: { alignItems: "center", marginBottom: 28 },
+  logo: { width: 68, height: 68, borderRadius: 22, backgroundColor: P.accent, alignItems: "center", justifyContent: "center", marginBottom: 14 },
+  logoSmall: { width: 54, height: 54, borderRadius: 18, backgroundColor: P.accent, alignItems: "center", justifyContent: "center", marginBottom: 8 },
+  logoText: { color: P.onAccent, fontSize: 34, fontWeight: "900" },
+  brand: { fontSize: 28, fontWeight: "900", color: P.text, letterSpacing: 0.5 },
+  subtitle: { marginTop: 6, fontSize: 14, color: P.muted },
 
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-
-  logo: {
-    width: 62,
-    height: 62,
-    borderRadius: 18,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 12,
-  },
-
-  logoText: {
-    color: "#FFFFFF",
-    fontSize: 36,
-    fontWeight: "800",
-  },
-
-  brand: {
-    fontSize: 27,
-    fontWeight: "800",
-    color: "#111827",
-    letterSpacing: 0.5,
-  },
-
-  subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#737984",
-  },
-
-  card: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "#E9EBEF",
-  },
-
-  title: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#111827",
-    textAlign: "right",
-    marginBottom: 8,
-  },
-
-  description: {
-    fontSize: 14,
-    color: "#737984",
-    textAlign: "right",
-    marginBottom: 25,
-  },
-
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#252A32",
-    textAlign: "right",
-    marginBottom: 8,
-  },
-
-  input: {
-    height: 52,
-    borderWidth: 1,
-    borderColor: "#DDE1E7",
-    borderRadius: 12,
-    backgroundColor: "#FAFBFC",
-    paddingHorizontal: 15,
-    color: "#111827",
-    fontSize: 15,
-    marginBottom: 18,
-  },
-
+  card: { width: "100%", backgroundColor: P.card, borderRadius: 26, padding: 22, borderWidth: 1, borderColor: P.border },
+  title: { fontSize: 26, fontWeight: "900", color: P.text, textAlign: "right", marginBottom: 8 },
+  description: { fontSize: 14, color: P.muted, textAlign: "right", marginBottom: 24 },
+  label: { fontSize: 14, fontWeight: "700", color: P.text, textAlign: "right", marginBottom: 8 },
+  input: { height: 54, borderWidth: 1, borderColor: P.border, borderRadius: 16, backgroundColor: P.field, paddingHorizontal: 16, color: P.text, fontSize: 15, marginBottom: 18 },
   pressed: { opacity: 0.7 },
 
-  methodTabs: {
-    flexDirection: "row",
-    backgroundColor: "#F1F3F5",
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 18,
-  },
+  methodTabs: { flexDirection: "row", backgroundColor: P.field, borderRadius: 16, padding: 4, marginBottom: 20, borderWidth: 1, borderColor: P.border },
+  methodTab: { flex: 1, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 12 },
+  methodTabActive: { backgroundColor: P.accent },
+  methodTabText: { color: P.muted, fontSize: 14, fontWeight: "700" },
+  methodTabTextActive: { color: P.onAccent, fontWeight: "900" },
 
-  methodTab: {
-    flex: 1,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 9,
-  },
-
-  methodTabActive: {
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-
-  methodTabText: { color: "#737984", fontSize: 14, fontWeight: "700" },
-
-  methodTabTextActive: { color: "#111827" },
-
-  phonePickerContainer: {
-    position: "relative",
-    zIndex: 1000,
-    elevation: 1000,
-  },
-
-  phoneRow: {
-    width: "100%",
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 18,
-    alignItems: "stretch",
-  },
-
-  phoneInput: {
-    flex: 1,
-    width: 0,
-    minWidth: 0,
-    flexShrink: 1,
-    marginBottom: 0,
-  },
-
-  countryBtn: {
-    flexShrink: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    height: 52,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: "#DDE1E7",
-    borderRadius: 12,
-    backgroundColor: "#FAFBFC",
-  },
-
-  countryBtnText: { color: "#111827", fontSize: 15, fontWeight: "700" },
-
+  phonePickerContainer: { position: "relative", zIndex: 1000, elevation: 1000 },
+  phoneRow: { width: "100%", flexDirection: "row", gap: 10, marginBottom: 18, alignItems: "stretch" },
+  phoneInput: { flex: 1, width: 0, minWidth: 0, flexShrink: 1, marginBottom: 0 },
+  countryBtn: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: 4, height: 54, paddingHorizontal: 12, borderWidth: 1, borderColor: P.border, borderRadius: 16, backgroundColor: P.field },
+  countryBtnText: { color: P.text, fontSize: 15, fontWeight: "700" },
   countryFlag: { fontSize: 18 },
+  pickerBackdrop: { position: "absolute", top: 0, left: -400, right: -400, bottom: -2000, zIndex: 1001, elevation: 1001 },
+  countryList: { position: "absolute", top: 60, right: 0, width: 230, backgroundColor: "#222225", borderRadius: 16, borderWidth: 1, borderColor: P.border, paddingVertical: 6, shadowColor: "#000", shadowOpacity: 0.5, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, zIndex: 1002, elevation: 1002 },
+  countryOption: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 11, paddingHorizontal: 14 },
+  countryOptionActive: { backgroundColor: P.soft },
+  countryOptionCode: { color: P.muted, fontSize: 13, fontWeight: "600" },
+  countryOptionName: { color: P.text, fontSize: 14, fontWeight: "600" },
 
-  pickerBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: -400,
-    right: -400,
-    bottom: -2000,
-    zIndex: 1001,
-    elevation: 1001,
-  },
+  passwordHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  showPassword: { color: P.accent, fontSize: 13, fontWeight: "800", marginBottom: 8 },
+  forgotContainer: { alignItems: "flex-start", marginTop: -5, marginBottom: 20 },
+  forgot: { color: P.accent, fontSize: 13, fontWeight: "700" },
 
-  countryList: {
-    position: "absolute",
-    top: 58,
-    right: 0,
-    width: 220,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E5E8EC",
-    paddingVertical: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 12,
-    zIndex: 1002,
-    elevation: 1002,
-  },
+  termsRow: { marginTop: 2, marginBottom: 20 },
+  termsText: { color: P.muted, fontSize: 12, lineHeight: 19, textAlign: "right" },
 
-  countryOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
+  loginButton: { height: 56, borderRadius: 28, backgroundColor: P.accent, alignItems: "center", justifyContent: "center" },
+  loginText: { color: P.onAccent, fontSize: 17, fontWeight: "900" },
+  registerButton: { height: 56, borderRadius: 28, backgroundColor: P.accent, alignItems: "center", justifyContent: "center" },
+  registerText: { color: P.onAccent, fontSize: 17, fontWeight: "900" },
+  disabled: { opacity: 0.6 },
 
-  countryOptionActive: { backgroundColor: "#F0FBF6" },
+  registerRow: { flexDirection: "row-reverse", justifyContent: "center", alignItems: "center", marginTop: 22 },
+  registerQuestion: { color: P.muted, fontSize: 14 },
+  registerLink: { color: P.accent, fontSize: 14, fontWeight: "900" },
+  loginRow: { flexDirection: "row-reverse", justifyContent: "center", alignItems: "center", marginTop: 22 },
+  loginQuestion: { color: P.muted, fontSize: 14 },
+  loginLink: { color: P.accent, fontSize: 14, fontWeight: "900" },
 
-  countryOptionCode: { color: "#6B7280", fontSize: 13, fontWeight: "600" },
-
-  countryOptionName: { color: "#111827", fontSize: 14, fontWeight: "600" },
-
-  passwordHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  showPassword: {
-    color: "#2563EB",
-    fontSize: 13,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-
-  forgotContainer: {
-    alignItems: "flex-start",
-    marginTop: -5,
-    marginBottom: 20,
-  },
-
-  forgot: {
-    color: "#2563EB",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  loginButton: {
-    height: 53,
-    borderRadius: 12,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  disabled: {
-    opacity: 0.6,
-  },
-
-  loginText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-
-  registerRow: {
-    flexDirection: "row-reverse",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 23,
-  },
-
-  registerQuestion: {
-    color: "#737984",
-    fontSize: 14,
-  },
-
-  registerLink: {
-    color: "#2563EB",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-
-  footer: {
-    textAlign: "center",
-    color: "#969BA4",
-    fontSize: 11,
-    lineHeight: 18,
-    marginTop: 25,
-    paddingHorizontal: 15,
-  },
+  footer: { textAlign: "center", color: P.muted, fontSize: 11, lineHeight: 18, marginTop: 24, paddingHorizontal: 15 },
 });
