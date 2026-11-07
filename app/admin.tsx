@@ -40,6 +40,7 @@ export default function AdminScreen() {
   const [query, setQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [confirmGlobalLock, setConfirmGlobalLock] = useState<"lock" | "unlock" | null>(null);
 
   type PendingRequestAction = {
     kind: "approveDeposit" | "rejectDeposit" | "approveWithdrawal" | "rejectWithdrawal";
@@ -58,6 +59,11 @@ export default function AdminScreen() {
   );
 
   const utils = trpc.useUtils();
+  const globalLock = trpc.admin.globalWithdrawalLock.useQuery(undefined, { enabled: isAdmin });
+  const lockAll = trpc.admin.lockAllWithdrawals.useMutation({ onSuccess: () => utils.admin.globalWithdrawalLock.invalidate() });
+  const unlockAll = trpc.admin.unlockAllWithdrawals.useMutation({ onSuccess: () => utils.admin.globalWithdrawalLock.invalidate() });
+  const globalLockUntil = globalLock.data?.until ? new Date(globalLock.data.until) : null;
+  const globalLockBusy = lockAll.isPending || unlockAll.isPending;
 
   // ====== Mutations first (so isMutating can gate refetchInterval) ======
   const approveDeposit = trpc.admin.approveDeposit.useMutation({
@@ -344,6 +350,43 @@ export default function AdminScreen() {
               <MaterialIcons name="campaign" size={19} color={CWAAX.white} />
               <Text style={styles.broadcastText}>إرسال إشعار لجميع المستخدمين</Text>
             </Pressable>
+
+            <Pressable
+              onPress={() => setConfirmGlobalLock(globalLockUntil ? "unlock" : "lock")}
+              style={({ pressed }) => [
+                styles.broadcastBtn,
+                { backgroundColor: globalLockUntil ? CWAAX.green : CWAAX.red },
+                pressed && styles.pressed,
+              ]}
+            >
+              <MaterialIcons name={globalLockUntil ? "lock-open" : "money-off"} size={19} color={CWAAX.white} />
+              <Text style={styles.broadcastText}>
+                {globalLockUntil
+                  ? `السحب مقفل للجميع حتى ${globalLockUntil.toISOString().slice(0, 10)} · اضغط لفتحه`
+                  : "قفل السحب على جميع المستخدمين (30 يوم)"}
+              </Text>
+            </Pressable>
+
+            <ConfirmModal
+              visible={confirmGlobalLock !== null}
+              title={confirmGlobalLock === "lock" ? "قفل السحب للجميع" : "فتح السحب للجميع"}
+              message={
+                confirmGlobalLock === "lock"
+                  ? "سيتم منع جميع المستخدمين من تقديم طلبات سحب لمدة 30 يوماً، وينفتح تلقائياً بعدها. يمكنك فتحه يدوياً في أي وقت. هل أنت متأكد؟"
+                  : "هل أنت متأكد من فتح السحب لجميع المستخدمين الآن؟"
+              }
+              danger={confirmGlobalLock === "lock"}
+              busy={globalLockBusy}
+              onCancel={() => !globalLockBusy && setConfirmGlobalLock(null)}
+              onConfirm={() => {
+                const opts = {
+                  onSuccess: () => setConfirmGlobalLock(null),
+                  onError: (e: any) => notify("تعذر تنفيذ العملية", e.message),
+                };
+                if (confirmGlobalLock === "lock") lockAll.mutate({ days: 30 }, opts);
+                else unlockAll.mutate(undefined, opts);
+              }}
+            />
 
             <Text style={styles.section}>طلبات الإيداع المعلقة</Text>
             <Card>
