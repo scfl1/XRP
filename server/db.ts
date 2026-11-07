@@ -700,6 +700,66 @@ export async function unbanUser(userId: number) {
     .where(eq(users.id, userId));
 }
 
+/* =========================
+   GLOBAL WITHDRAWAL LOCK (all users, timed)
+   يُخزَّن في جدول app_settings (يُنشأ تلقائياً عند أول استخدام، بدون migration)
+========================= */
+
+const GLOBAL_LOCK_KEY = "global_withdrawal_lock_until";
+let settingsTableReady = false;
+
+async function ensureSettingsTable(db: any) {
+  if (settingsTableReady) return;
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key text PRIMARY KEY,
+      value text NOT NULL,
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  settingsTableReady = true;
+}
+
+/** يرجع تاريخ انتهاء القفل العام إن كان ما زال ساري المفعول، وإلا null */
+export async function getGlobalWithdrawalLock(): Promise<Date | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    await ensureSettingsTable(db);
+    const rows: any = await db.execute(
+      sql`SELECT value FROM app_settings WHERE key = ${GLOBAL_LOCK_KEY} LIMIT 1`,
+    );
+    const list = Array.isArray(rows) ? rows : rows?.rows ?? [];
+    const value = list[0]?.value;
+    if (!value) return null;
+    const until = new Date(value);
+    return until.getTime() > Date.now() ? until : null;
+  } catch (error) {
+    console.error("[globalWithdrawalLock] read failed", error);
+    return null;
+  }
+}
+
+export async function setGlobalWithdrawalLock(days: number): Promise<Date> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureSettingsTable(db);
+  const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  await db.execute(sql`
+    INSERT INTO app_settings (key, value, updated_at)
+    VALUES (${GLOBAL_LOCK_KEY}, ${until.toISOString()}, now())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+  `);
+  return until;
+}
+
+export async function clearGlobalWithdrawalLock() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureSettingsTable(db);
+  await db.execute(sql`DELETE FROM app_settings WHERE key = ${GLOBAL_LOCK_KEY}`);
+}
+
 export async function lockWithdrawal(userId: number) {
   const db = await getDb();
 
