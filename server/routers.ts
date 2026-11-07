@@ -150,7 +150,13 @@ export const appRouter = router({
     balances: protectedProcedure.query(({ ctx }) => db.getWalletBalances(ctx.user.id)),
     transactions: protectedProcedure.query(({ ctx }) => db.listTransactions(ctx.user.id)),
     createDeposit: protectedProcedure.input(requestInput.extend({ paymentMethod: z.string().max(64).optional() })).mutation(({ ctx, input }) => db.createDepositRequest({ userId: ctx.user.id, ...input })),
-    createWithdrawal: protectedProcedure.input(requestInput.extend({ address: z.string().min(20).max(500) })).mutation(({ ctx, input }) => {
+    createWithdrawal: protectedProcedure.input(requestInput.extend({ address: z.string().min(20).max(500) })).mutation(async ({ ctx, input }) => {
+      const globalLockUntil = await db.getGlobalWithdrawalLock();
+      if (globalLockUntil) {
+        const d = globalLockUntil;
+        const date = `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String(d.getUTCDate()).padStart(2, "0")}`;
+        throw new TRPCError({ code: "FORBIDDEN", message: `السحب متوقف مؤقتاً لجميع الحسابات حتى ${date}.` });
+      }
       if (ctx.user.withdrawalLocked) {
         throw new TRPCError({ code: "FORBIDDEN", message: "السحب من حسابك مقفل مؤقتاً، تواصل مع الدعم." });
       }
@@ -163,6 +169,9 @@ export const appRouter = router({
   }),
   admin: router({
     stats: adminProcedure.query(() => db.getAdminStats()),
+    globalWithdrawalLock: adminProcedure.query(async () => ({ until: (await db.getGlobalWithdrawalLock())?.toISOString() ?? null })),
+    lockAllWithdrawals: adminProcedure.input(z.object({ days: z.number().int().min(1).max(365).default(30) }).optional()).mutation(async ({ input }) => ({ until: (await db.setGlobalWithdrawalLock(input?.days ?? 30)).toISOString() })),
+    unlockAllWithdrawals: adminProcedure.mutation(async () => { await db.clearGlobalWithdrawalLock(); return { until: null as string | null }; }),
     users: adminProcedure.input(z.object({ search: z.string().max(320).optional() }).optional()).query(({ input }) => db.listUsers(input?.search)),
     userDetail: adminProcedure.input(z.object({ userId: z.number().int().positive() })).query(({ input }) => db.getAdminUserDetail(input.userId)),
     referralsAtLevel: adminProcedure.input(z.object({ userId: z.number().int().positive(), level: z.union([z.literal(1), z.literal(2), z.literal(3)]) })).query(({ input }) => db.getReferralsAtLevel(input.userId, input.level)),
