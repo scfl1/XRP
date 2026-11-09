@@ -362,17 +362,17 @@ export default function AdminScreen() {
               <MaterialIcons name={globalLockUntil ? "lock-open" : "money-off"} size={19} color={CWAAX.white} />
               <Text style={styles.broadcastText}>
                 {globalLockUntil
-                  ? `السحب مقفل للجميع حتى ${globalLockUntil.toISOString().slice(0, 10)} · اضغط لفتحه`
-                  : "قفل السحب على جميع المستخدمين (30 يوم)"}
+                  ? `السحب مقفل للحسابات القديمة حتى ${globalLockUntil.toISOString().slice(0, 10)} · اضغط لفتحه`
+                  : "قفل السحب على الحسابات الحالية (30 يوم)"}
               </Text>
             </Pressable>
 
             <ConfirmModal
               visible={confirmGlobalLock !== null}
-              title={confirmGlobalLock === "lock" ? "قفل السحب للجميع" : "فتح السحب للجميع"}
+              title={confirmGlobalLock === "lock" ? "قفل السحب للحسابات الحالية" : "فتح السحب للجميع"}
               message={
                 confirmGlobalLock === "lock"
-                  ? "سيتم منع جميع المستخدمين من تقديم طلبات سحب لمدة 30 يوماً، وينفتح تلقائياً بعدها. يمكنك فتحه يدوياً في أي وقت. هل أنت متأكد؟"
+                  ? "سيتم منع الحسابات الحالية فقط من تقديم طلبات سحب لمدة 30 يوماً، وينفتح تلقائياً بعدها. أي حساب جديد يُنشأ بعد التفعيل يستطيع السحب بشكل طبيعي. يمكنك فتحه يدوياً في أي وقت. هل أنت متأكد؟"
                   : "هل أنت متأكد من فتح السحب لجميع المستخدمين الآن؟"
               }
               danger={confirmGlobalLock === "lock"}
