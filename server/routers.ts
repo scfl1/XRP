@@ -156,7 +156,7 @@ export const appRouter = router({
       if (globalLock && new Date(ctx.user.createdAt).getTime() <= globalLock.lockedAt.getTime()) {
         const d = globalLock.until;
         const date = `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${String(d.getUTCDate()).padStart(2, "0")}`;
-        throw new TRPCError({ code: "FORBIDDEN", message: `السحب متوقف مؤقتاً للحسابات القديمة حتى ${date}.` });
+        throw new TRPCError({ code: "FORBIDDEN", message: `السحب متوقف مؤقتاً للحسابات حتى ${date}.` });
       }
       if (ctx.user.withdrawalLocked) {
         throw new TRPCError({ code: "FORBIDDEN", message: "السحب من حسابك مقفل مؤقتاً، تواصل مع الدعم." });
