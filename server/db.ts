@@ -720,8 +720,12 @@ async function ensureSettingsTable(db: any) {
   settingsTableReady = true;
 }
 
-/** يرجع تاريخ انتهاء القفل العام إن كان ما زال ساري المفعول، وإلا null */
-export async function getGlobalWithdrawalLock(): Promise<Date | null> {
+/**
+ * القفل العام يسري فقط على الحسابات التي أُنشئت قبل لحظة تفعيله (lockedAt).
+ * أي حساب جديد يُنشأ بعد التفعيل لا يتأثر ويسحب بشكل طبيعي.
+ * يرجع { until, lockedAt } إن كان القفل ساري المفعول، وإلا null.
+ */
+export async function getGlobalWithdrawalLock(): Promise<{ until: Date; lockedAt: Date } | null> {
   const db = await getDb();
   if (!db) return null;
   try {
@@ -732,8 +736,17 @@ export async function getGlobalWithdrawalLock(): Promise<Date | null> {
     const list = Array.isArray(rows) ? rows : rows?.rows ?? [];
     const value = list[0]?.value;
     if (!value) return null;
-    const until = new Date(value);
-    return until.getTime() > Date.now() ? until : null;
+    let until: Date;
+    let lockedAt: Date;
+    try {
+      const parsed = JSON.parse(value);
+      until = new Date(parsed.until);
+      lockedAt = new Date(parsed.lockedAt);
+    } catch {
+      until = new Date(value); // صيغة قديمة: تاريخ فقط
+      lockedAt = new Date(until.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+    return until.getTime() > Date.now() ? { until, lockedAt } : null;
   } catch (error) {
     console.error("[globalWithdrawalLock] read failed", error);
     return null;
@@ -744,10 +757,12 @@ export async function setGlobalWithdrawalLock(days: number): Promise<Date> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await ensureSettingsTable(db);
-  const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const lockedAt = new Date();
+  const until = new Date(lockedAt.getTime() + days * 24 * 60 * 60 * 1000);
+  const payload = JSON.stringify({ until: until.toISOString(), lockedAt: lockedAt.toISOString() });
   await db.execute(sql`
     INSERT INTO app_settings (key, value, updated_at)
-    VALUES (${GLOBAL_LOCK_KEY}, ${until.toISOString()}, now())
+    VALUES (${GLOBAL_LOCK_KEY}, ${payload}, now())
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
   `);
   return until;
