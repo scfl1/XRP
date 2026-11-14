@@ -993,10 +993,16 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
                   onPress={() => (u.isBanned ? setConfirmUnban(true) : setMode("ban"))}
                 />
                 <ActionBtn
-                  icon={u.withdrawalLocked ? "lock-open" : "money-off"}
-                  label={u.withdrawalLocked ? "فتح السحب" : "قفل السحب"}
-                  tone={u.withdrawalLocked ? CWAAX.green : CWAAX.gold}
-                  onPress={() => setConfirmWithdrawalLock(u.withdrawalLocked ? "unlock" : "lock")}
+                  icon="money-off"
+                  label="قفل السحب 30 يوم"
+                  tone={CWAAX.gold}
+                  onPress={() => setConfirmWithdrawalLock("lock")}
+                />
+                <ActionBtn
+                  icon="lock-open"
+                  label="فتح السحب"
+                  tone={CWAAX.green}
+                  onPress={() => setConfirmWithdrawalLock("unlock")}
                 />
               </View>
             </ScrollView>
@@ -1070,7 +1076,7 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
             title={confirmWithdrawalLock === "lock" ? "تأكيد قفل السحب" : "تأكيد فتح السحب"}
             message={
               confirmWithdrawalLock === "lock"
-                ? "هل أنت متأكد من قفل السحب لهذا الحساب؟ لن يتمكن المستخدم من تقديم أي طلب سحب حتى تفتحه."
+                ? "هل أنت متأكد من قفل السحب لهذا الحساب لمدة 30 يوماً؟ لن يتمكن المستخدم من تقديم أي طلب سحب، وينفتح تلقائياً بعد 30 يوماً أو يمكنك فتحه يدوياً."
                 : "هل أنت متأكد من فتح السحب لهذا الحساب؟"
             }
             danger={confirmWithdrawalLock === "lock"}
@@ -1081,11 +1087,11 @@ function UserDetailModal({ userId, onClose }: { userId: number; onClose: () => v
             }
             onConfirm={() => {
               const mutation = confirmWithdrawalLock === "lock" ? lockWithdrawalMutation : unlockWithdrawalMutation;
-              mutation.mutate(
-                { userId },
+              (mutation as any).mutate(
+                confirmWithdrawalLock === "lock" ? { userId, days: 30 } : { userId },
                 {
                   onSuccess: () => setConfirmWithdrawalLock(null),
-                  onError: (e) => notify("تعذر تنفيذ العملية", e.message),
+                  onError: (e: any) => notify("تعذر تنفيذ العملية", e.message),
                 }
               );
             }}
