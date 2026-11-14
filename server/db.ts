@@ -805,6 +805,55 @@ export async function unlockWithdrawal(userId: number) {
       updatedAt: new Date(),
     })
     .where(eq(users.id, userId));
+
+  // احذف مدة القفل المؤقت (إن وُجدت)
+  try {
+    await ensureSettingsTable(db);
+    await db.execute(sql`DELETE FROM app_settings WHERE key = ${`user_withdrawal_lock_until:${userId}`}`);
+  } catch (error) {
+    console.error("[unlockWithdrawal] clear timed lock failed", error);
+  }
+}
+
+/** قفل سحب مستخدم واحد لعدد أيام محدد، ثم ينفتح تلقائياً */
+export async function lockWithdrawalTimed(userId: number, days: number): Promise<Date> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await ensureSettingsTable(db);
+  const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  await db.execute(sql`
+    INSERT INTO app_settings (key, value, updated_at)
+    VALUES (${`user_withdrawal_lock_until:${userId}`}, ${until.toISOString()}, now())
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+  `);
+  await db.update(users).set({ withdrawalLocked: true, updatedAt: new Date() }).where(eq(users.id, userId));
+  return until;
+}
+
+/**
+ * هل قفل السحب الفردي ما زال ساري المفعول؟
+ * - قفل مؤقت انتهت مدته → يُفتح تلقائياً ويرجع { active: false }
+ * - قفل بلا مدة (قديم/دائم) → يبقى ساري حتى يفتحه الأدمن
+ */
+export async function getUserWithdrawalLockState(userId: number): Promise<{ active: boolean; until: Date | null }> {
+  const db = await getDb();
+  if (!db) return { active: true, until: null };
+  try {
+    await ensureSettingsTable(db);
+    const rows: any = await db.execute(
+      sql`SELECT value FROM app_settings WHERE key = ${`user_withdrawal_lock_until:${userId}`} LIMIT 1`,
+    );
+    const list = Array.isArray(rows) ? rows : rows?.rows ?? [];
+    const value = list[0]?.value;
+    if (!value) return { active: true, until: null };
+    const until = new Date(value);
+    if (until.getTime() > Date.now()) return { active: true, until };
+    await unlockWithdrawal(userId);
+    return { active: false, until };
+  } catch (error) {
+    console.error("[getUserWithdrawalLockState] failed", error);
+    return { active: true, until: null };
+  }
 }
 
 /* =========================
